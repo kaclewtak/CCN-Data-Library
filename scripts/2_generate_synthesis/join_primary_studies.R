@@ -302,3 +302,6 @@ if(join_status == TRUE){
   
   WriteBib(as.BibEntry(bib_file), "data/CCN_synthesis/CCN_bibliography.bib") # some encoding funny business here
 }
+
+# find non-ASCII cases in the citations (accent encoding)
+# sort(unique(ccrcn_synthesis$study_citations$bibliography_id[grep("[^\001-\177]", ccrcn_synthesis$study_citations$author)]))
