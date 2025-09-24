@@ -8,19 +8,158 @@ library(tidyverse)
 library(readxl)
 library(lubridate)
 library(leaflet)
+library(sf)
 
 # load in helper functions
 source("scripts/1_data_formatting/curation_functions.R") # For curation
 source("scripts/1_data_formatting/qa_functions.R") # For QAQC
 
-
-#assign study id
-# id <- "Adotey_et_al_2024"
-
 ## Read files ####
 
 coredat <- read_xlsx("data/primary_studies/Krause_et_al_2025/original/Seagrass_C_stocks_database.xlsx", 
                      sheet = "Core data", guess_max = 19595)
+
+stocks_data <- read_xlsx("data/primary_studies/Krause_et_al_2025/original/Seagrass_C_stocks_database.xlsx",
+                         sheet = "Carbon stocks", guess_max = 19595) %>% 
+  rename(`Core ID` = `Additional identification`, `Site name` = `Study site`)
+
+## Identify Duplicates
+
+# Previous Fourqurean synthesis hook
+four_cores <- read_csv("data/primary_studies/Fourqurean_2012/derivative/Fourqurean_2012_cores.csv")
+four_bib <- read_csv("data/primary_studies/Fourqurean_2012/derivative/Fourqurean_2012_study_citations.csv") %>% 
+  filter(bibliography_id != "Fourqurean_et_al_2012_article")
+
+# nrow(coredat %>% filter(`Article ID` == "CC_012"))
+cc_012 <- stocks_data %>% filter(`Article ID` == "CC_012") %>% 
+  drop_na(`Core ID`) %>% 
+  mutate(article_year = str_extract(`Secondary reference`, "(1|2)\\d{3}"),
+         reference = ifelse(!is.na(article_year), gsub(".{2}$", "", `Secondary reference`), `Secondary reference`)) %>%
+  distinct(reference, article_year, `Core ID`) %>% 
+  count(reference, article_year) %>% 
+  arrange(reference) %>% 
+  mutate(unpublished = ifelse(grepl("unpublish|Unpublish|submitted|Press|press", reference), T, F),
+         study_id = case_when(unpublished == F ~ paste(gsub(",", "", word(reference)), "et_al", article_year, sep = "_"), 
+                              T ~ reference))
+
+four_compare <- full_join(cc_012, four_bib) %>% arrange(study_id) # LEFT OFF HERE
+# I think they're all the same though (some unvegetated records in the original though)
+# have to decide which version to keep
+# If we drop the old and bring in this version, we'll have to recreate the study IDs and bibliography linkeages...
+# Will have to do this already for the new data IDK
+
+# Via bibliography
+ccn_bib <- read_csv("data/CCN_synthesis/CCN_study_citations.csv", guess_max = 1200)
+
+krause_studies <- coredat %>% 
+  mutate(reference = coalesce(`Secondary reference`, `Primary reference`)) %>% 
+  distinct(Country, `Publication year`, reference) %>% 
+  rename(country = Country)
+
+unique(krause_studies$`Primary reference`)
+
+
+# Via coords
+
+ccn_cores <- read_csv("data/CCN_synthesis/CCN_cores.csv", guess_max = 17000) %>% drop_na(latitude)
+  # filter(country %in% c("United States", "Canada", "Mexico")) %>% 
+  # filter(longitude < -88) %>% 
+  # select(-c(position_notes:pb210_cic_r2))
+
+# ccn_bib <- read_csv("data/CCN_synthesis/CCN_study_citations.csv", guess_max = 1200) %>% 
+#   filter(study_id %in% unique(ccn_cores$study_id))
+
+# try a spatial join to isolate duplicate samples
+ccn_cores_sf <- ccn_cores %>% 
+  filter(habitat == "seagrass") %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+krause_cores_sf <- coredat %>% 
+  mutate(reference = coalesce(`Secondary reference`, `Primary reference`)) %>% 
+
+    mutate(longitude = as.numeric(gsub("˚E", "", Longitude)), 
+           latitude = as.numeric(gsub("˚N", "", Latitude))) %>% 
+  drop_na(latitude) %>% 
+  distinct(`Article ID`, `Site name`, Country, `Core ID`, `Primary reference`, `Secondary reference`, latitude, longitude) %>% 
+  # select(-c(Latitude, Longitude)) %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
+
+nearest <- st_nearest_feature(krause_cores_sf, ccn_cores_sf)
+
+distances <- krause_cores_sf %>% # need to add source information and plot the resulting pairs to see if they actually align
+  # select(`Article ID`, reference, `Publication year`, `Site name`, Country, `Core ID`) %>% 
+  mutate(sample_dist = as.vector(st_distance(krause_cores_sf, ccn_cores_sf[nearest,], by_element = T))) %>% 
+  bind_cols(ccn_cores_sf[nearest,])
+
+# isolate duplicates
+# filter coords pairs that are less than X meter off and pull IDs
+duplicates <- distances %>% 
+  filter(sample_dist < 4) %>%
+  distinct(study_id, core_id, site_id, `Article ID`, `Site name`, `Core ID`, `Primary reference`, `Secondary reference`, sample_dist) 
+
+# isolate new data
+new_data <- distances %>% 
+  filter(sample_dist > 4) %>%
+  distinct(`Article ID`, Country, `Site name`, `Core ID`, `Primary reference`, `Secondary reference`) %>% 
+  filter(`Article ID` != "CC_012") # Fourqurean synth needs to be resolved carefully - leave alone for now (keep prev version)
+  # pull(StudyID)
+
+# join to stocks table
+table_join <- left_join(new_data %>% select(`Article ID`, `Primary reference`, `Secondary reference`, `Site name`, `Core ID`),
+                        stocks_data)
+
+# write_csv(new_data, "temp/tamalavage/Krause_new_data_lookup.csv")
+# write_csv(table_join, "temp/tamalavage/Krause_new_data_stocks.csv")
+# write_csv(duplicates, "temp/tamalavage/Krause_duplicates_lookup.csv")
+
+## Clean new data
+
+novel_coredat <- coredat %>% drop_na(Latitude) %>% # theres some obs with no coordinates
+  inner_join(new_data) %>% 
+  rename(study_id = `Article ID`,
+         site_id = `Site name`,
+         core_id = `Core ID`,
+         latitude = Latitude,
+         longitude = Longitude,
+         depth_min = `Top of section`, 
+         depth_max = `Bottom of section`, 
+         dry_bulk_density = `Dry Bulk Density`) %>% 
+  mutate(fraction_organic_matter = `OM content`/100,
+         fraction_carbon = case_when(`Primary reference` == "Silva, Copertino, Lanari, 2022 unpublished" ~ NA,
+                                     T ~ as.numeric(Corg)/100),
+         reference = gsub(".{2}$", "", `Secondary reference`), `Secondary reference`) %>% 
+  mutate(longitude = as.numeric(gsub("˚E", "", longitude)), 
+         latitude = as.numeric(gsub("˚N", "", latitude))) 
+  
+## Core-level
+cores <- novel_coredat %>% 
+  distinct(`Primary reference`, reference, study_id, site_id, core_id, `Publication year`, Country, latitude, longitude, Species, 
+           `Depth of core`)
+
+# new_krause_final <- new_krause %>% 
+#   select(study_id, site_id, core_id, latitude, longitude, depth_min, depth_max, dry_bulk_density, fraction_organic_matter, fraction_carbon) 
+
+# write_csv(new_krause_final, "temp/tamalavage/Krauss_CCN_format.csv")
+
+# Map the cores with the CCN ones
+leaflet() %>%
+  addTiles() %>% 
+  addCircleMarkers(data = ccn_cores_sf,
+                   radius = 0.5, opacity = 0.5,
+                   label = ~paste(study_id, core_id, sep = "; "), 
+                   group = "CCN") %>%
+  
+  addCircleMarkers(data = cores, 
+                   lat = ~as.numeric(latitude), lng = ~as.numeric(longitude),
+                   color = "red", radius = 0.5, opacity = 0.5,
+                   group = "Krause",
+                   label = ~study_id,
+                   # label = studies$study_id[which(studies$StudyID == dont_keep[5])]
+  ) %>% 
+  addLayersControl(overlayGroups = c("CCN", "Krause"), # "Border"
+                   options = layersControlOptions(collapsed = FALSE)
+  )
+
 
 ## ... Curate methods ####
 # methods <- methods_raw
@@ -33,11 +172,17 @@ coredat <- read_xlsx("data/primary_studies/Krause_et_al_2025/original/Seagrass_C
 # 
 # depthseries <- reorderColumns("depthseries", depthseries)
 
-coredat %>% 
-  drop_na(`OM content`, Corg) %>% 
-  ggplot(aes(`OM content`, as.numeric(Corg), color = `Article ID`)) + 
+new_krause %>% 
+  drop_na(fraction_organic_matter, fraction_carbon) %>% 
+  ggplot(aes(fraction_organic_matter, fraction_carbon, color = study_id)) + 
   geom_point(alpha = 0.5) +
   facet_wrap(~`Primary reference`)
+
+new_krause_final %>% 
+  drop_na(fraction_organic_matter) %>% 
+  ggplot(aes(fraction_organic_matter, group = `Primary reference`)) + 
+  geom_density() +
+  facet_wrap(~`Primary reference`, scales = "free")
 
 coredat %>% 
   drop_na(Cinorg, Corg) %>% 

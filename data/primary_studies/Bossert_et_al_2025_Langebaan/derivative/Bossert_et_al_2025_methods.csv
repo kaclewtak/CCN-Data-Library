@@ -1,0 +1,2 @@
+﻿"study_id","method_id","coring_method","roots_flag","sediment_sieved_flag","compaction_flag","dry_bulk_density_temperature","dry_bulk_density_time","dry_bulk_density_sample_volume","dry_bulk_density_flag","carbon_measured_or_modeled","carbonates_removed","carbonate_removal_method","fraction_carbon_method","fraction_carbon_type"
+"Bossert_et_al_2025_Langebaan","single set of methods","russian corer","roots and rhizomes separated","sediment not sieved","corer limits compaction",60,72,50,"time approximate","measured",TRUE,"direct acid treatment","EA","organic carbon"

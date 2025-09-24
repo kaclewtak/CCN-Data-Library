@@ -48,7 +48,8 @@ cores <- orig_cores
 ## ... Depthseries ####
 
 # curate core depthseries data table
-depthseries <- orig_ds 
+depthseries <- orig_ds %>% 
+  mutate(fraction_organic_matter = fraction_organic_matter/100) # this needs to be fixed in the data release as well
 
 ## ... Species ####
 

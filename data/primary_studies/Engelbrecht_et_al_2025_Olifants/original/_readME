@@ -1,0 +1,17 @@
+Dataset: Blue carbon dynamics in seagrass and salt marshes: spatio-temporal variability and total carbon stocks
+
+Authors: Tiaan Engelbrecht, Sophie von der Heyden, Andrew Ndhlovu <andhlovu@sun.ac.za>
+
+Any use of this dataset must include a citation. The DOI: 10.25573/serc.29564621
+
+The data release contains biomass and soil carbon profiles from tidal wetlands. The data itself is housed in separate .csv files which can by joined by relational attributes (ex. site_id and core_id).
+
+Engelbrecht_et_al_2025_olifants_methods.csv - Contains methodological information on the soil core collection and processing.
+Engelbrecht_et_al_2025_olifants_sites.csv - Contains information on sampling sites.
+Engelbrecht_et_al_2025_olifants_cores.csv - Contains information on all individual soil cores associated with dataset.
+Engelbrecht_et_al_2025_olifants_depthseries.csv - Contains raw depth-series information for all soil cores.
+Engelbrecht_et_al_2025_olifants_species.csv - Contains taxonomic information associated with all soil cores. 
+
+metadata.xml - Contains a full suite of descriptive metadata with all attribute and variables defined, units clarified, and geographic, temporal, and taxonomic coverages described according to Ecological Metadata Language Standards.
+
+metadata.html - Is a simplified, visual and interactive version of metadata.xml for display purposes.
