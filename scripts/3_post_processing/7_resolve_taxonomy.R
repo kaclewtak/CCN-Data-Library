@@ -10,14 +10,9 @@ resolveTaxa <- function(taxa) {
   for (i in 1:length(taxa)){
     # gnr_sources <- taxize::gnr_datasources()
     
-    # store resolved results
-    gnr_result <- taxize::gnr_resolve(sci = as.vector(taxa[i]), 
-                                      canonical = TRUE) %>%
-      # gnr_datasources()
-      # preferred_data_sources = c(150, 9, 4, 3)
-      
-      # pick the first result
-      slice(1)
+    # store resolved results 
+    # taxize deprecated gnr_resolve => updated fxn to use gna_verifier 
+    gnr_result <- taxize::gna_verifier(names = taxa[i])
     
     if (!plyr::empty(gnr_result)) {
       # compile list of resolved taxa
@@ -58,10 +53,12 @@ if(length(taxa_index) > 0){
   
   if(!is_empty(taxa_resolved)){
     clean_resolved <- taxa_resolved %>% 
-      rename(species_code = user_supplied_name,
-             resolved_taxa = matched_name2,
-             data_source = data_source_title) %>% 
-      select(species_code, resolved_taxa, data_source, score)
+      rename(species_code = submittedName,
+             resolved_taxa = matchedCanonicalFull,
+             data_source = dataSourceTitleShort,
+             score = fuzzyLessScore) %>% 
+      select(species_code, resolved_taxa, data_source, score) %>% 
+      drop_na(resolved_taxa) # these are all general classifications, not taxonomic
     
     # add entries to the taxa database
     taxa_db <- bind_rows(taxa_db, clean_resolved) %>% arrange(species_code)

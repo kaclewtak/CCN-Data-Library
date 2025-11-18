@@ -1466,7 +1466,11 @@ lat_long,n,core_ids,study_ids,num_studies
 "69.9783, 23.4315",2,"Alta high marsh, Alta low marsh",Ward_2020,1
 "7.50765, 99.3033",13,"Povidisa_and_Delefosse_unpublished_1, Povidisa_and_Delefosse_unpublished_10, Povidisa_and_Delefosse_unpublished_11, Povidisa_and_Delefosse_unpublished_12, Povidisa_and_Delefosse_unpublished_13, Povidisa_and_Delefosse_unpublished_2, Povidisa_and_Delefosse_unpublished_3, Povidisa_and_Delefosse_unpublished_4, Povidisa_and_Delefosse_unpublished_5, Povidisa_and_Delefosse_unpublished_6, Povidisa_and_Delefosse_unpublished_7, Povidisa_and_Delefosse_unpublished_8, Povidisa_and_Delefosse_unpublished_9",Povidisa_and_Delefosse_unpublished,1
 "7.515981, 79.812103",22,"M0156, M0157, M0158, M0159, M0160, M0161, M0162, M0163, M0164, M0165, M0166, M0167, M0168, M0169, M0170, M0171, M0665, M0666, M0667, M0668, M0669, M0670","Bouillon_et_al_2003, Bouillon_et_al_2004_FEMS",2
+"7.739774473482519, -81.20231588332416",5,"T4 P1-5, T4 P2-5, T4 P3-5, T4 P4-5, T4 P5-5",Romero_et_al_2025_Montijo,1
+"7.750429110896602, -81.18480873349739",6,"T3 P1-6, T3 P2-6, T3 P3-6, T3 P4-6, T3 P5-6, T3 P6-6",Romero_et_al_2025_Montijo,1
 "7.767689, -81.574967",2,"PanamaPacific-VE LI-1, PanamaPacific-VE LI-2",Costa_et_al_2023,1
+"7.795814818499445, -81.17564069896054",5,"T1 P1-5, T1 P2-5, T1 P3-5, T1 P4-5, T1 P5-5",Romero_et_al_2025_Montijo,1
+"7.812477720047136, -81.17343449108897",4,"T2 P1-4, T2 P2-4, T2 P3-4, T2 P4-4",Romero_et_al_2025_Montijo,1
 "7.850317, -81.577513",2,"PanamaPacific-VE RN-1, PanamaPacific-VE RN-2",Costa_et_al_2023,1
 "70.1942, 24.9275",2,"Stabbursnes high marsh, Stabbursnes low marsh",Ward_2020,1
 "72.38047, 126.4071",2,"LF-T2-01, LF-T2-01b",Siewert_et_al_2016,1
