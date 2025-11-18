@@ -31,7 +31,7 @@ species_raw <- read_csv("data/primary_studies/Ndhlovu_et_al_2025/original/Ndhlov
 
 ## 1. Curation ####
 
-id <- "Ndhlovu_et_al_2025"
+id <- "Ndhlovu_et_al_2024"
 
 ## ... Methods ####
 
