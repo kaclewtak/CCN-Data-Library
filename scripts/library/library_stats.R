@@ -208,11 +208,21 @@ v2 <- read_csv("https://ndownloader.figshare.com/files/43694076", guess_max = 11
 
 # read in 
 
-ccn_pubs <- ccrcn_synthesis$study_citations %>% 
+ccn_pubs <- read_csv("data/CCN_synthesis/CCN_study_citations.csv", guess_max = 1100) %>% 
   # mostly SI figshare but Piazza dataset was published to ScienceBase
-  filter(grepl("SERC|serc|P9D8WTQW", doi)) %>% 
-  distinct(study_id) %>% 
-  pull(study_id)
+  filter(grepl("SERC|serc|P9D8WTQW", doi)) 
+  # distinct(study_id) %>% 
+  # pull(study_id)
+
+# test <- read_csv("data/CCN_synthesis/CCN_study_citations.csv", guess_max = 1100) %>%
+#   # ccn_pubs %>% 
+#   select(author) %>% 
+#   mutate(author = str_split(author, ";|and")) %>% 
+#   unnest(author) %>% arrange(author) %>% 
+#   mutate(author = trimws(author),
+#          author = gsub(" ", "", author),
+#          author = gsub("[.]", "", author)) %>% 
+#   distinct(author)
 
 nrow(ccrcn_synthesis$cores %>% filter(study_id %in% ccn_pubs))
 

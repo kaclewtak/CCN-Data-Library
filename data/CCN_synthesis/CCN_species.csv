@@ -1352,22 +1352,22 @@
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_6_2017","Phragmites australis","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_7_2017","Spartina alterniflora","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_7_2017","Spartina cynosuroides","Genus","marsh"
-"StLaurent_et_al_2020","Blackbird Creek Reserve","BB_7_2017","Atriplex patula","Genus species",NA
+"StLaurent_et_al_2020","Blackbird Creek Reserve","BB_7_2017","Atriplex patula","Genus",NA
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_7_2017","Polygonum punctatum","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_8_2017","Spartina alterniflora","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_9_2017","Spartina alterniflora","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_9_2017","Spartina cynosuroides","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_10_2017","Spartina alterniflora","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_11_2017","Spartina cynosuroides","Genus","marsh"
-"StLaurent_et_al_2020","Blackbird Creek Reserve","BB_12_2017","Schoenoplectus pungens","Genus species",NA
+"StLaurent_et_al_2020","Blackbird Creek Reserve","BB_12_2017","Schoenoplectus pungens","Genus",NA
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_12_2017","Schoenoplectus tabernaemontani","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_12_2017","Amaranthus cannabinus","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_12_2017","Spartina alterniflora","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_13_2017","Amaranthus cannabinus","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_13_2017","Polygonum punctatum","Genus","marsh"
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_13_2017","Zizania aquatica","Genus","marsh"
-"StLaurent_et_al_2020","Blackbird Creek Reserve","BB_14_2017","Pontederia cordata","Genus species",NA
-"StLaurent_et_al_2020","Blackbird Creek Reserve","BB_14_2017","Schoenoplectus pungens","Genus species",NA
+"StLaurent_et_al_2020","Blackbird Creek Reserve","BB_14_2017","Pontederia cordata","Genus",NA
+"StLaurent_et_al_2020","Blackbird Creek Reserve","BB_14_2017","Schoenoplectus pungens","Genus",NA
 "StLaurent_et_al_2020","Blackbird Creek Reserve","BB_14_2017","Zizania aquatica","Genus","marsh"
 "Stevens_et_al_2024","PI","PI_W","Spartina","Genus",NA
 "Stevens_et_al_2024","PI","PI_M","Juncus","Genus",NA
@@ -2429,6 +2429,63 @@
 "Sanborn_and_Coxson_2020","BC17-30","422","Carex lyngbyei","Genus","marsh"
 "Sanborn_and_Coxson_2020","BC17-31","423","Carex lyngbyei","Genus","marsh"
 "Sanborn_and_Coxson_2020","BC17-31","423","Deschampsia cespitosa","Genus","marsh"
+"Romero_et_al_2025_Montijo","Rio Guabo",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025_Montijo","Palmas Bella",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025_Montijo","Saino",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025_Montijo","Rio Cañaza",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","R1",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","R1",NA,"Laguncularia racemosa","Genus",NA
+"Romero_et_al_2025","R1",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","R2",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","R3",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","R3",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","R4",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","R4",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","R5",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","R5",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SF1",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SF1",NA,"Laguncularia racemosa","Genus",NA
+"Romero_et_al_2025","SF1",NA,"Avicennia germinans","Genus",NA
+"Romero_et_al_2025","SF2",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SF2",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SF2",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SF2",NA,"Mora oleifera","Genus",NA
+"Romero_et_al_2025","SF2",NA,"Laguncularia racemosa","Genus",NA
+"Romero_et_al_2025","SF3",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SF3",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SF3",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL1",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL10",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SL10",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SL11",NA,"Avicennia germinans","Genus",NA
+"Romero_et_al_2025","SL11",NA,"Laguncularia racemosa","Genus",NA
+"Romero_et_al_2025","SL11",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SL11",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SL12",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL12",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SL12",NA,"Mora oleifera","Genus",NA
+"Romero_et_al_2025","SL13",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SL13",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL13",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SL14",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL14",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SL14",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SL2",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL3",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL3",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SL4",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL5",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL5",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SL5",NA,"Laguncularia racemosa","Genus",NA
+"Romero_et_al_2025","SL6",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL7",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL7",NA,"Rhizophora racemosa","Genus",NA
+"Romero_et_al_2025","SL7",NA,"Laguncularia racemosa","Genus",NA
+"Romero_et_al_2025","SL8",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL8",NA,"Peliciera rhizophorae","Genus",NA
+"Romero_et_al_2025","SL8",NA,"Laguncularia racemosa","Genus",NA
+"Romero_et_al_2025","SL9",NA,"Rhizophora mangle","Genus",NA
+"Romero_et_al_2025","SL9",NA,"Rhizophora racemosa","Genus",NA
 "Radabaugh_et_al_2023","Tamiami_Trail01",NA,"Pluchea baccharis","Genus",NA
 "Radabaugh_et_al_2023","Peace_River01",NA,"Alternanthera philoxeroides","Genus",NA
 "Radabaugh_et_al_2023","Peace_River01",NA,"Colocasia esculenta","Genus",NA
@@ -3990,6 +4047,232 @@
 "Noe_et_al_2016","Butler_Island","W1","Nyssa aquatica","Genus","swamp"
 "Noe_et_al_2016","Turkey_Creek","W3","Taxodium distichum","Genus","swamp"
 "Noe_et_al_2016","Turkey_Creek","W4","Taxodium distichum","Genus","swamp"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg1","Berg1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Berg2","Berg2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Breede2","Breede2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna1","Knysna1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Knysna2","Knysna2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C6","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C6","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C6","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C6","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana1","Mngazana1_C6","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Mngazana2","Mngazana2_C5","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants1","Olifants1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Olifants2","Olifants2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops1","Swartkops1_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C4","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C1","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C2","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C3","Zostera capensis","Genus","seagrass"
+"Ndhlovu_et_al_2024","Swartkops2","Swartkops2_C4","Zostera capensis","Genus","seagrass"
 "Nahlik_and_Fennessy_2016","NWCA11-2410","NWCA11-2410-3275","Iva frutescens","Genus","scrub/shrub"
 "Nahlik_and_Fennessy_2016","NWCA11-2066","NWCA11-2066-3401","Spartina patens","Genus","marsh"
 "Nahlik_and_Fennessy_2016","NWCA11-2025","NWCA11-2025-3403","Polygonum","Genus","marsh"
@@ -5836,6 +6119,31 @@
 "Krauss_et_al_2018","Waccamaw","turkey_creek_1","Typha latifolia","Genus","marsh"
 "Krauss_et_al_2018","Waccamaw","turkey_creek_1","Scirpus robustus","Genus","marsh"
 "Krauss_et_al_2018","Waccamaw","turkey_creek_1","Schoenoplectus montevidensis","Genus","marsh"
+"Krause_et_al_2025","PD","PD12","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD19","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD20","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD22","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD23","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD24","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD25","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD3","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD6","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PD","PD8","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS1","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS10","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS11","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS13","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS14","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS15","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS16","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS17","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS18","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS2","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS21","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS4","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS5","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS7","Halodule pinifolia","Genus",NA
+"Krause_et_al_2025","PS","PS9","Halodule pinifolia","Genus",NA
 "Keshta_et_al_2020","Patuxent Wetland Park","PWP_MF_P1","Ceratophyllum demersum","Genus","mudflat"
 "Keshta_et_al_2020","Patuxent Wetland Park","PWP_MF_P2","Ceratophyllum demersum","Genus","mudflat"
 "Keshta_et_al_2020","Patuxent Wetland Park","PWP_MF_P3","Ceratophyllum demersum","Genus","mudflat"
@@ -5865,21 +6173,21 @@
 "Kemp_et_al_2020","Barnegat_Bay","BB1B","Distichlis spicata","Genus","marsh"
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS1","Picea sitchensis","Genus","swamp"
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS1","Cornus sericea","Genus","swamp"
-"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS1","Polystichum munitum","Genus species",NA
+"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS1","Polystichum munitum","Genus",NA
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS2","Picea sitchensis","Genus","swamp"
-"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS2","Acer circinatum","Genus species",NA
-"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS2","Polystichum munitum","Genus species",NA
+"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS2","Acer circinatum","Genus",NA
+"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS2","Polystichum munitum","Genus",NA
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS3","Thuja plicata","Genus","swamp"
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS3","Cornus sericea","Genus","swamp"
-"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS3","Polystichum munitum","Genus species",NA
+"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS3","Polystichum munitum","Genus",NA
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS4","Picea sitchensis","Genus","swamp"
-"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS4","Rubus parviflorus","Genus species",NA
+"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS4","Rubus parviflorus","Genus",NA
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS4","Impatiens","Genus",NA
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS5","Picea sitchensis","Genus","swamp"
-"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS5","Salix sitchensis","Genus species",NA
+"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS5","Salix sitchensis","Genus",NA
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS5","Oenanthe sarmentosa","Genus","marsh"
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS6","Thuja plicata","Genus","swamp"
-"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS6","Acer circinatum","Genus species",NA
+"Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS6","Acer circinatum","Genus",NA
 "Kauffman_et_al_2020","Blind Slough Swamp","COL-BLI-TS6","Carex obnupta","Genus","marsh"
 "Kauffman_et_al_2020","Secret River High Marsh","COL-SEC-HM1","Carex lyngbyei","Genus","marsh"
 "Kauffman_et_al_2020","Secret River High Marsh","COL-SEC-HM2","Carex lyngbyei","Genus","marsh"
@@ -5889,40 +6197,40 @@
 "Kauffman_et_al_2020","Secret River High Marsh","COL-SEC-HM4","Carex lyngbyei","Genus","marsh"
 "Kauffman_et_al_2020","Secret River High Marsh","COL-SEC-HM5","Phalaris arundinacea","Genus","marsh"
 "Kauffman_et_al_2020","Secret River High Marsh","COL-SEC-HM6","Carex lyngbyei","Genus","marsh"
-"Kauffman_et_al_2020","Secret River High Marsh","COL-SEC-HM6","Sparganium eurycarpum","Genus species",NA
+"Kauffman_et_al_2020","Secret River High Marsh","COL-SEC-HM6","Sparganium eurycarpum","Genus",NA
 "Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM1","Carex lyngbyei","Genus","marsh"
 "Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM2","Carex lyngbyei","Genus","marsh"
-"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM2","Lilaeopsis occidentalis","Genus species",NA
+"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM2","Lilaeopsis occidentalis","Genus",NA
 "Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM3","Carex lyngbyei","Genus","marsh"
-"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM4","Sparganium eurycarpum","Genus species",NA
-"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM4","Elodea canadensis","Genus species",NA
-"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM5","Polygonum persicaria","Genus species",NA
+"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM4","Sparganium eurycarpum","Genus",NA
+"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM4","Elodea canadensis","Genus",NA
+"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM5","Polygonum persicaria","Genus",NA
 "Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM5","Eleocharis palustris","Genus","marsh"
-"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM6","Polygonum persicaria","Genus species",NA
-"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM6","Lilaeopsis occidentalis","Genus species",NA
+"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM6","Polygonum persicaria","Genus",NA
+"Kauffman_et_al_2020","Secret River Low Marsh","COL-SEC-LM6","Lilaeopsis occidentalis","Genus",NA
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS1","Picea sitchensis","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS1","Alnus rubra","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS1","Cornus sericea","Genus","swamp"
-"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS1","Polystichum munitum","Genus species",NA
+"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS1","Polystichum munitum","Genus",NA
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS2","Picea sitchensis","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS2","Alnus rubra","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS2","Cornus sericea","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS2","Lysichiton americanus","Genus","marsh"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS3","Picea sitchensis","Genus","swamp"
-"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS3","Acer circinatum","Genus species",NA
-"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS3","Polystichum munitum","Genus species",NA
+"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS3","Acer circinatum","Genus",NA
+"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS3","Polystichum munitum","Genus",NA
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS4","Picea sitchensis","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS4","Cornus sericea","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS4","Rosa","Genus",NA
-"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS4","Polystichum munitum","Genus species",NA
+"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS4","Polystichum munitum","Genus",NA
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS5","Picea sitchensis","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS5","Cornus sericea","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS5","Athyrium filix-femina","Genus","marsh"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS6","Picea sitchensis","Genus","swamp"
 "Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS6","Alnus rubra","Genus","swamp"
-"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS6","Gaultheria shallon","Genus species",NA
-"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS6","Rubus spectabilis","Genus species",NA
-"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS6","Polystichum munitum","Genus species",NA
+"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS6","Gaultheria shallon","Genus",NA
+"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS6","Rubus spectabilis","Genus",NA
+"Kauffman_et_al_2020","Secret River Swamp","COL-SEC-TS6","Polystichum munitum","Genus",NA
 "Kauffman_et_al_2020","Barview Eelgrass","COO-BAR-SG1","Zostera marina","Genus","seagrass"
 "Kauffman_et_al_2020","Barview Eelgrass","COO-BAR-SG2","Zostera marina","Genus","seagrass"
 "Kauffman_et_al_2020","Barview Eelgrass","COO-BAR-SG3","Zostera marina","Genus","seagrass"
@@ -6071,35 +6379,35 @@
 "Kauffman_et_al_2020","Padilla lower transect","PAD-LOW-SG4","Zostera marina","Genus","seagrass"
 "Kauffman_et_al_2020","Padilla lower transect","PAD-LOW-SG5","Zostera marina","Genus","seagrass"
 "Kauffman_et_al_2020","Padilla lower transect","PAD-LOW-SG6","Zostera marina","Genus","seagrass"
-"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG1","Nanozostera japonica","Genus species",NA
-"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG2","Nanozostera japonica","Genus species",NA
-"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG3","Nanozostera japonica","Genus species",NA
-"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG4","Nanozostera japonica","Genus species",NA
-"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG5","Nanozostera japonica","Genus species",NA
-"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG6","Nanozostera japonica","Genus species",NA
-"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM1","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG1","Nanozostera japonica","Genus",NA
+"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG2","Nanozostera japonica","Genus",NA
+"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG3","Nanozostera japonica","Genus",NA
+"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG4","Nanozostera japonica","Genus",NA
+"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG5","Nanozostera japonica","Genus",NA
+"Kauffman_et_al_2020","Padilla upper Transect","PAD-UPR-SG6","Nanozostera japonica","Genus",NA
+"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM1","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM1","Eleocharis palustris","Genus","marsh"
-"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM2","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM2","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM2","Eleocharis palustris","Genus","marsh"
-"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM3","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM3","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM3","Eleocharis palustris","Genus","marsh"
-"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM4","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM4","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM4","Eleocharis palustris","Genus","marsh"
-"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM5","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM5","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM5","Eleocharis palustris","Genus","marsh"
-"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM6","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM6","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Delta Island Marsh","SKA-DEL-LM6","Eleocharis palustris","Genus","marsh"
-"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM1","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM1","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM1","Schoenoplectus","Genus",NA
-"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM2","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM2","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM2","Schoenoplectus","Genus",NA
-"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM3","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM3","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM3","Schoenoplectus","Genus",NA
-"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM4","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM4","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM4","Schoenoplectus","Genus",NA
-"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM5","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM5","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM5","Schoenoplectus","Genus",NA
-"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM6","Schoenoplectus pungens","Genus species",NA
+"Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM6","Schoenoplectus pungens","Genus",NA
 "Kauffman_et_al_2020","Fir Island Marsh","SKA-FIR-HM6","Schoenoplectus","Genus",NA
 "Kauffman_et_al_2020","Skagit Wildlife Marsh","SKA-WIL-HM1","Typha latifolia","Genus","marsh"
 "Kauffman_et_al_2020","Skagit Wildlife Marsh","SKA-WIL-HM1","Schoenoplectus","Genus",NA
@@ -6119,22 +6427,22 @@
 "Kauffman_et_al_2020","Otter Island Swamp","SNO-OTT-TS4","Picea sitchensis","Genus","swamp"
 "Kauffman_et_al_2020","Otter Island Swamp","SNO-OTT-TS5","Picea sitchensis","Genus","swamp"
 "Kauffman_et_al_2020","Otter Island Swamp","SNO-OTT-TS6","Picea sitchensis","Genus","swamp"
-"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM1","Grindelia integrifolia","Genus species",NA
+"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM1","Grindelia integrifolia","Genus",NA
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM1","Sarcocornia pacifica","Genus","marsh"
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM1","Juncus balticus","Genus","marsh"
-"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM2","Grindelia integrifolia","Genus species",NA
+"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM2","Grindelia integrifolia","Genus",NA
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM2","Sarcocornia pacifica","Genus","marsh"
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM2","Juncus balticus","Genus","marsh"
-"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM3","Grindelia integrifolia","Genus species",NA
+"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM3","Grindelia integrifolia","Genus",NA
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM3","Sarcocornia pacifica","Genus","marsh"
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM3","Juncus balticus","Genus","marsh"
-"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM4","Grindelia integrifolia","Genus species",NA
+"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM4","Grindelia integrifolia","Genus",NA
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM4","Sarcocornia pacifica","Genus","marsh"
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM4","Juncus balticus","Genus","marsh"
-"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM5","Grindelia integrifolia","Genus species",NA
+"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM5","Grindelia integrifolia","Genus",NA
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM5","Sarcocornia pacifica","Genus","marsh"
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM5","Juncus balticus","Genus","marsh"
-"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM6","Grindelia integrifolia","Genus species",NA
+"Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM6","Grindelia integrifolia","Genus",NA
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM6","Sarcocornia pacifica","Genus","marsh"
 "Kauffman_et_al_2020","Criteser's Marsh","YAQ-CRI-HM6","Juncus balticus","Genus","marsh"
 "Kauffman_et_al_2020","Poole Slough","YAQ-POO-LM1","Sarcocornia pacifica","Genus","marsh"
@@ -8792,6 +9100,222 @@
 "Fell_et_al_2021","GTMNERRNorthern","SG5GC","Avicennia germinans","Genus",NA
 "Fell_et_al_2021","GTMNERRNorthern","SG6GC","Batis maritima","Genus",NA
 "Fell_et_al_2021","GTMNERRNorthern","SG6GC","Avicennia germinans","Genus",NA
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T1-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T1-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T1-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T1-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T2-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T2-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T2-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T2-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T3-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T3-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T3-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T3-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T1-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T1-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T1-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T1-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T2-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T2-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T2-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T2-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T3-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T3-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T3-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Middle","MID_SUB-T3-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T1-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T1-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T1-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T1-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T2-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T2-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T2-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T2-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T3-D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T3-D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T3-D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Lower","LWR_SUB-T3-D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T1-D5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T1-D3_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T1-D1_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T1-D0.5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T2-D5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T2-D3_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T2-D1_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T2-D0.5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T3-D5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T3-D3_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T3-D1_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025","Olifants Estuary Upper","UPR_SUB-T3-D0.5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D5_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D5_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D3_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D3_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D3_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D1_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D1_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D1_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0.5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0.5_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0.5_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T1_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T1_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T1_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T1_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D5_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D5_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D3_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D3_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D3_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D1_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D1_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D1_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0.5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0.5_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0.5_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T2_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T2_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T2_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T2_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D5_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D5_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D3_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D3_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D3_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D1_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D1_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D1_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0.5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0.5_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0.5_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0_1","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0_1","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T3_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T3_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T3_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T3_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T1_D5_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T1_D3_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T1_D1_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T1_D0.5_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T1_D0_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T1_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T1_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T1_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T1_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T2_D5_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T2_D3_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T2_D1_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T2_D0.5_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T2_D0_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T2_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T2_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T2_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T2_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T3_D5_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T3_D3_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T3_D1_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T3_D0.5_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_SM_T3_D0_1","Sarcocornia pillansii","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T3_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T3_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T3_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Middle","MID_INT_T3_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T1_D5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T1_D3_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T1_D1_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T1_D0.5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T1_D0_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T1_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T1_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T1_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T1_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T2_D5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T2_D3_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T2_D1_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T2_D0.5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T2_D0_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T2_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T2_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T2_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T2_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T3_D5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T3_D3_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T3_D1_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T3_D0.5_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_SM_T3_D0_1","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T3_D5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T3_D3_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T3_D1_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Lower","LWR_INT_T3_D0.5_1","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D5_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D5_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D5_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D3_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D3_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D3_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D1_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D1_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D1_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0.5_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0.5_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0.5_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T1_D0_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T1_D5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T1_D3_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T1_D1_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T1_D0.5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D5_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D5_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D5_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D3_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D3_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D3_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D1_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D1_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D1_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0.5_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0.5_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0.5_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T2_D0_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T2_D5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T2_D3_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T2_D1_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T2_D0.5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D5_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D5_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D5_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D3_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D3_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D3_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D1_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D1_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D1_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0.5_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0.5_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0.5_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0_2","Salicornia tegetaria","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0_2","Chenolea diffusa","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_SM_T3_D0_2","Triglochin striata","Genus","marsh"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T3_D5_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T3_D3_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T3_D1_2","Zostera capensis","Genus","seagrass"
+"Engelbrecht_et_al_2025_Olifants","Olifants Estuary Upper","UPR_INT_T3_D0.5_2","Zostera capensis","Genus","seagrass"
 "Eagle_et_al_2021","Martin Peña West","MPW1","Rhizophora mangle","Genus",NA
 "Eagle_et_al_2021","Martin Peña West","MPW1","Laguncularia racemosa","Genus",NA
 "Eagle_et_al_2021","Martin Peña West","MPW1","Avicennia germinans","Genus",NA
@@ -9818,12 +10342,12 @@
 "Callaway_et_al_2019","Brown_Island","Browns_Island_A_High","Triglochin maritima","Genus","marsh"
 "Callaway_et_al_2019","Brown_Island","Browns_Island_B_Low","Triglochin maritima","Genus","marsh"
 "Callaway_et_al_2019","Brown_Island","Browns_Island_B_High","Triglochin maritima","Genus","marsh"
-"Callaway_et_al_2019","Brown_Island","Browns_Island_B_Mid","Typha domingensis","Genus species",NA
-"Callaway_et_al_2019","Brown_Island","Browns_Island_B_High","Typha domingensis","Genus species",NA
-"Callaway_et_al_2019","Brown_Island","Browns_Island_A_Mid","Typha domingensis","Genus species",NA
-"Callaway_et_al_2019","Brown_Island","Browns_Island_A_Low","Typha domingensis","Genus species",NA
-"Callaway_et_al_2019","Brown_Island","Browns_Island_A_High","Typha domingensis","Genus species",NA
-"Callaway_et_al_2019","Brown_Island","Browns_Island_B_Low","Typha domingensis","Genus species",NA
+"Callaway_et_al_2019","Brown_Island","Browns_Island_B_Mid","Typha domingensis","Genus",NA
+"Callaway_et_al_2019","Brown_Island","Browns_Island_B_High","Typha domingensis","Genus",NA
+"Callaway_et_al_2019","Brown_Island","Browns_Island_A_Mid","Typha domingensis","Genus",NA
+"Callaway_et_al_2019","Brown_Island","Browns_Island_A_Low","Typha domingensis","Genus",NA
+"Callaway_et_al_2019","Brown_Island","Browns_Island_A_High","Typha domingensis","Genus",NA
+"Callaway_et_al_2019","Brown_Island","Browns_Island_B_Low","Typha domingensis","Genus",NA
 "Callaway_et_al_2019","China_Camp","China_Camp_B_High","Cuscuta salina","Genus","marsh"
 "Callaway_et_al_2019","China_Camp","China_Camp_B_Low","Cuscuta salina","Genus","marsh"
 "Callaway_et_al_2019","China_Camp","China_Camp_A_High","Cuscuta salina","Genus","marsh"
@@ -10272,6 +10796,111 @@
 "Bost_et_al_2024","Coastal Prism","Bradley","Spartina alterniflora","Genus","marsh"
 "Bost_et_al_2024","Coastal Prism","Hewletts","Spartina alterniflora","Genus","marsh"
 "Bost_et_al_2024","Coastal Prism","Whiskey","Spartina alterniflora","Genus","marsh"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS1_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS1_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS1_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS1_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS1_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS2_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS2_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS2_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS2_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS2_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS3_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS3_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS3_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS3_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_LWR_SS3_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS1_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS1_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS1_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS1_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS1_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS2_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS2_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS2_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS2_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS2_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS3_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS3_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS3_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS3_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Berg","Berg_UPR_SS3_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS1_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS1_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS1_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS1_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS1_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS2_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS2_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS2_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS2_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS2_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS3_R1","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS3_R2","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS3_R3","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS3_R4","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Berg_Breede","Breede","Breede_UPR_SS3_R5","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S1_R1_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S1_R2_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S1_R3_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S1_R4_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S1_R5_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S2_R1_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S2_R2_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S2_R3_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S2_R4_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S2_R5_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S3_R1_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S3_R2_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S3_R3_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S3_R4_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S3_R5_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R1_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R2_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R3_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R4_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R5_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R6_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R7_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R8_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R9_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R10_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R11_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R12_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R13_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R14_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S4_R15_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R1_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R2_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R3_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R4_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R5_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R6_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R7_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R8_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R9_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R10_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R11_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R12_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R13_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R14_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R15_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R16_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R17_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R18_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R19_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R20_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R21_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R22_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R23_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R24_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R25_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R26_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R27_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R28_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R29_2023","Zostera capensis","Genus","seagrass"
+"Bossert_et_al_2025_Langebaan","Langebaan","S5_R30_2023","Zostera capensis","Genus","seagrass"
 "Beers_et_al_2023","Anchor_River","AR-1","Leymus","Genus",NA
 "Beers_et_al_2023","Anchor_River","AR-1","Poa","Genus",NA
 "Beers_et_al_2023","Anchor_River","AR-1","Angelica","Genus",NA

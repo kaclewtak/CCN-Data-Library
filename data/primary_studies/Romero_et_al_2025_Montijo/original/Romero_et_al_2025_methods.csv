@@ -1,0 +1,2 @@
+﻿"study_id","coring_method","roots_flag","sediment_sieved_flag","compaction_flag","dry_bulk_density_temperature","dry_bulk_density_flag","carbonates_removed","carbonate_removal_method","carbon_measured_or_modeled","fraction_carbon_method","fraction_carbon_type"
+"Romero_et_al_2025_Montijo","gouge auger","roots and rhizomes included","sediment sieved","not specified",60,"to constant mass",TRUE,"direct acid treatment","measured","EA","organic carbon"
