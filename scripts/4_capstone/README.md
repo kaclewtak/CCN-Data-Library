@@ -94,7 +94,3 @@ report.show_html("data_quality_report.html")
 1. Create or open a `.ipynb` file.
 2. Click **Select Kernel** at the top right.
 3. Choose **Python 3.13 (4_capstone)** or look for the path ending in `.venv`.
-
-```
-
-```
