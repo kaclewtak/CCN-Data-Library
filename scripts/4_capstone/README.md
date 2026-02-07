@@ -1,4 +1,3 @@
-```markdown
 # 4_capstone Project Environment
 
 This directory contains the unified development environment for the Capstone project. It is managed using **[uv](https://github.com/astral-sh/uv)**.
@@ -16,8 +15,8 @@ Navigate to this folder and sync the project. This will automatically download P
 ```bash
 cd scripts/4_capstone
 uv sync
-
 ```
+
 
 ---
 
@@ -80,7 +79,7 @@ report.show_html("data_quality_report.html")
 
 ---
 
-## 🛠 Common Commands For UV (as a just-in-case)
+## Common Commands For UV (as a just-in-case)
 
 | Goal | Command |
 | --- | --- |
