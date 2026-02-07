@@ -41,7 +41,7 @@ __pycache__/
 
 # --- Data Science Outputs ---
 # Ignore large report files from Sweetviz/Pandas Profiling
-*.html
+# *.html
 *.pdf
 
 # Ignore actual data files for now
