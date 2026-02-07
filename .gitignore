@@ -1,0 +1,65 @@
+# R Workspace data #
+###################
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.Rproj
+.DS_Store
+.Rapp.history
+temp/*
+~*
+
+# ignore a folder
+# folder_to_ignore/
+# large shapefiles are now managed with Github LFS
+
+# --- Python & UV ---
+# The virtual environment (Crucial: NEVER commit this)
+.venv/
+env/
+venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Tools & Caches ---
+# Ruff cache
+.ruff_cache/
+
+# Pytest cache
+.pytest_cache/
+
+# MyPy cache (if you add type checking later)
+.mypy_cache/
+
+# --- Jupyter Notebooks ---
+# Checkpoints created by Jupyter
+.ipynb_checkpoints/
+
+# --- Data Science Outputs ---
+# Ignore large report files from Sweetviz/Pandas Profiling
+*.html
+*.pdf
+
+# Ignore actual data files (prevent accidental leak of data)
+*.csv
+*.xlsx
+*.json
+*.parquet
+*.pkl
+*.pickle
+
+# --- OS Junk ---
+.DS_Store
+Thumbs.db
+
+# --- VS Code ---
+# Keep settings.json and extensions.json (so team matches),
+# but ignore local user workspace storage.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
