@@ -15,7 +15,7 @@ temp/*
 # large shapefiles are now managed with Github LFS
 
 # --- Python & UV ---
-# The virtual environment (Crucial: NEVER commit this)
+# The virtual environment
 .venv/
 env/
 venv/
@@ -32,7 +32,7 @@ __pycache__/
 # Pytest cache
 .pytest_cache/
 
-# MyPy cache (if you add type checking later)
+# MyPy cache
 .mypy_cache/
 
 # --- Jupyter Notebooks ---
@@ -44,7 +44,7 @@ __pycache__/
 *.html
 *.pdf
 
-# Ignore actual data files (prevent accidental leak of data)
+# Ignore actual data files for now
 *.csv
 *.xlsx
 *.json
@@ -57,7 +57,7 @@ __pycache__/
 Thumbs.db
 
 # --- VS Code ---
-# Keep settings.json and extensions.json (so team matches),
+# Keep settings.json and extensions.json,
 # but ignore local user workspace storage.
 .vscode/*
 !.vscode/settings.json
