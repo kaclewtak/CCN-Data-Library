@@ -12,6 +12,8 @@ If you do not have `uv` installed, run the installation command for your OS:
 ### 2. Sync the Environment
 Navigate to this folder and sync the project. This will automatically download Python 3.13 and all required packages into a local `.venv` folder.
 
+If you are on windows, either: make sure to use powershell when entering these commands. If you do so on WSL, you will have to first start VSCode in WSL mode. This can be done by going to the bottom-left of the window and clicking on the two arrows `><` and pressing "Connect to WSL". This will restart VSCode in WSL mode and ensure that the next steps all work.
+
 ```bash
 cd scripts/4_capstone
 uv sync
