@@ -1,15 +1,19 @@
-# 4_capstone Project Environment
+# Capstone Project Folder
 
-This directory contains the unified development environment for the Capstone project. It is managed using **[uv](https://github.com/astral-sh/uv)**.
+This directory contains all of our files for EDA, QA/QC, EO Integration, etc.
 
-## Quick Start
+## 1. Capstone Project Environment
 
-### 1. Install `uv`
+To interact with our tools, we include a unified development environment for the Capstone project. It is managed using **[uv](https://github.com/astral-sh/uv)**.
+
+### Quick Start
+
+#### 1. Install `uv`
 If you do not have `uv` installed, run the installation command for your OS:
 - **Mac/Linux:** `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - **Windows:** `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
 
-### 2. Sync the Environment
+#### 2. Sync the Environment
 Navigate to this folder and sync the project. This will automatically download Python 3.13 and all required packages into a local `.venv` folder.
 
 If you are on windows you will have to first start VSCode in WSL mode. This can be done by going to the bottom-left of the window and clicking on the two arrows `><` and pressing "Connect to WSL". This will restart VSCode in WSL mode and ensure that the next steps all work.
@@ -24,7 +28,7 @@ uv sync
 
 ---
 
-## VS Code Setup
+### VS Code Setup
 
 To ensure linting, formatting, and imports work correctly, you must open this specific folder as your workspace root.
 
@@ -32,7 +36,7 @@ To ensure linting, formatting, and imports work correctly, you must open this sp
 2. Go to **File > Open Folder...**
 3. Select `CCN-Data-Library/scripts/4_capstone`.
 
-### Recommended Extensions
+#### Recommended Extensions
 
 When you open this folder, VS Code should prompt you to install the recommended extensions. If not, manually install:
 
@@ -45,18 +49,18 @@ When you open this folder, VS Code should prompt you to install the recommended 
 
 ---
 
-## Data Science & QA Stack
+### Data Science & QA Stack
 
 I have pre-installed a unified stack for EDA and QA/QC.
 
-### Core Libraries
+#### Core Libraries
 
 * **pandas & numpy**: Base level data handling and manipulation
 * **matplotlib & seaborn**: Plotting
 * **scipy & networkx**: Scientific computing and graph analysis.
 * **geopandas**: Geospatial data manipulation and understanding.
 
-### QA & Validation
+#### QA & Validation
 
 * **pandera**: A statistical validation library for pandas. This can be used to define schemas and validate data quality (e.g., ensuring columns have no nulls or fall within a specific range).
 
@@ -64,7 +68,7 @@ I have pre-installed a unified stack for EDA and QA/QC.
 
 * **Great-Expectations**: Experimental package for data quality *enforcement*. It's a more complex profiler meant for production pipelines.
 
-### Interactive EDA
+#### Interactive EDA
 
 * **JupyterLab**: Interactive notebooks.
 * **ydata-profiling**: A library for generating high-density EDA reports.
@@ -90,7 +94,7 @@ An example notebook is provided (`exploration.ipynb`) which uses existing data f
 
 ---
 
-## Common Commands For UV (as a just-in-case)
+### Common Commands For UV (as a just-in-case)
 
 | Goal | Command |
 | --- | --- |
