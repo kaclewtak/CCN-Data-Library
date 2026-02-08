@@ -54,6 +54,7 @@ I have pre-installed a unified stack for EDA and QA/QC.
 * **pandas & numpy**: Base level data handling and manipulation
 * **matplotlib & seaborn**: Plotting
 * **scipy & networkx**: Scientific computing and graph analysis.
+* **geopandas**: Geospatial data manipulation and understanding.
 
 ### QA & Validation
 
@@ -98,6 +99,7 @@ An example notebook is provided (`exploration.ipynb`) which uses existing data f
 | **Start Jupyter** | `uv run jupyter lab` |
 | **Add a package** | `uv add package_name` |
 | **Add a dev tool** | `uv add --dev package_name` |
+| **Check installed packages** | `uv tree` |
 
 ### Using Jupyter in VS Code
 
