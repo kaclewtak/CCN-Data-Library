@@ -7,8 +7,11 @@ requires-python = ">=3.13, <3.14"
 dependencies = [
     "geopandas>=1.1.2",
     "great-expectations>=1.11.1",
+    "ipyleaflet>=0.20.0",
     "klib>=1.4.0",
     "pandera>=0.29.0",
+    "shiny>=1.5.1",
+    "shinywidgets>=0.7.1",
 ]
 
 [dependency-groups]
