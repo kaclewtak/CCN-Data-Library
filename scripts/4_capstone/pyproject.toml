@@ -10,6 +10,8 @@ dependencies = [
     "ipyleaflet>=0.20.0",
     "klib>=1.4.0",
     "pandera>=0.29.0",
+    "polars>=1.38.1",
+    "pyarrow>=23.0.1",
     "shiny>=1.5.1",
     "shinywidgets>=0.7.1",
 ]
