@@ -6,6 +6,13 @@ from typing import Any
 import pandas as pd
 import polars as pl
 from shiny import module, reactive, render, ui
+from table_helpers import (
+    coerce_new_column_default,
+    excel_sheet_names,
+    find_lat_lon_columns,
+    polars_to_pandas,
+    set_cell_value,
+)
 
 # filepath: /home/klewtak/NASA/CCN-Data-Library/scripts/4_capstone/src/dashboard/dashboard_table.py
 
@@ -146,203 +153,6 @@ def table_ui():
 
 
 # ---------------------------
-# Helpers
-# ---------------------------
-def _excel_sheet_names(path: str) -> list[str]:
-    """
-    Get the sheet names from an Excel file.
-
-    Args:
-        path: Path to the Excel file.
-
-    Returns:
-        A list of sheet names.
-    """
-    try:
-        xl = pd.ExcelFile(path)
-        return xl.sheet_names or []
-    except Exception:
-        return []
-
-
-def _coerce_value(raw_value: Any, dtype: pl.DataType) -> Any:
-    """
-    Coerce a raw value to the specified Polars data type.
-
-    Args:
-        raw_value: The value to coerce (from the editable grid).
-        dtype: The target Polars data type.
-
-    Returns:
-        The coerced value in the appropriate Python type for the Polars dtype.
-    """
-    # Empty string -> null
-    if raw_value in ("", None):
-        return None
-
-    try:
-        if dtype in (pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64):
-            return int(raw_value)
-        if dtype in (pl.Float32, pl.Float64):
-            return float(raw_value)
-        if dtype == pl.Boolean:
-            s = str(raw_value).strip().lower()
-            if s in {"true", "1", "yes", "y"}:
-                return True
-            if s in {"false", "0", "no", "n"}:
-                return False
-            raise ValueError("Invalid boolean value")
-        if dtype == pl.Date:
-            return pd.to_datetime(raw_value).date()
-        if dtype == pl.Datetime:
-            return pd.to_datetime(raw_value).to_pydatetime()
-        if dtype == pl.Time:
-            return pd.to_datetime(raw_value).time()
-        # Utf8, categorical, etc.
-        return str(raw_value)
-    except Exception as e:
-        raise ValueError(f"Cannot convert '{raw_value}' to {dtype}") from e
-
-
-def _set_cell_value(df: pl.DataFrame, row_idx: int, col_name: str, new_value: Any) -> pl.DataFrame:
-    """
-    Update a single cell in a Polars DataFrame while preserving the schema/dtype.
-
-    Args:
-        df: The Polars DataFrame.
-        row_idx: The index of the row to update.
-        col_name: The name of the column to update.
-        new_value: The new value to set.
-
-    Returns:
-        A new Polars DataFrame with the updated cell.
-    """
-    # Update a single cell while preserving schema/dtype
-    dtype = df.schema[col_name]
-    coerced = _coerce_value(new_value, dtype)
-
-    updated = (
-        df.with_row_index("__rowid")
-        .with_columns(
-            pl.when(pl.col("__rowid") == row_idx)
-            .then(pl.lit(coerced, dtype=dtype))
-            .otherwise(pl.col(col_name))
-            .alias(col_name)
-        )
-        .drop("__rowid")
-    )
-    return updated
-
-
-def _polars_to_pandas(df: pl.DataFrame) -> pd.DataFrame:
-    """
-    Convert a Polars DataFrame to a Pandas DataFrame.
-
-    Args:
-        df: The Polars DataFrame.
-
-    Returns:
-        A Pandas DataFrame.
-    """
-    try:
-        return df.to_pandas()
-    except ModuleNotFoundError:
-        return pd.DataFrame(df.to_dicts())
-
-
-def _find_lat_lon_columns(columns: list[str]) -> tuple[str, str] | None:
-    def _normalize(name: str) -> str:
-        normalized = "".join(ch.lower() if ch.isalnum() else "_" for ch in name).strip("_")
-        while "__" in normalized:
-            normalized = normalized.replace("__", "_")
-        return normalized
-
-    def _tokens(name: str) -> list[str]:
-        normalized = _normalize(name)
-        return [tok for tok in normalized.split("_") if tok]
-
-    def _is_lat_candidate(name: str) -> bool:
-        token_set = set(_tokens(name))
-        if token_set.intersection({"lat", "latitude"}):
-            return True
-        normalized = _normalize(name)
-        return normalized.endswith("latitude") or normalized.endswith("_lat") or normalized == "lat"
-
-    def _is_lon_candidate(name: str) -> bool:
-        token_set = set(_tokens(name))
-        if token_set.intersection({"lon", "lng", "long", "longitude"}):
-            return True
-        normalized = _normalize(name)
-        return (
-            normalized.endswith("longitude")
-            or normalized.endswith("_lon")
-            or normalized.endswith("_lng")
-            or normalized == "lon"
-            or normalized == "lng"
-        )
-
-    def _stem(name: str, axis: str) -> str:
-        lat_terms = {"lat", "latitude"}
-        lon_terms = {"lon", "lng", "long", "longitude"}
-        remove = lat_terms if axis == "lat" else lon_terms
-        stem_tokens = [tok for tok in _tokens(name) if tok not in remove]
-        return "_".join(stem_tokens)
-
-    lat_matches = [(idx, col) for idx, col in enumerate(columns) if _is_lat_candidate(col)]
-    lon_matches = [(idx, col) for idx, col in enumerate(columns) if _is_lon_candidate(col)]
-
-    if not lat_matches or not lon_matches:
-        return None
-
-    best_pair: tuple[str, str] | None = None
-    best_score = -1
-    best_order = (10**9, 10**9)
-
-    for lat_idx, lat_col in lat_matches:
-        lat_stem = _stem(lat_col, "lat")
-        for lon_idx, lon_col in lon_matches:
-            lon_stem = _stem(lon_col, "lon")
-
-            score = 0
-            if lat_stem and lon_stem and lat_stem == lon_stem:
-                score += 3
-            if _normalize(lat_col) in {"lat", "latitude"}:
-                score += 2
-            if _normalize(lon_col) in {"lon", "lng", "longitude"}:
-                score += 2
-
-            order = (lat_idx, lon_idx)
-            if score > best_score or (score == best_score and order < best_order):
-                best_score = score
-                best_order = order
-                best_pair = (lat_col, lon_col)
-
-    return best_pair
-
-
-def _coerce_new_column_default(raw_value: str, dtype_name: str) -> Any:
-    if raw_value == "":
-        return None
-
-    normalized = dtype_name.strip().lower()
-    if normalized == "string":
-        return str(raw_value)
-    if normalized == "int":
-        return int(raw_value)
-    if normalized == "float":
-        return float(raw_value)
-    if normalized == "bool":
-        s = str(raw_value).strip().lower()
-        if s in {"true", "1", "yes", "y"}:
-            return True
-        if s in {"false", "0", "no", "n"}:
-            return False
-        raise ValueError("Default bool value must be true/false, 1/0, yes/no, y/n")
-
-    raise ValueError(f"Unsupported column type: {dtype_name}")
-
-
-# ---------------------------
 # Server
 # ---------------------------
 @module.server
@@ -367,37 +177,18 @@ def table_server(input, output, session):
         current = active_compact_panel.get()
         active_compact_panel.set(None if current == panel_name else panel_name)
 
-    @reactive.effect
-    @reactive.event(input.show_load_controls)
-    def _toggle_load_controls():
-        _toggle_panel("load")
+    def _clear_highlights() -> None:
+        highlighted_new_row.set(None)
+        highlighted_new_col.set(None)
 
-    @reactive.effect
-    @reactive.event(input.show_download_controls)
-    def _toggle_download_controls():
-        _toggle_panel("download")
+    def _require_df(action_name: str) -> pl.DataFrame | None:
+        df = data_pl.get()
+        if df is None:
+            status_msg.set(f"{action_name} failed: no data loaded.")
+            return None
+        return df
 
-    @reactive.effect
-    @reactive.event(input.show_schema_controls)
-    def _toggle_schema_controls():
-        _toggle_panel("schema")
-
-    @reactive.effect
-    @reactive.event(input.show_status_controls)
-    def _toggle_status_controls():
-        _toggle_panel("status")
-
-    @reactive.effect
-    @reactive.event(input.show_map_controls)
-    def _toggle_map_controls():
-        _toggle_panel("map")
-
-    @render.ui
-    def compact_controls_panel():
-        panel_name = active_compact_panel.get()
-        if panel_name is None:
-            return ui.div()
-
+    def _build_compact_controls(panel_name: str):
         if panel_name == "load":
             return ui.div(
                 ui.layout_columns(
@@ -446,209 +237,82 @@ def table_server(input, output, session):
 
         return ui.div()
 
-    @reactive.effect
-    def _sync_drop_column_choices():
-        df = data_pl.get()
-        choices = [] if df is None else df.columns
-        selected = choices[0] if choices else None
-        ui.update_select("drop_col_name", choices=choices, selected=selected)
+    def _read_uploaded_dataframe(file_info: dict[str, Any]) -> pl.DataFrame:
+        path = file_info["datapath"]
+        name = file_info["name"].lower()
 
-    @reactive.effect
-    @reactive.event(input.file)
-    def _update_sheet_choices():
-        files = input.file()
-        if not files:
-            ui.update_select("sheet_name", choices=["(first sheet)"], selected="(first sheet)")
-            return
-
-        f = files[0]
-        source_name.set(Path(f["name"]).stem)
-        name = f["name"].lower()
+        if name.endswith(".csv"):
+            sep = input.csv_sep() or ","
+            return pl.read_csv(path, separator=sep)
 
         if name.endswith((".xlsx", ".xls")):
-            sheets = _excel_sheet_names(f["datapath"])
-            choices = sheets if sheets else ["(first sheet)"]
-            ui.update_select("sheet_name", choices=choices, selected=choices[0])
-        else:
-            ui.update_select("sheet_name", choices=["(first sheet)"], selected="(first sheet)")
+            sheet = input.sheet_name()
+            if sheet == "(first sheet)":
+                return pl.read_excel(path)
+            try:
+                return pl.read_excel(path, sheet_name=sheet)
+            except TypeError:
+                pdf = pd.read_excel(path, sheet_name=sheet)
+                return pl.from_pandas(pdf)
 
-    @reactive.effect
-    @reactive.event(input.load)
-    def _load_file():
-        files = input.file()
-        if not files:
-            status_msg.set("No file selected.")
-            data_pl.set(None)
-            return
+        raise ValueError("Unsupported file type. Use .csv/.xlsx/.xls")
 
-        f = files[0]
-        path = f["datapath"]
-        name = f["name"].lower()
-
-        try:
-            if name.endswith(".csv"):
-                sep = input.csv_sep() or ","
-                df = pl.read_csv(path, separator=sep)
-            elif name.endswith((".xlsx", ".xls")):
-                sheet = input.sheet_name()
-                if sheet == "(first sheet)":
-                    # read first sheet (default)
-                    df = pl.read_excel(path)
-                else:
-                    # Polars currently supports sheet_name in recent versions
-                    # fallback to pandas for compatibility if needed.
-                    try:
-                        df = pl.read_excel(path, sheet_name=sheet)
-                    except TypeError:
-                        pdf = pd.read_excel(path, sheet_name=sheet)
-                        df = pl.from_pandas(pdf)
-            else:
-                status_msg.set("Unsupported file type. Use .csv/.xlsx/.xls")
-                data_pl.set(None)
-                return
-
-            data_pl.set(df)
-            lat_lon_cols.set(_find_lat_lon_columns(df.columns))
-            use_points_on_map.set(False)
-            highlighted_new_row.set(None)
-            highlighted_new_col.set(None)
-            status_msg.set(f"Loaded {f['name']} | rows={df.height}, cols={df.width}")
-        except Exception as e:
-            data_pl.set(None)
-            lat_lon_cols.set(None)
-            use_points_on_map.set(False)
-            highlighted_new_row.set(None)
-            highlighted_new_col.set(None)
-            status_msg.set(f"Load failed: {e}")
-
-    @render.ui
-    def lat_lon_prompt():
-        cols = lat_lon_cols.get()
-        if cols is None:
-            return ui.p("No latitude/longitude columns detected.")
-
-        lat_col, lon_col = cols
-        return ui.TagList(
-            ui.p(f"Detected '{lat_col}' and '{lon_col}'. Do you want to display these points on the map?"),
-            ui.input_switch("use_map_points", "Plot table points on map", value=False),
-        )
-
-    @reactive.effect
-    def _sync_use_points_on_map():
-        cols = lat_lon_cols.get()
-        if cols is None:
-            use_points_on_map.set(False)
-            return
-        use_points_on_map.set(bool(input.use_map_points()))
-
-    @reactive.effect
-    @reactive.event(input.add_row)
-    def _add_row():
-        df = data_pl.get()
-        if df is None:
-            status_msg.set("Add row failed: no data loaded.")
-            return
-
+    def _append_blank_row(df: pl.DataFrame) -> tuple[pl.DataFrame, int]:
         new_row = {col: None for col in df.columns}
         row_df = pl.DataFrame([new_row], schema=df.schema)
         updated = pl.concat([df, row_df], how="vertical_relaxed")
-        data_pl.set(updated)
-        highlighted_new_row.set(updated.height - 1)
-        status_msg.set(f"Added row. rows={updated.height}, cols={updated.width}")
+        return updated, updated.height - 1
 
-    @reactive.effect
-    @reactive.event(input.remove_row)
-    def _remove_row():
-        df = data_pl.get()
-        if df is None:
-            status_msg.set("Remove row failed: no data loaded.")
-            return
+    def _remove_row_from_bottom(df: pl.DataFrame, bottom_offset: int) -> tuple[pl.DataFrame, int]:
+        if bottom_offset < 0 or bottom_offset >= df.height:
+            raise ValueError(f"bottom offset {bottom_offset} out of range [0, {max(df.height - 1, 0)}].")
 
-        row_idx = int(input.remove_row_index() or 0)
-        if row_idx < 0 or row_idx >= df.height:
-            status_msg.set(f"Remove row failed: index {row_idx} out of range [0, {max(df.height - 1, 0)}].")
-            return
-
-        marked_row = highlighted_new_row.get()
-        if marked_row is not None:
-            if row_idx == marked_row:
-                highlighted_new_row.set(None)
-            elif row_idx < marked_row:
-                highlighted_new_row.set(marked_row - 1)
-
+        row_idx = df.height - 1 - bottom_offset
         updated = df.filter(pl.int_range(0, df.height) != row_idx)
-        data_pl.set(updated)
-        status_msg.set(f"Removed row {row_idx}. rows={updated.height}, cols={updated.width}")
+        return updated, row_idx
 
-    @reactive.effect
-    @reactive.event(input.add_col)
-    def _add_column():
-        df = data_pl.get()
-        if df is None:
-            status_msg.set("Add column failed: no data loaded.")
-            return
-
-        col_name = (input.new_col_name() or "").strip()
+    def _add_column_with_default(
+        df: pl.DataFrame,
+        col_name: str,
+        dtype_name: str,
+        default_raw: str,
+    ) -> pl.DataFrame:
         if not col_name:
-            status_msg.set("Add column failed: column name is required.")
-            return
+            raise ValueError("column name is required.")
         if col_name in df.columns:
-            status_msg.set(f"Add column failed: '{col_name}' already exists.")
-            return
+            raise ValueError(f"'{col_name}' already exists.")
 
-        dtype_name = input.new_col_type()
         dtype_map: dict[str, pl.DataType] = {
             "string": pl.Utf8,
             "int": pl.Int64,
             "float": pl.Float64,
             "bool": pl.Boolean,
         }
+        if dtype_name not in dtype_map:
+            raise ValueError(f"Unsupported column type: {dtype_name}")
 
-        try:
-            if dtype_name not in dtype_map:
-                raise ValueError(f"Unsupported column type: {dtype_name}")
+        default_value = coerce_new_column_default(default_raw, dtype_name)
+        series = pl.Series(col_name, [default_value] * df.height, dtype=dtype_map[dtype_name])
+        return df.with_columns(series)
 
-            default_value = _coerce_new_column_default(input.new_col_default() or "", dtype_name)
-            series = pl.Series(col_name, [default_value] * df.height, dtype=dtype_map[dtype_name])
-            updated = df.with_columns(series)
-            data_pl.set(updated)
-            highlighted_new_col.set(col_name)
-            status_msg.set(f"Added column '{col_name}'. rows={updated.height}, cols={updated.width}")
-        except Exception as e:
-            status_msg.set(f"Add column failed: {e}")
-
-    @reactive.effect
-    @reactive.event(input.remove_col)
-    def _remove_column():
-        df = data_pl.get()
-        if df is None:
-            status_msg.set("Remove column failed: no data loaded.")
-            return
-
+    def _remove_existing_column(df: pl.DataFrame, col_name: str) -> pl.DataFrame:
         if df.width <= 1:
-            status_msg.set("Remove column failed: cannot remove the last remaining column.")
-            return
-
-        col_name = input.drop_col_name()
+            raise ValueError("cannot remove the last remaining column.")
         if not col_name or col_name not in df.columns:
-            status_msg.set("Remove column failed: select a valid column.")
+            raise ValueError("select a valid column.")
+        return df.drop(col_name)
+
+    def _sync_row_highlight_after_remove(removed_row_idx: int) -> None:
+        marked_row = highlighted_new_row.get()
+        if marked_row is None:
             return
-
-        if highlighted_new_col.get() == col_name:
-            highlighted_new_col.set(None)
-
-        updated = df.drop(col_name)
-        data_pl.set(updated)
-        status_msg.set(f"Removed column '{col_name}'. rows={updated.height}, cols={updated.width}")
-
-    @reactive.effect
-    def _clear_highlight_when_no_longer_blank():
-        df = data_pl.get()
-        if df is None:
+        if removed_row_idx == marked_row:
             highlighted_new_row.set(None)
-            highlighted_new_col.set(None)
             return
+        if removed_row_idx < marked_row:
+            highlighted_new_row.set(marked_row - 1)
 
+    def _clear_highlight_when_filled(df: pl.DataFrame) -> None:
         marked_row = highlighted_new_row.get()
         if marked_row is not None:
             if marked_row < 0 or marked_row >= df.height:
@@ -667,12 +331,7 @@ def table_server(input, output, session):
                 if any(not _is_blank_value(value) for value in col_values):
                     highlighted_new_col.set(None)
 
-    @render.data_frame
-    def table():
-        df = data_pl.get()
-        if df is None:
-            return render.DataGrid(pd.DataFrame({"Info": ["Upload and load a file to begin editing."]}))
-
+    def _table_styles(df: pl.DataFrame) -> list[render.StyleInfo]:
         styles: list[render.StyleInfo] = []
 
         marked_row = highlighted_new_row.get()
@@ -701,9 +360,199 @@ def table_server(input, output, session):
                     },
                 }
             )
+        return styles
+
+    @reactive.effect
+    @reactive.event(input.show_load_controls)
+    def _toggle_load_controls():
+        _toggle_panel("load")
+
+    @reactive.effect
+    @reactive.event(input.show_download_controls)
+    def _toggle_download_controls():
+        _toggle_panel("download")
+
+    @reactive.effect
+    @reactive.event(input.show_schema_controls)
+    def _toggle_schema_controls():
+        _toggle_panel("schema")
+
+    @reactive.effect
+    @reactive.event(input.show_status_controls)
+    def _toggle_status_controls():
+        _toggle_panel("status")
+
+    @reactive.effect
+    @reactive.event(input.show_map_controls)
+    def _toggle_map_controls():
+        _toggle_panel("map")
+
+    @render.ui
+    def compact_controls_panel():
+        panel_name = active_compact_panel.get()
+        if panel_name is None:
+            return ui.div()
+        return _build_compact_controls(panel_name)
+
+    @reactive.effect
+    def _sync_drop_column_choices():
+        df = data_pl.get()
+        choices = [] if df is None else df.columns
+        selected = choices[0] if choices else None
+        ui.update_select("drop_col_name", choices=choices, selected=selected)
+
+    @reactive.effect
+    @reactive.event(input.file)
+    def _update_sheet_choices():
+        files = input.file()
+        if not files:
+            ui.update_select("sheet_name", choices=["(first sheet)"], selected="(first sheet)")
+            return
+
+        f = files[0]
+        source_name.set(Path(f["name"]).stem)
+        name = f["name"].lower()
+
+        if name.endswith((".xlsx", ".xls")):
+            sheets = excel_sheet_names(f["datapath"])
+            choices = sheets if sheets else ["(first sheet)"]
+            ui.update_select("sheet_name", choices=choices, selected=choices[0])
+        else:
+            ui.update_select("sheet_name", choices=["(first sheet)"], selected="(first sheet)")
+
+    @reactive.effect
+    @reactive.event(input.load)
+    def _load_file():
+        files = input.file()
+        if not files:
+            status_msg.set("No file selected.")
+            data_pl.set(None)
+            _clear_highlights()
+            return
+
+        f = files[0]
+
+        try:
+            df = _read_uploaded_dataframe(f)
+
+            data_pl.set(df)
+            lat_lon_cols.set(find_lat_lon_columns(df.columns))
+            use_points_on_map.set(False)
+            _clear_highlights()
+            status_msg.set(f"Loaded {f['name']} | rows={df.height}, cols={df.width}")
+        except Exception as e:
+            data_pl.set(None)
+            lat_lon_cols.set(None)
+            use_points_on_map.set(False)
+            _clear_highlights()
+            status_msg.set(f"Load failed: {e}")
+
+    @render.ui
+    def lat_lon_prompt():
+        cols = lat_lon_cols.get()
+        if cols is None:
+            return ui.p("No latitude/longitude columns detected.")
+
+        lat_col, lon_col = cols
+        return ui.TagList(
+            ui.p(f"Detected '{lat_col}' and '{lon_col}'. Do you want to display these points on the map?"),
+            ui.input_switch("use_map_points", "Plot table points on map", value=False),
+        )
+
+    @reactive.effect
+    def _sync_use_points_on_map():
+        cols = lat_lon_cols.get()
+        if cols is None:
+            use_points_on_map.set(False)
+            return
+        use_points_on_map.set(bool(input.use_map_points()))
+
+    @reactive.effect
+    @reactive.event(input.add_row)
+    def _add_row():
+        df = _require_df("Add row")
+        if df is None:
+            return
+
+        updated, added_row_idx = _append_blank_row(df)
+        data_pl.set(updated)
+        highlighted_new_row.set(added_row_idx)
+        status_msg.set(f"Added row. rows={updated.height}, cols={updated.width}")
+
+    @reactive.effect
+    @reactive.event(input.remove_row)
+    def _remove_row():
+        df = _require_df("Remove row")
+        if df is None:
+            return
+
+        bottom_offset = int(input.remove_row_index() or 0)
+        try:
+            updated, row_idx = _remove_row_from_bottom(df, bottom_offset)
+            _sync_row_highlight_after_remove(row_idx)
+            data_pl.set(updated)
+            status_msg.set(
+                f"Removed row from bottom offset {bottom_offset} (actual row index {row_idx}). "
+                f"rows={updated.height}, cols={updated.width}"
+            )
+        except ValueError as e:
+            status_msg.set(f"Remove row failed: {e}")
+
+    @reactive.effect
+    @reactive.event(input.add_col)
+    def _add_column():
+        df = _require_df("Add column")
+        if df is None:
+            return
+
+        col_name = (input.new_col_name() or "").strip()
+        try:
+            updated = _add_column_with_default(
+                df=df,
+                col_name=col_name,
+                dtype_name=input.new_col_type(),
+                default_raw=input.new_col_default() or "",
+            )
+            data_pl.set(updated)
+            highlighted_new_col.set(col_name)
+            status_msg.set(f"Added column '{col_name}'. rows={updated.height}, cols={updated.width}")
+        except ValueError as e:
+            status_msg.set(f"Add column failed: {e}")
+
+    @reactive.effect
+    @reactive.event(input.remove_col)
+    def _remove_column():
+        df = _require_df("Remove column")
+        if df is None:
+            return
+
+        col_name = input.drop_col_name()
+        try:
+            updated = _remove_existing_column(df, col_name)
+            if highlighted_new_col.get() == col_name:
+                highlighted_new_col.set(None)
+            data_pl.set(updated)
+            status_msg.set(f"Removed column '{col_name}'. rows={updated.height}, cols={updated.width}")
+        except ValueError as e:
+            status_msg.set(f"Remove column failed: {e}")
+
+    @reactive.effect
+    def _clear_highlight_when_no_longer_blank():
+        df = data_pl.get()
+        if df is None:
+            _clear_highlights()
+            return
+        _clear_highlight_when_filled(df)
+
+    @render.data_frame
+    def table():
+        df = data_pl.get()
+        if df is None:
+            return render.DataGrid(pd.DataFrame({"Info": ["Upload and load a file to begin editing."]}))
+        styles = _table_styles(df)
 
         return render.DataGrid(
-            _polars_to_pandas(df),
+            polars_to_pandas(df),
             editable=True,
             selection_mode="none",
             styles=styles or None,
@@ -721,7 +570,7 @@ def table_server(input, output, session):
         value = patch["value"]
 
         col_name = df.columns[col]
-        updated = _set_cell_value(df, row, col_name, value)
+        updated = set_cell_value(df, row, col_name, value)
         data_pl.set(updated)
 
         # returned value is what the client displays in edited cell
@@ -747,7 +596,7 @@ def table_server(input, output, session):
             return pd.DataFrame(columns=["latitude", "longitude"])
 
         lat_col, lon_col = cols
-        points = _polars_to_pandas(df.select([lat_col, lon_col]))
+        points = polars_to_pandas(df.select([lat_col, lon_col]))
         points = points.rename(columns={lat_col: "latitude", lon_col: "longitude"})
         points["latitude"] = pd.to_numeric(points["latitude"], errors="coerce")
         points["longitude"] = pd.to_numeric(points["longitude"], errors="coerce")
