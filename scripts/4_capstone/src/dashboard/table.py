@@ -5,7 +5,6 @@ from typing import Any
 
 import pandas as pd
 import polars as pl
-import pyarrow as pa
 from shiny import module, reactive, render, ui
 
 # filepath: /home/klewtak/NASA/CCN-Data-Library/scripts/4_capstone/src/dashboard/dashboard_table.py
@@ -16,6 +15,13 @@ from shiny import module, reactive, render, ui
 # ---------------------------
 @module.ui
 def table_ui():
+    """
+    UI for the table loader and cell editor module.
+        - File upload for CSV/Excel with options
+        - Display editable data grid
+        - Show load status and current schema
+        - Download edited data as CSV
+    """
     return ui.TagList(
         ui.panel_title("Table Loader + Cell Editor"),
         ui.layout_sidebar(
@@ -39,6 +45,9 @@ def table_ui():
                 ui.hr(),
                 ui.h5("Load / validation status"),
                 ui.output_text_verbatim("status"),
+                ui.hr(),
+                ui.h5("Map integration"),
+                ui.output_ui("lat_lon_prompt"),
                 width=350,
             ),
             ui.card(
@@ -56,6 +65,15 @@ def table_ui():
 # Helpers
 # ---------------------------
 def _excel_sheet_names(path: str) -> list[str]:
+    """
+    Get the sheet names from an Excel file.
+
+    Args:
+        path: Path to the Excel file.
+
+    Returns:
+        A list of sheet names.
+    """
     try:
         xl = pd.ExcelFile(path)
         return xl.sheet_names or []
@@ -64,6 +82,16 @@ def _excel_sheet_names(path: str) -> list[str]:
 
 
 def _coerce_value(raw_value: Any, dtype: pl.DataType) -> Any:
+    """
+    Coerce a raw value to the specified Polars data type.
+
+    Args:
+        raw_value: The value to coerce (from the editable grid).
+        dtype: The target Polars data type.
+
+    Returns:
+        The coerced value in the appropriate Python type for the Polars dtype.
+    """
     # Empty string -> null
     if raw_value in ("", None):
         return None
@@ -93,6 +121,18 @@ def _coerce_value(raw_value: Any, dtype: pl.DataType) -> Any:
 
 
 def _set_cell_value(df: pl.DataFrame, row_idx: int, col_name: str, new_value: Any) -> pl.DataFrame:
+    """
+    Update a single cell in a Polars DataFrame while preserving the schema/dtype.
+
+    Args:
+        df: The Polars DataFrame.
+        row_idx: The index of the row to update.
+        col_name: The name of the column to update.
+        new_value: The new value to set.
+
+    Returns:
+        A new Polars DataFrame with the updated cell.
+    """
     # Update a single cell while preserving schema/dtype
     dtype = df.schema[col_name]
     coerced = _coerce_value(new_value, dtype)
@@ -111,10 +151,33 @@ def _set_cell_value(df: pl.DataFrame, row_idx: int, col_name: str, new_value: An
 
 
 def _polars_to_pandas(df: pl.DataFrame) -> pd.DataFrame:
+    """
+    Convert a Polars DataFrame to a Pandas DataFrame.
+
+    Args:
+        df: The Polars DataFrame.
+
+    Returns:
+        A Pandas DataFrame.
+    """
     try:
         return df.to_pandas()
     except ModuleNotFoundError:
         return pd.DataFrame(df.to_dicts())
+
+
+def _find_lat_lon_columns(columns: list[str]) -> tuple[str, str] | None:
+    normalized_to_original = {col.strip().lower(): col for col in columns}
+
+    lat_candidates = ["latitude", "lat"]
+    lon_candidates = ["longitude", "lng", "lon"]
+
+    lat_col = next((normalized_to_original[c] for c in lat_candidates if c in normalized_to_original), None)
+    lon_col = next((normalized_to_original[c] for c in lon_candidates if c in normalized_to_original), None)
+
+    if lat_col is None or lon_col is None:
+        return None
+    return lat_col, lon_col
 
 
 # ---------------------------
@@ -125,6 +188,8 @@ def table_server(input, output, session):
     data_pl = reactive.Value(None)  # type: ignore[var-annotated]
     status_msg = reactive.Value("Waiting for file upload.")
     source_name = reactive.Value("edited_data")
+    lat_lon_cols = reactive.Value(None)  # type: ignore[var-annotated]
+    use_points_on_map = reactive.Value(False)
 
     @reactive.effect
     @reactive.event(input.file)
@@ -181,10 +246,34 @@ def table_server(input, output, session):
                 return
 
             data_pl.set(df)
+            lat_lon_cols.set(_find_lat_lon_columns(df.columns))
+            use_points_on_map.set(False)
             status_msg.set(f"Loaded {f['name']} | rows={df.height}, cols={df.width}")
         except Exception as e:
             data_pl.set(None)
+            lat_lon_cols.set(None)
+            use_points_on_map.set(False)
             status_msg.set(f"Load failed: {e}")
+
+    @render.ui
+    def lat_lon_prompt():
+        cols = lat_lon_cols.get()
+        if cols is None:
+            return ui.p("No latitude/longitude columns detected.")
+
+        lat_col, lon_col = cols
+        return ui.TagList(
+            ui.p(f"Detected '{lat_col}' and '{lon_col}'. Do you want to display these points on the map?"),
+            ui.input_switch("use_map_points", "Plot table points on map", value=False),
+        )
+
+    @reactive.effect
+    def _sync_use_points_on_map():
+        cols = lat_lon_cols.get()
+        if cols is None:
+            use_points_on_map.set(False)
+            return
+        use_points_on_map.set(bool(input.use_map_points()))
 
     @render.data_frame
     def table():
@@ -222,6 +311,22 @@ def table_server(input, output, session):
             return "No dataframe loaded."
         return "\n".join(f"{k}: {v}" for k, v in df.schema.items())
 
+    @reactive.calc
+    def map_points() -> pd.DataFrame:
+        df = data_pl.get()
+        cols = lat_lon_cols.get()
+
+        if df is None or cols is None or not use_points_on_map.get():
+            return pd.DataFrame(columns=["latitude", "longitude"])
+
+        lat_col, lon_col = cols
+        points = _polars_to_pandas(df.select([lat_col, lon_col]))
+        points = points.rename(columns={lat_col: "latitude", lon_col: "longitude"})
+        points["latitude"] = pd.to_numeric(points["latitude"], errors="coerce")
+        points["longitude"] = pd.to_numeric(points["longitude"], errors="coerce")
+        points = points.dropna(subset=["latitude", "longitude"]) 
+        return points
+
     @render.download(filename=lambda: f"{source_name.get()}_edited.csv")
     def download_csv():
         df = data_pl.get()
@@ -229,3 +334,7 @@ def table_server(input, output, session):
             yield "No data loaded.\n"
             return
         yield df.write_csv()
+
+    return {
+        "map_points": map_points,
+    }

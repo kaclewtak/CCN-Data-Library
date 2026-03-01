@@ -1,42 +1,99 @@
 import ipyleaflet
 import pandas as pd
+from ipywidgets import HTML
 from shiny import App, reactive, render, ui
 from shinywidgets import output_widget, render_widget
 from table import table_server, table_ui
 
 # UI
-app_ui = ui.page_navbar(
-    ui.nav_panel(
-        "Location Viewer",
-        ui.layout_sidebar(
-            ui.sidebar(
-                ui.input_numeric("lat", "Latitude:", value=25.286, step=0.01),
-                ui.input_numeric("lng", "Longitude:", value=-81.178, step=0.01),
-                ui.input_action_button("go", "Show on Map", class_="btn-primary"),
-            ),
-            output_widget("map", height="500px"),
-            ui.hr(),
-            ui.h4("Saved Locations"),
-            ui.output_data_frame("loc_table"),
-        ),
+app_ui = ui.page_fluid(
+    ui.panel_title("Location + Data Editor"),
+    ui.div(
+        table_ui("data_editor"),
+        style="height: 48vh; overflow: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;",
     ),
-    ui.nav_panel("Data Editor", table_ui("data_editor")),
-    title="Dashboard",
-    id="tabs",
+    ui.br(),
+    ui.div(
+        ui.h4("Map Viewer"),
+        ui.layout_columns(
+            ui.input_numeric("lat", "Latitude:", value=25.286, step=0.01),
+            ui.input_numeric("lng", "Longitude:", value=-81.178, step=0.01),
+            ui.input_action_button("go", "Add manual point", class_="btn-primary"),
+            col_widths=[4, 4, 4],
+        ),
+        ui.output_text_verbatim("map_status"),
+        output_widget("map", height="38vh"),
+        style="height: 48vh; overflow: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;",
+    ),
 )
 
 
 # Server
 def server(input, output, session):
-    # Location Viewer logic
-    locations = reactive.Value(pd.DataFrame(columns=["ID", "Latitude", "Longitude"]))
+    # Table module outputs
+    table_state = table_server("data_editor")
 
-    # Initialize Map
-    m = ipyleaflet.Map(basemap=ipyleaflet.basemaps.Esri.WorldImagery, center=(25.286, -81.178), zoom=13)
+    # Manual location logic
+    locations = reactive.Value(pd.DataFrame(columns=["ID", "Latitude", "Longitude"]))
+    rendered_marker_count = reactive.Value(0)
+
+    # Track map view state so it persists across redraws
+    map_center = reactive.Value((25.286, -81.178))
+    map_zoom = reactive.Value(13)
 
     @render_widget
     def map():
-        return m
+        manual_df = locations.get()
+        table_points = table_state["map_points"]()
+
+        layers = []
+
+        for _, row in manual_df.iterrows():
+            lat = float(row["Latitude"])
+            lng = float(row["Longitude"])
+            if not _is_valid_coordinate(lat, lng):
+                continue
+            marker = ipyleaflet.CircleMarker(
+                location=(lat, lng),
+                radius=9,
+                color="#ff3333",
+                fill_color="#ff3333",
+                fill_opacity=1,
+                weight=3,
+                opacity=1,
+            )
+            marker.popup = HTML(value=f"Manual Point<br>Lat: {lat}<br>Lng: {lng}")
+            layers.append(marker)
+
+        for _, row in table_points.iterrows():
+            lat = float(row["latitude"])
+            lng = float(row["longitude"])
+            if not _is_valid_coordinate(lat, lng):
+                continue
+            marker = ipyleaflet.CircleMarker(
+                location=(lat, lng),
+                radius=7,
+                color="#1f78b4",
+                fill_color="#1f78b4",
+                fill_opacity=0.9,
+                weight=2,
+                opacity=1,
+            )
+            marker.popup = HTML(value=f"Table Point<br>Lat: {lat}<br>Lng: {lng}")
+            layers.append(marker)
+
+        rendered_marker_count.set(len(layers))
+
+        basemap_layer = ipyleaflet.basemap_to_tiles(ipyleaflet.basemaps.Esri.WorldImagery)
+        return ipyleaflet.Map(
+            basemap=ipyleaflet.basemaps.Esri.WorldImagery,
+            center=map_center.get(),
+            zoom=map_zoom.get(),
+            layers=[basemap_layer] + layers,
+        )
+
+    def _is_valid_coordinate(latitude: float, longitude: float) -> bool:
+        return -90 <= latitude <= 90 and -180 <= longitude <= 180
 
     @reactive.Effect
     @reactive.event(input.go)
@@ -44,48 +101,38 @@ def server(input, output, session):
         # Create new row
         current_df = locations.get()
         new_id = len(current_df) + 1
-        lat = input.lat()
-        lng = input.lng()
+        lat = float(input.lat())
+        lng = float(input.lng())
 
-        new_row = pd.DataFrame([[new_id, lat, lng]], columns=["ID", "Latitude", "Longitude"])
-        updated_df = pd.concat([current_df, new_row], ignore_index=True)
+        if not _is_valid_coordinate(lat, lng):
+            ui.notification_show(
+                "Invalid coordinates. Latitude must be in [-90, 90] and longitude in [-180, 180].",
+                type="error",
+                duration=5,
+            )
+            return
+
+        updated_df = current_df.copy()
+        updated_df.loc[len(updated_df)] = {
+            "ID": new_id,
+            "Latitude": lat,
+            "Longitude": lng,
+        }
         locations.set(updated_df)
 
         # Update Map View
-        m.center = (lat, lng)
-        m.zoom = 15
+        map_center.set((lat, lng))
+        map_zoom.set(15)
 
-        # Re-draw markers
-        # Filter out existing CircleMarkers to clear them (keeping other layers like tiles)
-        base_layers = [l for l in m.layers if not isinstance(l, ipyleaflet.CircleMarker)]
-
-        new_markers = []
-        for idx, row in updated_df.iterrows():
-            marker = ipyleaflet.CircleMarker(
-                location=(row["Latitude"], row["Longitude"]),
-                radius=8,
-                color="#ff3333",
-                fill_color="#ff3333",
-                fill_opacity=0.9,
-                weight=2,
-                opacity=1,
-            )
-            # Add popup
-            popup_content = f"ID: {row['ID']}<br>Lat: {row['Latitude']}<br>Lng: {row['Longitude']}"
-            message = ipyleaflet.HTML()
-            message.value = popup_content
-            marker.popup = message
-
-            new_markers.append(marker)
-
-        m.layers = tuple(base_layers + new_markers)
-
-    @render.data_frame
-    def loc_table():
-        return render.DataGrid(locations.get(), selection_mode="none")
-
-    # Data Editor logic
-    table_server("data_editor")
+    @render.text
+    def map_status():
+        manual_df = locations.get()
+        table_points = table_state["map_points"]()
+        return (
+            f"Manual points: {len(manual_df)} | "
+            f"Table points (enabled + valid): {len(table_points)} | "
+            f"Rendered markers: {rendered_marker_count.get()}"
+        )
 
 
 app = App(app_ui, server)
