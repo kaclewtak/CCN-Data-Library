@@ -4,7 +4,7 @@ from table import table_server, table_ui
 
 # UI
 app_ui = ui.page_fluid(
-    ui.panel_title("Location + Data Editor"),
+    ui.panel_title("CCN Data Library Dashboard"),
     ui.layout_columns(
         ui.div(
             table_ui("data_editor"),
