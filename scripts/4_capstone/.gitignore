@@ -51,6 +51,7 @@ __pycache__/
 *.parquet
 *.pkl
 *.pickle
+*zip
 
 # --- OS Junk ---
 .DS_Store
@@ -63,3 +64,5 @@ Thumbs.db
 !.vscode/settings.json
 !.vscode/extensions.json
 !.vscode/launch.json
+
+/comp_vision
