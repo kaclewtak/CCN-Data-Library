@@ -59,27 +59,6 @@ def build_manual_markers(
     return layers
 
 
-# def build_manual_markers(manual_df: pd.DataFrame) -> list[ipyleaflet.CircleMarker]:
-#     layers: list[ipyleaflet.CircleMarker] = []
-#     for _, row in manual_df.iterrows():
-#         lat = float(row["Latitude"])
-#         lng = float(row["Longitude"])
-#         if not is_valid_coordinate(lat, lng):
-#             continue
-#         marker = ipyleaflet.CircleMarker(
-#             location=(lat, lng),
-#             radius=9,
-#             color="#ff3333",
-#             fill_color="#ff3333",
-#             fill_opacity=1,
-#             weight=3,
-#             opacity=1,
-#         )
-#         marker.popup = HTML(value=f"Manual Point<br>Lat: {lat}<br>Long: {lng}<br> Delete Point: btn")
-#         layers.append(marker)
-#     return layers
-
-
 def build_table_markers(table_points: pd.DataFrame) -> list[ipyleaflet.CircleMarker]:
     layers: list[ipyleaflet.CircleMarker] = []
     for _, row in table_points.iterrows():
