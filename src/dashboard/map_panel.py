@@ -7,6 +7,7 @@ import pandas as pd
 from map_utils.marker_utils import (
     build_manual_markers,
     build_table_markers,
+    delete_manual_marker,
     is_valid_coordinate,
 )
 from map_utils.view_utils import compute_imported_view
@@ -50,7 +51,15 @@ def map_server(input, output, session, table_points_getter: Callable[[], pd.Data
         manual_df = locations.get()
         table_points = table_points_getter()
 
-        layers = [*build_manual_markers(manual_df), *build_table_markers(table_points)]
+        # layers = [*build_manual_markers(manual_df), *build_table_markers(table_points)]
+        def on_delete(marker):
+            updated = delete_manual_marker(marker, locations.get())  # .get() here
+            locations.set(updated)
+
+        layers = [
+            *build_manual_markers(manual_df, on_delete=on_delete),
+            *build_table_markers(table_points),
+        ]
         rendered_marker_count.set(len(layers))
 
         basemap_layer = ipyleaflet.basemap_to_tiles(ipyleaflet.basemaps.Esri.WorldImagery)
