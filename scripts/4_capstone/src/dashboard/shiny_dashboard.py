@@ -1,8 +1,7 @@
 from map_panel import map_server, map_ui
-from shiny import App, ui
+from shiny import App, reactive, ui
 from table import table_server, table_ui
 
-# UI
 app_ui = ui.page_fluid(
     ui.panel_title("CCN Data Library Dashboard"),
     ui.layout_columns(
@@ -16,13 +15,40 @@ app_ui = ui.page_fluid(
         ),
         col_widths=[6, 6],
     ),
+    # JS handler so table can scroll to a row when map marker is clicked
+    ui.tags.script(
+        """
+        Shiny.addCustomMessageHandler("scroll_to_row", function(rowIndex) {
+            setTimeout(function() {
+                const grids = document.querySelectorAll(".shiny-data-grid-output, [data-testid='data-grid']");
+                grids.forEach(function(grid) {
+                    const rows = grid.querySelectorAll("tbody tr");
+                    if (rows[rowIndex]) {
+                        rows[rowIndex].scrollIntoView({ behavior: "smooth", block: "center" });
+                        rows[rowIndex].style.outline = "2px solid #ff3333";
+                        setTimeout(() => rows[rowIndex].style.outline = "", 1500);
+                    }
+                });
+            }, 100);
+        });
+    """
+    ),
 )
 
 
-# Server
 def server(input, output, session):
-    table_state = table_server("data_editor")
-    map_server("map_viewer", table_points_getter=table_state["map_points"])
+    # Shared reactive: holds the currently selected table row index (or None)
+    selected_point = reactive.Value(None)
+
+    table_state = table_server(
+        "data_editor",
+        selected_point=selected_point,
+    )
+    map_server(
+        "map_viewer",
+        table_points_getter=table_state["map_points"],
+        selected_point=selected_point,
+    )
 
 
 app = App(app_ui, server)
