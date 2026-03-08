@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
 import ipyleaflet
 import pandas as pd
 from map_utils.marker_utils import (
@@ -31,14 +29,15 @@ def map_ui():
 
 
 @module.server
-def map_server(input, output, session, table_points_getter: Callable[[], pd.DataFrame]):
+def map_server(input, output, session, table_points_getter, selected_point):
     # --- State ----------------------------------------------------------------
     locations = reactive.Value(pd.DataFrame(columns=["ID", "Latitude", "Longitude"]))
     rendered_marker_count = reactive.Value(0)
-
     map_center = reactive.Value((25.286, -81.178))
     map_zoom = reactive.Value(13)
     last_imported_view_key: dict[str, tuple[int, float, float, float] | None] = {"value": None}
+    map_widget = reactive.Value(None)
+    table_markers_ref: reactive.Value[list[ipyleaflet.CircleMarker]] = reactive.Value([])  # reactive list
 
     # --- Helpers ---------------------------------------------------------------
     def _set_map_view(center_lat: float, center_lng: float, zoom: int) -> None:
@@ -51,40 +50,62 @@ def map_server(input, output, session, table_points_getter: Callable[[], pd.Data
         manual_df = locations.get()
         table_points = table_points_getter()
 
-        # layers = [*build_manual_markers(manual_df), *build_table_markers(table_points)]
         def on_delete(marker):
-            updated = delete_manual_marker(marker, locations.get())  # .get() here
+            updated = delete_manual_marker(marker, locations.get())
             locations.set(updated)
 
-        layers = [
-            *build_manual_markers(manual_df, on_delete=on_delete),
-            *build_table_markers(table_points),
-        ]
+        manual_layers = build_manual_markers(manual_df, on_delete=on_delete)
+        new_table_markers = build_table_markers(
+            table_points,
+            on_select=lambda idx: selected_point.set(idx),
+        )
+        with reactive.isolate():  # <-- wrap in isolate
+            table_markers_ref.set(new_table_markers)
+
+        layers = [*manual_layers, *new_table_markers]
         rendered_marker_count.set(len(layers))
 
         basemap_layer = ipyleaflet.basemap_to_tiles(ipyleaflet.basemaps.Esri.WorldImagery)
-        return ipyleaflet.Map(
+        m = ipyleaflet.Map(
             basemap=ipyleaflet.basemaps.Esri.WorldImagery,
             center=map_center.get(),
             zoom=map_zoom.get(),
             layers=[basemap_layer] + layers,
         )
+        map_widget.set(m)
+        return m
 
-    # --- Reactive effects: imported points focus ------------------------------
+    # --- Update marker styles in place, no full re-render --------------------
     @reactive.effect
-    def _focus_map_on_imported_points():
-        table_points = table_points_getter()
-        imported_view = compute_imported_view(table_points)
-        if imported_view is None:
-            last_imported_view_key["value"] = None
+    def _update_selected_marker():
+        markers = table_markers_ref.get()
+        selected_idx = selected_point.get()
+
+        if not markers or selected_idx is None:
             return
 
-        (center_lat, center_lng), zoom, view_key = imported_view
-        if last_imported_view_key["value"] == view_key:
-            return
+        for i, marker in enumerate(markers):
+            is_selected = i == selected_idx
+            marker.color = "#ff3369" if is_selected else "#7438cd"
+            marker.fill_color = "#ff3369" if is_selected else "#7438cd"
+            marker.fill_opacity = 1.0 if is_selected else 0.9
+            marker.weight = 3 if is_selected else 2
 
-        last_imported_view_key["value"] = view_key
-        _set_map_view(center_lat, center_lng, zoom)
+        # --- Reactive effects: imported points focus ------------------------------
+        @reactive.effect
+        def _focus_map_on_imported_points():
+            table_points = table_points_getter()
+            imported_view = compute_imported_view(table_points)
+            if imported_view is None:
+                last_imported_view_key["value"] = None
+                return
+
+            (center_lat, center_lng), zoom, view_key = imported_view
+            if last_imported_view_key["value"] == view_key:
+                return
+
+            last_imported_view_key["value"] = view_key
+            _set_map_view(center_lat, center_lng, zoom)
 
     # --- Reactive effects: manual point actions -------------------------------
     @reactive.Effect
@@ -110,7 +131,6 @@ def map_server(input, output, session, table_points_getter: Callable[[], pd.Data
             "Longitude": lng,
         }
         locations.set(updated_df)
-
         _set_map_view(lat, lng, 15)
 
     @render.text
