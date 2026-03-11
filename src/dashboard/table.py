@@ -630,6 +630,10 @@ def table_server(input, output, session):
     def map_points() -> pd.DataFrame:
         return map_points_cache.get()
 
+    @reactive.calc
+    def data() -> pl.DataFrame | None:
+        return data_pl.get()
+
     @render.download(filename=lambda: f"{source_name.get()}_edited.csv")
     def download_csv():
         df = data_pl.get()
@@ -647,4 +651,5 @@ def table_server(input, output, session):
 
     return {
         "map_points": map_points,
+        "data": data,
     }

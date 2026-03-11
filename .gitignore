@@ -64,5 +64,7 @@ Thumbs.db
 !.vscode/settings.json
 !.vscode/extensions.json
 !.vscode/launch.json
+.github/
 
 /comp_vision
+/z_staging
