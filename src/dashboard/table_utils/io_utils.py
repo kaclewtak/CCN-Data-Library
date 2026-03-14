@@ -22,7 +22,7 @@ def read_uploaded_dataframe(file_info: dict[str, str], sheet_name: str, csv_sep:
 
     if name.endswith(".csv"):
         sep = csv_sep or ","
-        return pl.read_csv(path, separator=sep)
+        return pl.read_csv(path, separator=sep, null_values=["NA", "N/A", ""], infer_schema_length=None)
 
     if name.endswith((".xlsx", ".xls")):
         if sheet_name == "(first sheet)":

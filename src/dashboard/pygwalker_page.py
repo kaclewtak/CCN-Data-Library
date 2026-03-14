@@ -11,7 +11,7 @@ from shiny import module, render, ui
 def pygwalker_ui():
     return ui.div(
         ui.output_ui("pygwalker_view"),
-        style="height: 92vh; overflow: auto;",
+        style="height: 142vh; overflow: auto;",
     )
 
 
