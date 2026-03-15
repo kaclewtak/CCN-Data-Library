@@ -176,7 +176,7 @@ def table_ui():
 # Server
 # ---------------------------
 @module.server
-def table_server(input, output, session):
+def table_server(input, output, session, selected_point):
     data_pl = reactive.Value(None)  # type: ignore[var-annotated]
     map_points_cache = reactive.Value(pd.DataFrame(columns=["latitude", "longitude"]))
     status_msg = reactive.Value("Waiting for file upload.")
@@ -577,9 +577,24 @@ def table_server(input, output, session):
         return render.DataGrid(
             polars_to_pandas(df),
             editable=True,
-            selection_mode="none",
+            selection_mode="row",
             styles=styles or None,
         )
+
+    @reactive.effect
+    def _sync_row_selection_outward():
+        sel = table.cell_selection()
+        rows = sel.get("rows", []) if sel else []
+        new_idx = rows[0] if rows else None
+        print(f"_sync_row_selection_outward: sel={sel}, new_idx={new_idx}", flush=True)
+        if new_idx != selected_point.get():
+            selected_point.set(new_idx)
+
+    @reactive.effect
+    async def _sync_row_selection_inward():
+        idx = selected_point.get()
+        if idx is not None:
+            await session.send_custom_message("scroll_to_row", idx)
 
     @table.set_patch_fn
     def _apply_patch(patch):

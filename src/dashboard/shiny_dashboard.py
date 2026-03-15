@@ -3,7 +3,6 @@ from pygwalker_page import pygwalker_server, pygwalker_ui
 from shiny import App, ui
 from table import table_server, table_ui
 
-# UI
 app_ui = ui.page_fluid(
     ui.panel_title("CCN Data Library Dashboard"),
     ui.navset_tab(
@@ -26,10 +25,27 @@ app_ui = ui.page_fluid(
             pygwalker_ui("pygwalker_explorer"),
         ),
     ),
+    # JS handler so table can scroll to a row when map marker is clicked
+    ui.tags.script(
+        """
+        Shiny.addCustomMessageHandler("scroll_to_row", function(rowIndex) {
+            setTimeout(function() {
+                const grids = document.querySelectorAll(".shiny-data-grid-output, [data-testid='data-grid']");
+                grids.forEach(function(grid) {
+                    const rows = grid.querySelectorAll("tbody tr");
+                    if (rows[rowIndex]) {
+                        rows[rowIndex].scrollIntoView({ behavior: "smooth", block: "center" });
+                        rows[rowIndex].style.outline = "2px solid #ff3333";
+                        setTimeout(() => rows[rowIndex].style.outline = "", 1500);
+                    }
+                });
+            }, 100);
+        });
+    """
+    ),
 )
 
 
-# Server
 def server(input, output, session):
     table_state = table_server("data_editor")
     map_server("map_viewer", table_points_getter=table_state["map_points"])
