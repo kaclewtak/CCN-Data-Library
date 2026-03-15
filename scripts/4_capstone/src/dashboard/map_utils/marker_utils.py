@@ -30,14 +30,13 @@ def build_manual_markers(
 
         marker = ipyleaflet.CircleMarker(
             location=(lat, lng),
-            radius=9,
-            color="#ff3333",
-            fill_color="#ff3333",
+            radius=7,
+            color="#ffe033",
+            fill_color="#ffe033",
             fill_opacity=1,
             weight=3,
             opacity=1,
         )
-        # marker.popup = HTML(value=f"Manual Point<br>Lat: {lat}<br>Lng: {lng}")
         delete_btn = widgets.Button(
             description="Delete",
             button_style="danger",
@@ -59,22 +58,37 @@ def build_manual_markers(
     return layers
 
 
-def build_table_markers(table_points: pd.DataFrame) -> list[ipyleaflet.CircleMarker]:
+def build_table_markers(
+    table_points: pd.DataFrame,
+    on_select: Callable[[int], None] | None = None,
+) -> list[ipyleaflet.CircleMarker]:
     layers: list[ipyleaflet.CircleMarker] = []
-    for _, row in table_points.iterrows():
+    for i, (_, row) in enumerate(table_points.iterrows()):
         lat = float(row["latitude"])
         lng = float(row["longitude"])
         if not is_valid_coordinate(lat, lng):
             continue
+
         marker = ipyleaflet.CircleMarker(
             location=(lat, lng),
             radius=7,
-            color="#fdcd3a",
-            fill_color="#fdcd3a",
+            color="#6108e8",
+            fill_color="#6108e8",
             fill_opacity=0.9,
             weight=2,
             opacity=1,
         )
         marker.popup = HTML(value=f"Table Point<br>Lat: {lat}<br>Lng: {lng}")
+
+        if on_select is not None:
+
+            def make_click_handler(idx):
+                def on_click(**kwargs):
+                    on_select(idx)
+
+                return on_click
+
+            marker.on_click(make_click_handler(i))
+
         layers.append(marker)
     return layers
