@@ -56,6 +56,7 @@ __pycache__/
 # --- OS Junk ---
 .DS_Store
 Thumbs.db
+*:Zone.Identifier
 
 # --- VS Code ---
 # Keep settings.json and extensions.json,
