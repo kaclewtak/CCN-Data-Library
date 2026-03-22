@@ -9,9 +9,11 @@ from shiny import module, render, ui
 
 @module.ui
 def pygwalker_ui():
-    return ui.div(
-        ui.output_ui("pygwalker_view"),
-        style="height: 142vh; overflow: auto;",
+    return ui.TagList(
+        ui.div(
+            ui.output_ui("pygwalker_view"),
+            class_="pygwalker-container",
+        ),
     )
 
 

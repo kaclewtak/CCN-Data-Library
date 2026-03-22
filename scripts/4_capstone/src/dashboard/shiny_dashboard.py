@@ -1,9 +1,31 @@
 from map_panel import map_server, map_ui
 from pygwalker_page import pygwalker_server, pygwalker_ui
-from shiny import App, ui
+from shiny import App, reactive, ui
 from table import table_server, table_ui
 
 app_ui = ui.page_fluid(
+    ui.head_content(
+        ui.tags.style(
+            """
+            .pygwalker-container {
+                height: calc(100vh - 90px) !important;
+                overflow: hidden !important;
+            }
+            /* Shiny 1.5+ sets display:contents on .shiny-html-output when it has
+               children, which removes it from the box model and breaks height:100%
+               resolution for all descendants. Override it here. */
+            .pygwalker-container div.shiny-html-output {
+                display: block !important;
+                height: 100% !important;
+            }
+            .pygwalker-container [id^="ifr-pyg-"],
+            .pygwalker-container iframe {
+                height: 100% !important;
+                width: 100% !important;
+            }
+        """
+        )
+    ),
     ui.panel_title("CCN Data Library Dashboard"),
     ui.navset_tab(
         ui.nav_panel(
@@ -47,8 +69,9 @@ app_ui = ui.page_fluid(
 
 
 def server(input, output, session):
-    table_state = table_server("data_editor")
-    map_server("map_viewer", table_points_getter=table_state["map_points"])
+    selected_point = reactive.Value(None)
+    table_state = table_server("data_editor", selected_point=selected_point)
+    map_server("map_viewer", table_points_getter=table_state["map_points"], selected_point=selected_point)
     pygwalker_server("pygwalker_explorer", data_getter=table_state["data"])
 
 
