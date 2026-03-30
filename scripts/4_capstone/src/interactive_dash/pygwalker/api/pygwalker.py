@@ -1,53 +1,54 @@
 import base64
-from typing import List, Dict, Any, Optional, Union
-import urllib
 import json
-import os, sys, subprocess
+import os
+import subprocess
+import sys
+import urllib
 import urllib.parse
 import zlib
+from typing import Any, Dict, List, Optional, Union
 
-from typing_extensions import Literal
-from duckdb import ParserException
 import ipywidgets
 import pandas as pd
+from duckdb import ParserException
+from typing_extensions import Literal
 
+from pygwalker import __version__
+from pygwalker._constants import JUPYTER_BYTE_LIMIT, JUPYTER_WIDGETS_BYTE_LIMIT
 from pygwalker._typing import DataFrame, IAppearance, IThemeKey
+from pygwalker.communications.hacker_comm import BaseCommunication, HackerCommunication
 from pygwalker.data_parsers.base import BaseDataParser, FieldSpec
 from pygwalker.data_parsers.database_parser import Connector
-from pygwalker.utils.display import display_html
-from pygwalker.utils.randoms import rand_str
+from pygwalker.services.check_update import check_update
+from pygwalker.services.cloud_service import CloudService
+from pygwalker.services.config import get_local_user_id, set_config
+from pygwalker.services.data_parsers import get_parser
 from pygwalker.services.global_var import GlobalVarManager
+from pygwalker.services.preview_image import (
+    ChartData,
+    PreviewImageTool,
+    render_gw_chart_preview_html,
+    render_gw_preview_html,
+)
 from pygwalker.services.render import (
+    get_max_limited_datas,
     render_gwalker_html,
     render_gwalker_iframe,
-    get_max_limited_datas,
-    render_iframe_messages_html
+    render_iframe_messages_html,
 )
-from pygwalker.services.config import set_config
-from pygwalker.services.preview_image import (
-    PreviewImageTool,
-    ChartData,
-    render_gw_preview_html,
-    render_gw_chart_preview_html
-)
-from pygwalker.services.upload_data import (
-    BatchUploadDatasToolOnWidgets,
-    BatchUploadDatasToolOnJupyter
-)
-from pygwalker.services.config import get_local_user_id
-from pygwalker.services.spec import get_spec_json, fill_new_fields
-from pygwalker.services.data_parsers import get_parser
-from pygwalker.services.cloud_service import CloudService
-from pygwalker.services.check_update import check_update
+from pygwalker.services.spec import fill_new_fields, get_spec_json
 from pygwalker.services.track import track_event
-from pygwalker.utils.randoms import generate_hash_code
-from pygwalker.communications.hacker_comm import HackerCommunication, BaseCommunication
-from pygwalker._constants import JUPYTER_BYTE_LIMIT, JUPYTER_WIDGETS_BYTE_LIMIT
-from pygwalker import __version__
+from pygwalker.services.upload_data import (
+    BatchUploadDatasToolOnJupyter,
+    BatchUploadDatasToolOnWidgets,
+)
+from pygwalker.utils.display import display_html
+from pygwalker.utils.randoms import generate_hash_code, rand_str
 
 
 class PygWalker:
     """PygWalker"""
+
     def __init__(
         self,
         *,
@@ -67,7 +68,7 @@ class PygWalker:
         kanaries_api_key: str,
         default_tab: Literal["data", "vis"],
         gw_mode: Literal["explore", "renderer", "filter_renderer", "table"],
-        **kwargs
+        **kwargs,
     ):
         self.kanaries_api_key = kanaries_api_key or GlobalVarManager.kanaries_api_key
         if gid is None:
@@ -80,7 +81,7 @@ class PygWalker:
             field_specs=field_specs,
             cloud_computation=cloud_computation,
             kanaries_api_key=self.kanaries_api_key,
-            cloud_service=self.cloud_service
+            cloud_service=self.cloud_service,
         )
 
         suggest_kernel_computation = self.data_parser.data_size > JUPYTER_BYTE_LIMIT
@@ -127,28 +128,15 @@ class PygWalker:
         field_specs: List[FieldSpec],
         cloud_computation: bool,
         kanaries_api_key: str,
-        cloud_service: CloudService
+        cloud_service: CloudService,
     ) -> BaseDataParser:
-        data_parser = get_parser(
-            dataset,
-            field_specs,
-            other_params={"kanaries_api_key": kanaries_api_key}
-        )
+        data_parser = get_parser(dataset, field_specs, other_params={"kanaries_api_key": kanaries_api_key})
         if not cloud_computation:
             return data_parser
 
-        dataset_id = cloud_service.create_cloud_dataset(
-            data_parser,
-            f"temp_{rand_str()}",
-            False,
-            True
-        )
+        dataset_id = cloud_service.create_cloud_dataset(data_parser, f"temp_{rand_str()}", False, True)
 
-        return get_parser(
-            dataset_id,
-            field_specs,
-            other_params={"kanaries_api_key": kanaries_api_key}
-        )
+        return get_parser(dataset_id, field_specs, other_params={"kanaries_api_key": kanaries_api_key})
 
     def _get_parse_dsl_type(self, data_parser: BaseDataParser) -> Literal["server", "client"]:
         if data_parser.dataset_type.startswith("connector"):
@@ -170,23 +158,13 @@ class PygWalker:
 
     def _update_vis_spec(self, vis_spec: List[Dict[str, Any]]):
         self.vis_spec = vis_spec
-        self._chart_name_index_map = {
-            item["name"]: index
-            for index, item in enumerate(vis_spec)
-            if "name" in item
-        }
+        self._chart_name_index_map = {item["name"]: index for index, item in enumerate(vis_spec) if "name" in item}
 
     def _get_chart_map_dict(self, chart_map: Dict[str, ChartData]) -> Dict[str, Any]:
-        return {
-            key: value.dict(by_alias=True)
-            for key, value in chart_map.items()
-        }
+        return {key: value.dict(by_alias=True) for key, value in chart_map.items()}
 
     def _parse_chart_map_dict(self, chart_map_dict: Dict[str, Any]) -> Dict[str, ChartData]:
-        return {
-            key: ChartData.parse_obj(value)
-            for key, value in chart_map_dict.items()
-        }
+        return {key: ChartData.parse_obj(value) for key, value in chart_map_dict.items()}
 
     def to_html(self, iframe_width: Optional[str] = None, iframe_height: Optional[str] = None) -> str:
         props = self._get_props()
@@ -213,11 +191,7 @@ class PygWalker:
         and only a small amount of data will be output to the front end to complete the analysis of big data.
         """
         data_source = get_max_limited_datas(self.origin_data_source, JUPYTER_BYTE_LIMIT)
-        props = self._get_props(
-            "jupyter",
-            data_source,
-            len(self.origin_data_source) > len(data_source)
-        )
+        props = self._get_props("jupyter", data_source, len(self.origin_data_source) > len(data_source))
         iframe_html = self._get_render_iframe(props)
 
         if len(self.origin_data_source) > len(data_source):
@@ -242,16 +216,11 @@ class PygWalker:
         comm = HackerCommunication(self.gid)
         preview_tool = PreviewImageTool(self.gid)
         data_source = get_max_limited_datas(self.origin_data_source, JUPYTER_WIDGETS_BYTE_LIMIT)
-        props = self._get_props(
-            "jupyter_widgets",
-            data_source,
-            len(self.origin_data_source) > len(data_source)
-        )
+        props = self._get_props("jupyter_widgets", data_source, len(self.origin_data_source) > len(data_source))
         iframe_html = self._get_render_iframe(props, iframe_width=iframe_width, iframe_height=iframe_height)
 
         html_widgets = ipywidgets.Box(
-            [ipywidgets.HTML(iframe_html), comm.get_widgets()],
-            layout=ipywidgets.Layout(display='block')
+            [ipywidgets.HTML(iframe_html), comm.get_widgets()], layout=ipywidgets.Layout(display="block")
         )
 
         self._init_callback(comm, preview_tool)
@@ -300,11 +269,7 @@ class PygWalker:
         """
         Export the chart as a html string.
         """
-        return self._get_gw_chart_preview_html(
-            chart_name,
-            title="",
-            desc=""
-        )
+        return self._get_gw_chart_preview_html(chart_name, title="", desc="")
 
     def export_chart_png(self, chart_name: str) -> bytes:
         """
@@ -324,7 +289,8 @@ class PygWalker:
         prefix = "data:image/svg+xml;base64,"
         if isinstance(svg_str, str) and svg_str.startswith(prefix):
             import base64
-            return base64.b64decode(svg_str[len(prefix):])
+
+            return base64.b64decode(svg_str[len(prefix) :])
         if isinstance(svg_str, str):
             return svg_str.encode("utf-8")
         return svg_str
@@ -336,11 +302,7 @@ class PygWalker:
         if title is None:
             title = chart_name
 
-        html = self._get_gw_chart_preview_html(
-            chart_name,
-            title=title,
-            desc=desc
-        )
+        html = self._get_gw_chart_preview_html(chart_name, title=title, desc=desc)
         display_html(html)
 
     def get_single_chart_html_by_spec(
@@ -352,6 +314,7 @@ class PygWalker:
     ) -> str:
         # pylint: disable=import-outside-toplevel
         from pygwalker.utils.dsl_transform import dsl_to_workflow
+
         workflow = dsl_to_workflow(spec)
         data = self.data_parser.get_datas_by_payload(workflow)
         return render_gw_chart_preview_html(
@@ -360,7 +323,7 @@ class PygWalker:
             theme_key=self.theme_key,
             title=title,
             desc=desc,
-            appearance=self.appearance
+            appearance=self.appearance,
         )
 
     def _get_chart_by_name(self, chart_name: str) -> ChartData:
@@ -374,11 +337,7 @@ class PygWalker:
         self.comm = comm
 
         def reuqest_data_callback(_):
-            upload_tool.run(
-                records=self.origin_data_source,
-                sample_data_count=0,
-                data_source_id=self.data_source_id
-            )
+            upload_tool.run(records=self.origin_data_source, sample_data_count=0, data_source_id=self.data_source_id)
             return {}
 
         def get_latest_vis_spec(_):
@@ -393,7 +352,7 @@ class PygWalker:
                 "config": data["visSpec"],
                 "chart_map": {},
                 "version": __version__,
-                "workflow_list": data.get("workflowList", [])
+                "workflow_list": data.get("workflowList", []),
             }
             self._update_vis_spec(data["visSpec"])
             self.spec_version = __version__
@@ -429,45 +388,27 @@ class PygWalker:
         def _get_datas(data: Dict[str, Any]):
             sql = data["sql"]
             datas = self.data_parser.get_datas_by_sql(sql)
-            return {
-                "datas": datas
-            }
+            return {"datas": datas}
 
         def _get_datas_by_payload(data: Dict[str, Any]):
             datas = self.data_parser.get_datas_by_payload(data["payload"])
-            return {
-                "datas": datas
-            }
+            return {"datas": datas}
 
         def _batch_get_datas_by_sql(data: Dict[str, Any]):
             result = self.data_parser.batch_get_datas_by_sql(data["queryList"])
-            return {
-                "datas": result
-            }
+            return {"datas": result}
 
         def _batch_get_datas_by_payload(data: Dict[str, Any]):
             result = self.data_parser.batch_get_datas_by_payload(data["queryList"])
-            return {
-                "datas": result
-            }
+            return {"datas": result}
 
         def _get_spec_by_text(data: Dict[str, Any]):
-            callback = self.other_props.get(
-                "custom_ask_callback",
-                self.cloud_service.get_spec_by_text
-            )
-            return {
-                "data": callback(data["metas"], data["query"])
-            }
+            callback = self.other_props.get("custom_ask_callback", self.cloud_service.get_spec_by_text)
+            return {"data": callback(data["metas"], data["query"])}
 
         def _get_chart_by_chats(data: Dict[str, Any]):
-            callback = self.other_props.get(
-                "custom_chat_callback",
-                self.cloud_service.get_chart_by_chats
-            )
-            return {
-                "data": callback(data["metas"], data["chats"])
-            }
+            callback = self.other_props.get("custom_chat_callback", self.cloud_service.get_chart_by_chats)
+            return {"data": callback(data["metas"], data["chats"])}
 
         def _export_dataframe_by_payload(data: Dict[str, Any]):
             df = pd.DataFrame(self.data_parser.get_datas_by_payload(data["payload"]))
@@ -479,6 +420,44 @@ class PygWalker:
             df = pd.DataFrame(self.data_parser.get_datas_by_sql(sql))
             GlobalVarManager.set_last_exported_dataframe(df)
             self._last_exported_dataframe = df
+
+        def _update_cell(data: Dict[str, Any]):
+            row_index = int(data["rowIndex"])
+            fid = data["fid"]
+            value = data["value"]
+            df = self.data_parser.df
+
+            if hasattr(df, "iloc"):
+                # pandas DataFrame
+                if fid in df.columns:
+                    try:
+                        value = df[fid].dtype.type(value)
+                    except (ValueError, TypeError):
+                        pass
+                    df.at[row_index, fid] = value
+            else:
+                # polars DataFrame
+                import polars as pl
+
+                if fid in df.schema:
+                    col_dtype = df.schema[fid]
+                    try:
+                        value = pl.Series([value]).cast(col_dtype)[0]
+                    except Exception:
+                        pass
+                    self.data_parser.df = df.with_columns(
+                        pl.when(pl.int_range(0, pl.len(), eager=False) == row_index)
+                        .then(pl.lit(value, dtype=col_dtype))
+                        .otherwise(pl.col(fid))
+                        .alias(fid)
+                    )
+                    self.data_parser._duckdb_df = self.data_parser.df
+
+            # Update in-memory records cache so re-renders and exports reflect the change
+            if row_index < len(self.origin_data_source):
+                self.origin_data_source[row_index][fid] = value
+
+            return {}
 
         def _upload_to_cloud_charts(data: Dict[str, Any]):
             result = self.cloud_service.upload_cloud_chart(
@@ -500,7 +479,7 @@ class PygWalker:
                 spec_list=data["visSpec"],
                 is_public=data["isPublic"],
                 create_dashboard_flag=data["isCreateDashboard"],
-                appearance=self.appearance
+                appearance=self.appearance,
             )
             return {"dashboardId": result["dashboard_id"], "datasetId": result["dataset_id"]}
 
@@ -518,15 +497,21 @@ class PygWalker:
             return urllib.parse.quote(base64.b64encode(compressed_data).decode())
 
         def open_in_desktop(data: Dict[str, Any]):
-            spec = json.dumps(data['spec'])
-            fields = json.dumps(data['fields'])
-            data = json.dumps(self.data_parser.to_records(), default=lambda obj: obj.isoformat() if hasattr(obj, 'isoformat') else str(obj))
-            _open_protocol(f"gw://import?data={compress_data(data)}&spec={compress_data(spec)}&fields={compress_data(fields)}")
+            spec = json.dumps(data["spec"])
+            fields = json.dumps(data["fields"])
+            data = json.dumps(
+                self.data_parser.to_records(),
+                default=lambda obj: obj.isoformat() if hasattr(obj, "isoformat") else str(obj),
+            )
+            _open_protocol(
+                f"gw://import?data={compress_data(data)}&spec={compress_data(spec)}&fields={compress_data(fields)}"
+            )
 
         comm.register("get_latest_vis_spec", get_latest_vis_spec)
         comm.register("request_data", reuqest_data_callback)
         comm.register("ping", lambda _: {})
         comm.register("open_in_desktop", open_in_desktop)
+        comm.register("update_cell", _update_cell)
 
         if self.use_save_tool:
             comm.register("upload_spec_to_cloud", upload_spec_to_cloud)
@@ -551,10 +536,22 @@ class PygWalker:
 
     def _send_props_track(self, props: Dict[str, Any]):
         needed_fields = {
-            "id", "version", "hashcode", "themeKey",
-            "dark", "env", "specType", "needLoadDatas", "showCloudTool",
-            "useKernelCalc", "useSaveTool", "parseDslType", "gwMode", "datasetType",
-            "defaultTab", "useCloudCalc"
+            "id",
+            "version",
+            "hashcode",
+            "themeKey",
+            "dark",
+            "env",
+            "specType",
+            "needLoadDatas",
+            "showCloudTool",
+            "useKernelCalc",
+            "useSaveTool",
+            "parseDslType",
+            "gwMode",
+            "datasetType",
+            "defaultTab",
+            "useCloudCalc",
         }
         event_info = {key: value for key, value in props.items() if key in needed_fields}
         event_info["hasKanariesToken"] = bool(self.kanaries_api_key)
@@ -562,10 +559,7 @@ class PygWalker:
         track_event("invoke_props", event_info)
 
     def _get_props(
-        self,
-        env: str = "",
-        data_source: Optional[Dict[str, Any]] = None,
-        need_load_datas: bool = False
+        self, env: str = "", data_source: Optional[Dict[str, Any]] = None, need_load_datas: bool = False
     ) -> Dict[str, Any]:
         if data_source is None:
             data_source = self.origin_data_source
@@ -579,17 +573,14 @@ class PygWalker:
                 "privacy": GlobalVarManager.privacy,
             },
             "visSpec": self.vis_spec,
-            "rawFields": [
-                {**field, "offset": 0}
-                for field in self.field_specs
-            ],
+            "rawFields": [{**field, "offset": 0} for field in self.field_specs],
             "fieldkeyGuard": False,
             "themeKey": self.theme_key,
             "dark": self.appearance,
             "sourceInvokeCode": self.source_invoke_code,
             "dataSourceProps": {
-                'tunnelId': self.tunnel_id,
-                'dataSourceId': self.data_source_id,
+                "tunnelId": self.tunnel_id,
+                "dataSourceId": self.data_source_id,
             },
             "env": env,
             "specType": self.spec_type,
@@ -608,7 +599,7 @@ class PygWalker:
             "fieldMetas": self.data_parser.field_metas,
             "isExportDataFrame": self.is_export_dataframe,
             "defaultTab": self.default_tab,
-            "useCloudCalc": self.cloud_computation
+            "useCloudCalc": self.cloud_computation,
         }
 
         self._send_props_track(props)
@@ -620,7 +611,7 @@ class PygWalker:
         props: Dict[str, Any],
         return_iframe: bool = True,
         iframe_width: Optional[str] = None,
-        iframe_height: Optional[str] = None
+        iframe_height: Optional[str] = None,
     ) -> str:
         """Get render iframe html."""
         html = render_gwalker_html(self.gid, props)
@@ -642,11 +633,7 @@ class PygWalker:
             except ParserException:
                 datas.append([])
         html = render_gw_preview_html(
-            self.vis_spec,
-            datas,
-            self.theme_key,
-            self.gid if not manual else self.gid + rand_str(),
-            self.appearance
+            self.vis_spec, datas, self.theme_key, self.gid if not manual else self.gid + rand_str(), self.appearance
         )
 
         return html
@@ -665,5 +652,5 @@ class PygWalker:
             theme_key=self.theme_key,
             title=title,
             desc=desc,
-            appearance=self.appearance
+            appearance=self.appearance,
         )

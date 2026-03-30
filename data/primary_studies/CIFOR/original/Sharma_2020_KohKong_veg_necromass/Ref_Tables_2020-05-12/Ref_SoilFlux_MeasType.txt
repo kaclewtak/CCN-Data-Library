@@ -1,3 +1,0 @@
-"ID","SOILFLUX_ MEASTYP"
-1,"Chamber-based method"
-2,"Light response curve"
