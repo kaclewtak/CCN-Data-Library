@@ -21,6 +21,7 @@ dependencies = [
     "pyarrow>=23.0.1",
     "pygwalker",
     "scikit-learn>=1.8.0",
+    "scipy>=1.14.0",
     "shiny>=1.5.1",
     "shinywidgets>=0.7.1",
     "torch>=2.11.0",
