@@ -11,8 +11,6 @@ from typing import Any, Dict, List, Optional, Union
 import ipywidgets
 import pandas as pd
 from duckdb import ParserException
-from typing_extensions import Literal
-
 from pygwalker import __version__
 from pygwalker._constants import JUPYTER_BYTE_LIMIT, JUPYTER_WIDGETS_BYTE_LIMIT
 from pygwalker._typing import DataFrame, IAppearance, IThemeKey
@@ -44,6 +42,7 @@ from pygwalker.services.upload_data import (
 )
 from pygwalker.utils.display import display_html
 from pygwalker.utils.randoms import generate_hash_code, rand_str
+from typing_extensions import Literal
 
 
 class PygWalker:
@@ -421,44 +420,6 @@ class PygWalker:
             GlobalVarManager.set_last_exported_dataframe(df)
             self._last_exported_dataframe = df
 
-        def _update_cell(data: Dict[str, Any]):
-            row_index = int(data["rowIndex"])
-            fid = data["fid"]
-            value = data["value"]
-            df = self.data_parser.df
-
-            if hasattr(df, "iloc"):
-                # pandas DataFrame
-                if fid in df.columns:
-                    try:
-                        value = df[fid].dtype.type(value)
-                    except (ValueError, TypeError):
-                        pass
-                    df.at[row_index, fid] = value
-            else:
-                # polars DataFrame
-                import polars as pl
-
-                if fid in df.schema:
-                    col_dtype = df.schema[fid]
-                    try:
-                        value = pl.Series([value]).cast(col_dtype)[0]
-                    except Exception:
-                        pass
-                    self.data_parser.df = df.with_columns(
-                        pl.when(pl.int_range(0, pl.len(), eager=False) == row_index)
-                        .then(pl.lit(value, dtype=col_dtype))
-                        .otherwise(pl.col(fid))
-                        .alias(fid)
-                    )
-                    self.data_parser._duckdb_df = self.data_parser.df
-
-            # Update in-memory records cache so re-renders and exports reflect the change
-            if row_index < len(self.origin_data_source):
-                self.origin_data_source[row_index][fid] = value
-
-            return {}
-
         def _upload_to_cloud_charts(data: Dict[str, Any]):
             result = self.cloud_service.upload_cloud_chart(
                 data_parser=self.data_parser,
@@ -511,7 +472,6 @@ class PygWalker:
         comm.register("request_data", reuqest_data_callback)
         comm.register("ping", lambda _: {})
         comm.register("open_in_desktop", open_in_desktop)
-        comm.register("update_cell", _update_cell)
 
         if self.use_save_tool:
             comm.register("upload_spec_to_cloud", upload_spec_to_cloud)

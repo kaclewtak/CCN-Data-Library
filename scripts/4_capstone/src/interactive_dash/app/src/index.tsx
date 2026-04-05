@@ -411,18 +411,7 @@ function GWalkerComponent(props: IAppProps) {
         return (
             <React.StrictMode>
                 <RuncellBanner env={props.env} />
-                <Tabs defaultValue="explore" className="w-full">
-                    <TabsList>
-                        <TabsTrigger value="explore">Explore</TabsTrigger>
-                        <TabsTrigger value="edit">Edit Data</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="explore">
-                        <ExploreApp {...props} dataSource={dataSource} initChartFlag={initChartFlag} />
-                    </TabsContent>
-                    <TabsContent value="edit">
-                        <EditableTableApp {...props} dataSource={dataSource} />
-                    </TabsContent>
-                </Tabs>
+                <ExploreApp {...props} dataSource={dataSource} initChartFlag={initChartFlag} />
             </React.StrictMode>
         )
     }
@@ -432,7 +421,7 @@ function GWalkerComponent(props: IAppProps) {
             <RuncellBanner env={props.env} />
             { props.gwMode === "renderer" && <PureRednererApp {...props} dataSource={dataSource}  /> }
             { props.gwMode === "filter_renderer" && <GraphicRendererApp {...props} dataSource={dataSource} /> }
-            { props.gwMode === "table" && <EditableTableApp {...props} dataSource={dataSource} /> }
+            { props.gwMode === "table" && <TableWalkerApp {...props} dataSource={dataSource} /> }
         </React.StrictMode>
     )
 }
@@ -542,118 +531,6 @@ function GraphicRendererApp(props: IAppProps) {
             </Tabs>
         </React.StrictMode>
     )
-}
-
-function EditableTableApp(props: IAppProps) {
-    const fields = props.rawFields;
-    const PAGE_SIZE = 20;
-    const [rows, setRows] = useState<IRow[]>(props.dataSource);
-    const [page, setPage] = useState(0);
-    const [editingCell, setEditingCell] = useState<{ rowIndex: number; fid: string } | null>(null);
-    const [editValue, setEditValue] = useState("");
-
-    const totalRows = rows.length;
-    const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
-    const pageRows = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-
-    const startEdit = (rowIdx: number, fid: string, currentValue: any) => {
-        setEditingCell({ rowIndex: rowIdx, fid });
-        setEditValue(currentValue == null ? "" : String(currentValue));
-    };
-
-    const commitEdit = async () => {
-        if (!editingCell) return;
-        const { rowIndex, fid } = editingCell;
-        const absRowIndex = page * PAGE_SIZE + rowIndex;
-        const value = editValue;
-        setEditingCell(null);
-        setRows(prev => {
-            const next = [...prev];
-            next[absRowIndex] = { ...next[absRowIndex], [fid]: value };
-            return next;
-        });
-        try {
-            await communicationStore.comm?.sendMsg("update_cell", { rowIndex: absRowIndex, fid, value });
-        } catch (e) {
-            console.error("update_cell failed", e);
-        }
-    };
-
-    const cancelEdit = () => setEditingCell(null);
-
-    return (
-        <React.StrictMode>
-            <div className="overflow-auto">
-                <div className="flex items-center justify-between p-2 text-sm text-muted-foreground">
-                    <span>
-                        Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalRows)} of {totalRows}
-                    </span>
-                    <div className="space-x-2">
-                        <button
-                            className="px-2 py-1 border rounded disabled:opacity-40"
-                            disabled={page === 0}
-                            onClick={() => setPage(p => p - 1)}
-                        >Prev</button>
-                        <button
-                            className="px-2 py-1 border rounded disabled:opacity-40"
-                            disabled={page >= totalPages - 1}
-                            onClick={() => setPage(p => p + 1)}
-                        >Next</button>
-                    </div>
-                </div>
-                <div className="overflow-y-auto" style={{ maxHeight: "600px" }}>
-                    <table className="min-w-full border-x text-xs font-mono">
-                        <thead className="sticky top-0 bg-background">
-                            <tr className="divide-x divide-border border-b">
-                                {fields.map(f => (
-                                    <th
-                                        key={f.fid}
-                                        className="whitespace-nowrap px-4 py-3 text-left font-medium text-foreground bg-background"
-                                        title="Click a cell to edit"
-                                    >
-                                        {f.name || f.fid}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border bg-background">
-                            {pageRows.map((row, rowIdx) => (
-                                <tr key={rowIdx} className="divide-x divide-border">
-                                    {fields.map(f => {
-                                        const isEditing = editingCell?.rowIndex === rowIdx && editingCell?.fid === f.fid;
-                                        const cellValue = row[f.fid];
-                                        return (
-                                            <td
-                                                key={f.fid}
-                                                className="whitespace-nowrap px-4 py-2 text-muted-foreground max-w-[240px] cursor-text hover:bg-accent"
-                                                onClick={() => startEdit(rowIdx, f.fid, cellValue)}
-                                            >
-                                                {isEditing ? (
-                                                    <input
-                                                        autoFocus
-                                                        className="w-full min-w-[80px] bg-background border border-primary rounded px-1 text-foreground outline-none"
-                                                        value={editValue}
-                                                        onChange={e => setEditValue(e.target.value)}
-                                                        onBlur={commitEdit}
-                                                        onKeyDown={e => {
-                                                            if (e.key === "Enter") commitEdit();
-                                                            if (e.key === "Escape") cancelEdit();
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <span>{cellValue == null ? "" : String(cellValue)}</span>
-                                                )}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </React.StrictMode>
-    );
 }
 
 function TableWalkerApp(props: IAppProps) {
