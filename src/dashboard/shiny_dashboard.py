@@ -1,19 +1,29 @@
+from eo_panel import eo_server, eo_ui
 from map_panel import map_server, map_ui
 from shiny import App, reactive, ui
 from table import table_server, table_ui
 
 app_ui = ui.page_fluid(
     ui.panel_title("CCN Data Library Dashboard"),
-    ui.layout_columns(
-        ui.div(
-            table_ui("data_editor"),
-            style="height: 88vh; overflow: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;",
+    ui.navset_tab(
+        ui.nav_panel(
+            "Table & Map",
+            ui.layout_columns(
+                ui.div(
+                    table_ui("data_editor"),
+                    style="height: 88vh; overflow: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;",
+                ),
+                ui.div(
+                    map_ui("map_viewer"),
+                    style="height: 88vh; overflow: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;",
+                ),
+                col_widths=[6, 6],
+            ),
         ),
-        ui.div(
-            map_ui("map_viewer"),
-            style="height: 88vh; overflow: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;",
+        ui.nav_panel(
+            "Satellite Search",
+            eo_ui("eo_search"),
         ),
-        col_widths=[6, 6],
     ),
     # JS handler so table can scroll to a row when map marker is clicked
     ui.tags.script(
@@ -48,6 +58,10 @@ def server(input, output, session):
         "map_viewer",
         table_points_getter=table_state["map_points"],
         selected_point=selected_point,
+    )
+    eo_server(
+        "eo_search",
+        table_points_getter=table_state["map_points"],
     )
 
 
