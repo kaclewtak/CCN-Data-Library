@@ -48,7 +48,7 @@ requires-dist = [
     { name = "pandera", specifier = ">=0.29.0" },
     { name = "polars", specifier = ">=1.38.1" },
     { name = "pyarrow", specifier = ">=23.0.1" },
-    { name = "pygwalker", specifier = ">=0.4.9" },
+    { name = "pygwalker", editable = "src/interactive_dash" },
     { name = "shiny", specifier = ">=1.5.1" },
     { name = "shinywidgets", specifier = ">=0.7.1" },
 ]
@@ -2003,8 +2003,7 @@ wheels = [
 
 [[package]]
 name = "pygwalker"
-version = "0.5.0.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "src/interactive_dash" }
 dependencies = [
     { name = "anywidget" },
     { name = "appdirs" },
@@ -2025,7 +2024,6 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pydantic" },
     { name = "pytz" },
-    { name = "quickjs" },
     { name = "requests" },
     { name = "segment-analytics-python" },
     { name = "sqlalchemy" },
@@ -2033,10 +2031,60 @@ dependencies = [
     { name = "traitlets" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/42/3e/01b1f66339acda385a44ceb0b72311081dc273bf88b0fdca6966a80a73ee/pygwalker-0.5.0.0.tar.gz", hash = "sha256:cb2f11088c7308da03dc21a176a03dd8eb77dc611835deffd24168960e48f6de", size = 4911427, upload-time = "2025-12-30T19:45:57.444Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f2/bd/8819e39767bf7b633deb1a4e5d735cfc54954ab5a883ec9b582dccc146d8/pygwalker-0.5.0.0-py3-none-any.whl", hash = "sha256:04ade2f3e616ee5360898dbcc7cea0471a7bac6e1f379ecc4888bb000c8b1a71", size = 4841774, upload-time = "2025-12-30T19:45:55.597Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "anywidget" },
+    { name = "appdirs" },
+    { name = "arrow" },
+    { name = "astor" },
+    { name = "build", marker = "extra == 'dev'" },
+    { name = "cachetools" },
+    { name = "duckdb", specifier = ">=0.10.4,<2.0.0" },
+    { name = "gw-dsl-parser", specifier = "==0.1.49.1" },
+    { name = "ipylab", specifier = "<=1.0.0" },
+    { name = "ipython" },
+    { name = "ipywidgets" },
+    { name = "ipywidgets", marker = "extra == 'labv4'", specifier = ">=8.0.0" },
+    { name = "ipywidgets", marker = "extra == 'notebook'", specifier = ">7.0.0,<8.0.0" },
+    { name = "jinja2" },
+    { name = "jupyter-client", marker = "extra == 'labv4'", specifier = ">7.4.9" },
+    { name = "jupyter-client", marker = "extra == 'notebook'", specifier = ">6.0.0,<=7.4.9" },
+    { name = "jupyter-server", marker = "extra == 'labv4'", specifier = ">2.5.0" },
+    { name = "jupyter-server", marker = "extra == 'notebook'", specifier = "<=2.5.0" },
+    { name = "jupyter-server-proxy", marker = "extra == 'dev'" },
+    { name = "jupyterlab", marker = "extra == 'dev'" },
+    { name = "kanaries-track", specifier = "==0.0.5" },
+    { name = "mini-racer", marker = "extra == 'all'", specifier = ">=0.12" },
+    { name = "mini-racer", marker = "extra == 'export'", specifier = ">=0.12" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "pandas" },
+    { name = "pandas", marker = "extra == 'all'" },
+    { name = "pandas", marker = "extra == 'pandas'" },
+    { name = "pandas", marker = "extra == 'snowflake'" },
+    { name = "polars", marker = "extra == 'all'" },
+    { name = "polars", marker = "extra == 'polars'" },
+    { name = "psutil" },
+    { name = "pyarrow" },
+    { name = "pyarrow", marker = "extra == 'snowflake'", specifier = "==10.0.1" },
+    { name = "pydantic" },
+    { name = "pytz" },
+    { name = "reflex", marker = "extra == 'all'" },
+    { name = "reflex", marker = "extra == 'reflex'" },
+    { name = "requests" },
+    { name = "segment-analytics-python", specifier = "==2.2.3" },
+    { name = "snowflake-sqlalchemy", marker = "extra == 'snowflake'", specifier = "==1.5.0" },
+    { name = "sqlalchemy" },
+    { name = "sqlalchemy", marker = "extra == 'snowflake'", specifier = "==1.4.49" },
+    { name = "sqlglot", specifier = ">=23.15.8" },
+    { name = "streamlit", marker = "extra == 'all'" },
+    { name = "streamlit", marker = "extra == 'streamlit'" },
+    { name = "traitlets" },
+    { name = "twine", marker = "extra == 'dev'" },
+    { name = "typing-extensions" },
 ]
+provides-extras = ["all", "dev", "export", "labv4", "notebook", "pandas", "polars", "reflex", "snowflake", "streamlit"]
 
 [[package]]
 name = "pyobjc-core"
@@ -2294,12 +2342,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/f6/45/eafb0bba0f9988f6a
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3c/26/1062c7ec1b053db9e499b4d2d5bc231743201b74051c973dadeac80a8f43/questionary-2.1.1-py3-none-any.whl", hash = "sha256:a51af13f345f1cdea62347589fbb6df3b290306ab8930713bfae4d475a7d4a59", size = 36753, upload-time = "2025-08-28T19:00:19.56Z" },
 ]
-
-[[package]]
-name = "quickjs"
-version = "1.19.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f1/a7/8fac2e213db8108d8108e9f1ee8d6c2abfcbe943238b0960585c26666862/quickjs-1.19.4.tar.gz", hash = "sha256:1205953abc24ff757f4a795304d5d61e4bf1e555c9ef6ec96a132d4b95535484", size = 456179, upload-time = "2023-11-19T10:06:39.445Z" }
 
 [[package]]
 name = "referencing"
@@ -2657,11 +2699,11 @@ wheels = [
 
 [[package]]
 name = "sqlglot"
-version = "29.0.1"
+version = "30.0.3"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/61/12/c3f7533fde302fcd59bebcd4c2e46d5bf0eef21f183c67995bbb010fb578/sqlglot-29.0.1.tar.gz", hash = "sha256:0010b4f77fb996c8d25dd4b16f3654e6da163ff1866ceabc70b24e791c203048", size = 5760786, upload-time = "2026-02-23T21:41:20.178Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/7a/3b6a8853fc2fa166f785a8ea4fecde46f70588e35471bc7811373da31a49/sqlglot-30.0.3.tar.gz", hash = "sha256:35ba7514c132b54f87fd1732a65a73615efa9fd83f6e1eed0a315bc9ee3e1027", size = 5802632, upload-time = "2026-03-19T16:51:39.166Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/c9/f58c3a17beb650700f9d2eccd410726b6d96df8953663700764ca48636c7/sqlglot-29.0.1-py3-none-any.whl", hash = "sha256:06a473ea6c2b3632ac67bd38e687a6860265bf4156e66b54adeda15d07f00c65", size = 611448, upload-time = "2026-02-23T21:41:18.008Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/13/b57ab75b0f60b5ee8cb8924bc01a5c419ed3221e00f8f11f8c059a707eb7/sqlglot-30.0.3-py3-none-any.whl", hash = "sha256:5489cc98b5666f1fafc21e0304ca286e513e142aa054ee5760806a2139d07a05", size = 651853, upload-time = "2026-03-19T16:51:36.241Z" },
 ]
 
 [[package]]
