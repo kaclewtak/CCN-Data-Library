@@ -1,0 +1,10 @@
+study_id,core_id,species_code,code_type,habitat
+Drexler_et_al_2009,BACHI,Salix lasiolepis,Genus species,swamp
+Drexler_et_al_2009,BACHI,Cornus sericea,Genus species,swamp
+Drexler_et_al_2009,BACHI,Phragmites australis,Genus species,marsh
+Drexler_et_al_2009,BACHI,Rosa californica,Genus species,marsh
+Drexler_et_al_2009,FW,Cornus sericea,Genus species,swamp
+Drexler_et_al_2009,FW,Salix lasiolepis,Genus species,swamp
+Drexler_et_al_2009,FW,Athyrium filix-femina,Genus species,marsh
+Drexler_et_al_2009,TT,Cornus sericea,Genus species,swamp
+Drexler_et_al_2009,TT,Salix lasiolepis,Genus species,swamp
