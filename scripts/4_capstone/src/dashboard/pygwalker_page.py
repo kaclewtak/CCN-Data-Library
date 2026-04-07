@@ -9,11 +9,12 @@ from shiny import module, render, ui
 
 @module.ui
 def pygwalker_ui():
-    return ui.TagList(
+    return ui.div(
         ui.div(
             ui.output_ui("pygwalker_view"),
             class_="pygwalker-container",
         ),
+        class_="pygwalker-page",
     )
 
 

@@ -1,3 +1,4 @@
+from data_inventory import data_inventory_server, data_inventory_ui
 from map_panel import map_server, map_ui
 from pygwalker_page import pygwalker_server, pygwalker_ui
 from shiny import App, reactive, ui
@@ -7,21 +8,63 @@ app_ui = ui.page_fluid(
     ui.head_content(
         ui.tags.style(
             """
+            html,
+            body {
+                height: 100%;
+            }
+            body > .container-fluid {
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+            body > .container-fluid > h2,
+            body > .container-fluid > .nav {
+                flex: 0 0 auto;
+            }
+            body > .container-fluid > .tab-content {
+                flex: 1 1 auto;
+                min-height: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            body > .container-fluid > .tab-content > .tab-pane {
+                min-height: 0;
+            }
+            body > .container-fluid > .tab-content > .tab-pane.active {
+                display: flex;
+                flex: 1 1 auto;
+                flex-direction: column;
+            }
+            .pygwalker-page {
+                height: 88vh;
+                overflow: hidden;
+            }
             .pygwalker-container {
-                height: calc(100vh - 90px) !important;
+                display: flex;
+                flex: 1 1 auto;
+                height: 100%;
+                min-height: 0;
                 overflow: hidden !important;
             }
             /* Shiny 1.5+ sets display:contents on .shiny-html-output when it has
                children, which removes it from the box model and breaks height:100%
                resolution for all descendants. Override it here. */
-            .pygwalker-container div.shiny-html-output {
-                display: block !important;
+            .pygwalker-container > .shiny-html-output,
+            .pygwalker-container > .shiny-html-output > [id^="ifr-pyg-"] {
+                display: flex !important;
+                flex: 1 1 auto;
                 height: 100% !important;
+                min-height: 0;
             }
             .pygwalker-container [id^="ifr-pyg-"],
             .pygwalker-container iframe {
-                height: 100% !important;
                 width: 100% !important;
+            }
+            .pygwalker-container iframe {
+                display: block;
+                flex: 1 1 auto;
+                min-height: 0;
+                height: 100% !important;
             }
         """
         )
@@ -46,6 +89,10 @@ app_ui = ui.page_fluid(
             "Data Explorer",
             pygwalker_ui("pygwalker_explorer"),
         ),
+        ui.nav_panel(
+            "Data Inventory",
+            data_inventory_ui("inventory"),
+        ),
     ),
     # JS handler so table can scroll to a row when map marker is clicked
     ui.tags.script(
@@ -63,6 +110,23 @@ app_ui = ui.page_fluid(
                 });
             }, 100);
         });
+
+        document.addEventListener("shown.bs.tab", function(event) {
+            if (event.target?.getAttribute("data-value") !== "Data Explorer") {
+                return;
+            }
+            setTimeout(function() {
+                window.dispatchEvent(new Event("resize"));
+                document.querySelectorAll(".pygwalker-container iframe").forEach(function(iframe) {
+                    try {
+                        if (iframe.contentWindow) {
+                            iframe.contentWindow.dispatchEvent(new Event("resize"));
+                        }
+                    } catch (error) {
+                    }
+                });
+            }, 50);
+        });
     """
     ),
 )
@@ -73,6 +137,7 @@ def server(input, output, session):
     table_state = table_server("data_editor", selected_point=selected_point)
     map_server("map_viewer", table_points_getter=table_state["map_points"], selected_point=selected_point)
     pygwalker_server("pygwalker_explorer", data_getter=table_state["data"])
+    data_inventory_server("inventory")
 
 
 app = App(app_ui, server)
