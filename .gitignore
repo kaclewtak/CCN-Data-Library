@@ -70,4 +70,4 @@ Thumbs.db
 *.log
 
 /comp_vision
-/z_staging
+/output
