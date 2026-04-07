@@ -49,4 +49,4 @@ _DEFAULT_SPEC = json.dumps(
 
 
 def get_pygwalker_html(df: pl.DataFrame) -> str:
-    return pyg.to_html(df, spec=_DEFAULT_SPEC)
+    return pyg.to_html(df, spec=_DEFAULT_SPEC, **{"width": "100%", "height": "100%"})
