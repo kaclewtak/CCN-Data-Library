@@ -5,8 +5,7 @@ from pathlib import Path
 import pandas as pd
 import polars as pl
 from shiny import module, reactive, render, ui
-from table_utils.assets_utils import TABLE_SCROLL_PERSISTENCE_SCRIPT
-from table_utils.dataframe_utils import (
+from utils.dataframe import (
     add_column_with_default,
     append_blank_row,
     is_blank_value,
@@ -16,12 +15,12 @@ from table_utils.dataframe_utils import (
     set_cell_value,
     sync_row_highlight_after_remove,
 )
-from table_utils.geo_utils import (
+from utils.geo import (
     dataframe_to_map_points,
     find_lat_lon_columns,
     row_has_complete_lat_lon,
 )
-from table_utils.io_utils import (
+from utils.io import (
     autosave_file_path,
     excel_sheet_names,
     file_modified_time,
@@ -30,10 +29,228 @@ from table_utils.io_utils import (
     read_uploaded_dataframe,
     write_autosave_csv,
 )
-from table_utils.style_utils import table_styles
-from table_utils.ui_utils import build_compact_controls
 
-# filepath: /home/klewtak/NASA/CCN-Data-Library/scripts/4_capstone/src/dashboard/dashboard_table.py
+# ---------------------------------------------------------------------------
+# Inlined from table_utils/style_utils.py
+# ---------------------------------------------------------------------------
+
+
+def table_styles(
+    df: pl.DataFrame,
+    highlighted_new_row: int | None,
+    highlighted_new_col: str | None,
+) -> list[render.StyleInfo]:
+    styles: list[render.StyleInfo] = []
+
+    if highlighted_new_row is not None and 0 <= highlighted_new_row < df.height:
+        styles.append(
+            {
+                "rows": [highlighted_new_row],
+                "style": {
+                    "paddingTop": "11px",
+                    "paddingBottom": "11px",
+                    "fontStyle": "italic",
+                },
+            }
+        )
+
+    if df.height > 0:
+        styles.append(
+            {
+                "rows": [df.height - 1],
+                "style": {
+                    "paddingBottom": "22px",
+                },
+            }
+        )
+
+    if highlighted_new_col is not None and highlighted_new_col in df.columns:
+        styles.append(
+            {
+                "cols": [highlighted_new_col],
+                "style": {
+                    "minWidth": "150px",
+                    "paddingTop": "8px",
+                    "paddingBottom": "8px",
+                    "fontStyle": "italic",
+                },
+            }
+        )
+
+    return styles
+
+
+# ---------------------------------------------------------------------------
+# Inlined from table_utils/ui_utils.py
+# ---------------------------------------------------------------------------
+
+
+def build_compact_controls(panel_name: str):
+    if panel_name == "load":
+        return ui.div(
+            ui.layout_columns(
+                ui.input_file(
+                    "file",
+                    "Upload CSV/Excel",
+                    accept=[".csv", ".xlsx", ".xls"],
+                    multiple=False,
+                ),
+                ui.input_select(
+                    "sheet_name",
+                    "Excel sheet",
+                    choices=["(first sheet)"],
+                    selected="(first sheet)",
+                ),
+                ui.input_text("csv_sep", "CSV separator", value=","),
+                col_widths=[5, 4, 3],
+            ),
+            class_="table-controls-panel load-controls-panel",
+        )
+
+    if panel_name == "download":
+        return ui.div(
+            ui.download_button("download_csv", "Download edited CSV", class_="btn-sm"),
+            class_="table-controls-panel",
+        )
+
+    if panel_name == "schema":
+        return ui.div(
+            ui.output_text_verbatim("schema_text"),
+            class_="table-controls-panel",
+        )
+
+    if panel_name == "status":
+        return ui.div(
+            ui.output_text_verbatim("status"),
+            class_="table-controls-panel",
+        )
+
+    if panel_name == "map":
+        return ui.div(
+            ui.output_ui("lat_lon_prompt"),
+            class_="table-controls-panel",
+        )
+
+    return ui.div()
+
+
+# ---------------------------------------------------------------------------
+# Inlined from table_utils/assets_utils.py
+# ---------------------------------------------------------------------------
+
+TABLE_SCROLL_PERSISTENCE_SCRIPT = """
+(() => {
+    if (window.__tableScrollPersistenceInit) {
+        return;
+    }
+    window.__tableScrollPersistenceInit = true;
+
+    const state = new Map();
+
+    const isTableOutputId = (id) => {
+        if (!id) {
+            return false;
+        }
+        return id === "table" || id.endsWith("-table");
+    };
+
+    const findScrollable = (root) => {
+        if (!root) {
+            return null;
+        }
+
+        const candidates = [root, ...root.querySelectorAll("*")];
+        for (const el of candidates) {
+            const style = window.getComputedStyle(el);
+            const yAuto = style.overflowY === "auto" || style.overflowY === "scroll";
+            const xAuto = style.overflowX === "auto" || style.overflowX === "scroll";
+            const canY = yAuto && el.scrollHeight > el.clientHeight;
+            const canX = xAuto && el.scrollWidth > el.clientWidth;
+            if (canY || canX) {
+                return el;
+            }
+        }
+        return null;
+    };
+
+    const save = (id) => {
+        const root = document.getElementById(id);
+        const scrollable = findScrollable(root);
+        if (!scrollable) {
+            return;
+        }
+        state.set(id, {
+            top: scrollable.scrollTop,
+            left: scrollable.scrollLeft,
+        });
+    };
+
+    const restore = (id) => {
+        const root = document.getElementById(id);
+        const scrollable = findScrollable(root);
+        const saved = state.get(id);
+        if (!scrollable || !saved) {
+            return;
+        }
+        scrollable.scrollTop = saved.top;
+        scrollable.scrollLeft = saved.left;
+    };
+
+    const attach = (id) => {
+        const root = document.getElementById(id);
+        if (!root || root.dataset.scrollPersistAttached === "1") {
+            return;
+        }
+
+        root.dataset.scrollPersistAttached = "1";
+
+        root.addEventListener(
+            "scroll",
+            () => {
+                save(id);
+            },
+            { passive: true, capture: true }
+        );
+
+        const observer = new MutationObserver(() => {
+            restore(id);
+        });
+        observer.observe(root, { childList: true, subtree: true });
+
+        restore(id);
+    };
+
+    const scan = () => {
+        const nodes = document.querySelectorAll(".shiny-bound-output[id]");
+        for (const node of nodes) {
+            if (isTableOutputId(node.id)) {
+                attach(node.id);
+            }
+        }
+    };
+
+    const bodyObserver = new MutationObserver(() => {
+        scan();
+    });
+    bodyObserver.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener(
+        "shiny:value",
+        (event) => {
+            const target = event.target;
+            const id = target && target.id ? target.id : null;
+            if (!isTableOutputId(id)) {
+                return;
+            }
+            setTimeout(() => restore(id), 0);
+            setTimeout(() => restore(id), 80);
+        },
+        true
+    );
+
+    scan();
+})();
+"""
 
 
 # ---------------------------

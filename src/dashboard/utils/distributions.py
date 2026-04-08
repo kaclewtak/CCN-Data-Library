@@ -5,12 +5,7 @@ import pandas as pd
 import seaborn as sns
 from scipy import stats
 
-from data_inventory_utils.synthesis_io import (
-    BAD_KEYWORDS,
-    BD_KEYWORDS,
-    SOM_KEYWORDS,
-    find_best_column,
-)
+from utils.synthesis_io import BAD_KEYWORDS, BD_KEYWORDS, SOM_KEYWORDS, find_best_column
 
 
 def find_comparable_columns(user_df: pd.DataFrame, inventory_columns: list[str] | None = None) -> dict[str, str]:

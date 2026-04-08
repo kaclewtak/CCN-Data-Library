@@ -1,12 +1,14 @@
-from data_inventory import data_inventory_server, data_inventory_ui
-from eo_panel import eo_server, eo_ui
-from map_panel import map_server, map_ui
-from pygwalker_page import pygwalker_server, pygwalker_ui
+from panels.data_inventory import data_inventory_server, data_inventory_ui
+from panels.eo_panel import eo_server, eo_ui
+from panels.map_panel import map_server, map_ui
+from panels.pygwalker_page import pygwalker_server, pygwalker_ui
+from panels.qa_panel import qa_server, qa_ui
+from panels.table import table_server, table_ui
 from shiny import App, reactive, ui
-from table import table_server, table_ui
 
 app_ui = ui.page_fluid(
     ui.head_content(
+        ui.tags.script(src="https://cdn.plot.ly/plotly-2.35.2.min.js"),
         ui.tags.style(
             """
             html,
@@ -68,7 +70,7 @@ app_ui = ui.page_fluid(
                 height: 100% !important;
             }
         """
-        )
+        ),
     ),
     ui.panel_title("CCN Data Library Dashboard"),
     ui.navset_tab(
@@ -97,6 +99,10 @@ app_ui = ui.page_fluid(
         ui.nav_panel(
             "Data Inventory",
             data_inventory_ui("inventory"),
+        ),
+        ui.nav_panel(
+            "QA Dashboard",
+            qa_ui("qa_dashboard"),
         ),
     ),
     # JS handler so table can scroll to a row when map marker is clicked
@@ -155,6 +161,7 @@ def server(input, output, session):
     )
     pygwalker_server("pygwalker_explorer", data_getter=table_state["data"])
     data_inventory_server("inventory")
+    qa_server("qa_dashboard", data_getter=table_state["data"])
 
 
 app = App(app_ui, server)

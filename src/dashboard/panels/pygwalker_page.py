@@ -1,10 +1,25 @@
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable
+from pathlib import Path
 
 import polars as pl
-from pygwalker_utils.render_utils import get_pygwalker_html
 from shiny import module, render, ui
+
+# ---------------------------------------------------------------------------
+# Inlined from pygwalker_utils/render_utils.py
+# ---------------------------------------------------------------------------
+
+_local_pygwalker = Path(__file__).resolve().parents[3] / "interactive_dash"
+if _local_pygwalker.is_dir() and str(_local_pygwalker) not in sys.path:
+    sys.path.insert(0, str(_local_pygwalker))
+
+import pygwalker as pyg  # noqa: E402
+
+
+def get_pygwalker_html(df: pl.DataFrame) -> str:
+    return pyg.to_html(df, spec="", **{"width": "100%", "height": "100%"})
 
 
 @module.ui
