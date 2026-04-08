@@ -4,14 +4,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from data_inventory_utils.distribution_utils import (
-    compare_distributions,
-    find_comparable_columns,
-)
-from data_inventory_utils.geo_gap_utils import generate_gap_hints
-from data_inventory_utils.inventory_io import build_inventory_df
-from data_inventory_utils.synthesis_io import build_synthesis_df
 from shiny import module, reactive, render, ui
+from utils.distributions import compare_distributions, find_comparable_columns
+from utils.geo_gaps import generate_gap_hints
+from utils.inventory_io import build_inventory_df
+from utils.synthesis_io import build_synthesis_df
 
 matplotlib.use("Agg")
 

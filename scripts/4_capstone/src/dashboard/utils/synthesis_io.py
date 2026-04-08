@@ -144,7 +144,7 @@ def load_som_bd_from_file(path: str, som_col: str, bd_col: str, study_id: str) -
 
 def build_synthesis_df(df_inv: pd.DataFrame) -> pd.DataFrame:
     # Fast path: if inventory came from CCN_synthesis flat files, load depthseries directly.
-    from data_inventory_utils.inventory_io import SYNTHESIS_ROOT
+    from utils.inventory_io import SYNTHESIS_ROOT
 
     depthseries_path = SYNTHESIS_ROOT / "CCN_depthseries.csv"
     cores_path = SYNTHESIS_ROOT / "CCN_cores.csv"

@@ -4,7 +4,8 @@ from typing import Any
 
 import pandas as pd
 import polars as pl
-from table_utils.dataframe_utils import polars_to_pandas
+
+from utils.dataframe import polars_to_pandas
 
 
 def find_lat_lon_columns(columns: list[str]) -> tuple[str, str] | None:
