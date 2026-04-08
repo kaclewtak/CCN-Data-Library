@@ -53,6 +53,15 @@ import FormatSpec from './utils/formatSpec';
 import { getOpenDesktopTool } from './tools/openDesktop';
 import RuncellBanner from './components/runcellBanner';
 
+// ---- CCN ADDITION START: default config type ----
+import type { IDefaultConfig } from '@kanaries/graphic-walker/interfaces';
+// CCN SOFT-DISABLED: CoordSystemToggle moved from standalone JSX into
+// the toolbar `extra` array as two toggle items.  The component file is
+// kept for reference but no longer imported here.
+// import CoordSystemToggle from './components/ccn/CoordSystemToggle';
+import { GlobeAltIcon } from '@heroicons/react/24/outline';
+// ---- CCN ADDITION END ----
+
 
 const initChart = async (gwRef: React.MutableRefObject<IGWHandler | null>, total: number, props: IAppProps) => {
     if (props.needInitChart && props.env === "jupyter_widgets" && total !== 0) {
@@ -159,6 +168,9 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     const [visSpec, setVisSpec] = useState(props.visSpec);
     const [hideModeOption, _] = useState(true);
     const [isChanged, setIsChanged] = useState(false);
+    // ---- CCN ADDITION START: track coord system for toolbar toggle reactivity ----
+    const [coordSystem, setCoordSystem] = useState<string>('generic');
+    // ---- CCN ADDITION END ----
     const storeRef = React.useRef<VizSpecStore|null>(null);
     const disposerRef = React.useRef<() => void>();
     const storeRefProxied = React.useMemo(
@@ -173,6 +185,9 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
                                 () => store.currentVis,
                                 () => {
                                     setIsChanged((value as VizSpecStore).canUndo);
+                                    // ---- CCN ADDITION START: sync coord system to React state ----
+                                    setCoordSystem(store.currentVis?.config?.coordSystem ?? 'generic');
+                                    // ---- CCN ADDITION END ----
                                     streamlitComponentCallback({
                                         event: "spec_change",
                                         data: store.exportCode()
@@ -225,8 +240,57 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     }
 
     const toolbarConfig = {
-        exclude: ["export_code"],
-        extra: tools
+        // ---- CCN ADDITION START: hide built-in coord_system dropdown ----
+        // The built-in coord_system dropdown is excluded because our
+        // two toggle items (ccn_coord_generic / ccn_coord_geographic)
+        // render both modes as always-visible icons in the toolbar.
+        // To restore the dropdown, remove "coord_system" from exclude
+        // and remove the two CCN coord tools from the extra array.
+        exclude: ["export_code", "coord_system"],
+        // ---- CCN ADDITION END ----
+        extra: [
+            // ---- CCN ADDITION START: coord system toolbar toggles ----
+            // These behave like radio buttons: clicking the inactive one
+            // switches modes; clicking the already-active one is a no-op.
+            // Both the MobX store AND the React state are updated directly
+            // to avoid timing issues with the MobX reaction roundtrip.
+            // Cartesian / crosshair icon  (matches graphic-walker built-in)
+            {
+                key: 'ccn_coord_generic',
+                label: 'Cartesian',
+                icon: (iconProps?: any) => (
+                    <svg stroke="currentColor" fill="none" strokeWidth="1.5"
+                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                         aria-hidden="true" {...iconProps}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2v20" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7h2M12 16h2M7 12v-2M16 12v-2" />
+                    </svg>
+                ),
+                checked: coordSystem === 'generic',
+                onChange: (checked: boolean) => {
+                    if (checked) {
+                        storeRef.current?.setCoordSystem('generic');
+                        setCoordSystem('generic');
+                    }
+                },
+            },
+            // Geographic / globe icon
+            {
+                key: 'ccn_coord_geographic',
+                label: 'Geographic',
+                icon: (iconProps?: any) => <GlobeAltIcon {...iconProps} />,
+                checked: coordSystem === 'geographic',
+                onChange: (checked: boolean) => {
+                    if (checked) {
+                        storeRef.current?.setCoordSystem('geographic');
+                        setCoordSystem('geographic');
+                    }
+                },
+            },
+            // ---- CCN ADDITION END ----
+            '-',
+            ...tools,
+        ],
     }
 
     const enhanceAPI = React.useMemo(() => {
@@ -253,6 +317,22 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
 
     const computationCallback = React.useMemo(() => getComputationCallback(props), []);
 
+    // ---- CCN ADDITION START: custom default configuration ----
+    // Default layout: 600×600 fixed.  Aggregation: off.
+    // Allows future Python-side overrides via props.extraConfig.defaultConfig.
+    const ccnDefaultConfig: IDefaultConfig = {
+        config: {
+            timezoneDisplayOffset: 0,
+            defaultAggregated: false,                    // CCN: aggregation off by default
+            ...(props.extraConfig?.defaultConfig?.config ?? {}),
+        },
+        layout: {
+            size: { mode: 'fixed', width: 600, height: 600 }, // CCN: 600×600 fixed layout
+            ...(props.extraConfig?.defaultConfig?.layout ?? {}),
+        },
+    };
+    // ---- CCN ADDITION END ----
+
     const modeChange = (value: string) => {
         if (mode === "walker") {
             setVisSpec(storeRef.current?.exportCode());
@@ -266,6 +346,12 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
             <UploadSpecModal storeRef={storeRef} setGwIsChanged={setIsChanged} />
             <UploadChartModal gwRef={gwRef} storeRef={storeRef} dark={useContext(darkModeContext)} />
             <CodeExportModal open={exportOpen} setOpen={setExportOpen} globalStore={storeRef} sourceCode={props["sourceInvokeCode"] || ""} />
+            {/* ---- CCN SOFT-DISABLED START: standalone coord toggle ----
+              * Moved into the toolbar `extra` array as two toggle items so the
+              * icons appear alongside the other toolbar options instead of at
+              * the top level.  See toolbarConfig above.
+              * <CoordSystemToggle storeRef={storeRefProxied} />
+              * ---- CCN SOFT-DISABLED END ---- */}
             {
                 !hideModeOption &&
                 <Select onValueChange={modeChange} defaultValue='walker' >
@@ -295,7 +381,13 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
                     enhanceAPI={enhanceAPI}
                     chart={visSpec.length === 0 ? undefined : visSpec}
                     experimentalFeatures={{ computedField: props.useKernelCalc }}
-                    defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
+                    // ---- CCN SOFT-DISABLED START: original hardcoded defaultConfig ----
+                    // Replaced by ccnDefaultConfig which sets 600×600 fixed layout and
+                    // disables aggregation by default.  Restore this line and remove
+                    // ccnDefaultConfig above to revert to upstream behaviour.
+                    // defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
+                    // ---- CCN SOFT-DISABLED END ----
+                    defaultConfig={ccnDefaultConfig}
                 /> :
                 <GraphicRendererApp
                     {...props}
@@ -342,7 +434,13 @@ const PureRednererApp: React.FC<IAppProps> = observer((props) => {
                                 computation={computationCallback}
                                 chart={props.visSpec}
                                 experimentalFeatures={{ computedField: props.useKernelCalc }}
-                                defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
+                                // ---- CCN SOFT-DISABLED START: original hardcoded defaultConfig ----
+                                // defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
+                                // ---- CCN SOFT-DISABLED END ----
+                                defaultConfig={{
+                                    config: { timezoneDisplayOffset: 0, defaultAggregated: false },
+                                    layout: { size: { mode: 'fixed', width: 600, height: 600 } },
+                                }}
                             />
                         </div>
                     )

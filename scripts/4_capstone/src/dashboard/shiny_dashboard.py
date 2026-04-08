@@ -52,6 +52,10 @@ app_ui = ui.page_fluid(
             /* Shiny 1.5+ sets display:contents on .shiny-html-output when it has
                children, which removes it from the box model and breaks height:100%
                resolution for all descendants. Override it here. */
+            /* ---- CCN SOFT-DISABLED START: original .shiny-html-output rules ----
+             * The output_ui element no longer exists; replaced by the persistent
+             * #ccn-pygwalker-host div.  Restore these if reverting to the original
+             * output_ui approach in pygwalker_page.py.
             .pygwalker-container > .shiny-html-output,
             .pygwalker-container > .shiny-html-output > [id^="ifr-pyg-"] {
                 display: flex !important;
@@ -59,6 +63,22 @@ app_ui = ui.page_fluid(
                 height: 100% !important;
                 min-height: 0;
             }
+             * ---- CCN SOFT-DISABLED END ---- */
+
+            /* ---- CCN ADDITION START: flex sizing for persistent host div ---- */
+            #ccn-pygwalker-host {
+                display: flex;
+                flex: 1 1 auto;
+                height: 100%;
+                min-height: 0;
+            }
+            #ccn-pygwalker-host > [id^="ifr-pyg-"] {
+                display: flex !important;
+                flex: 1 1 auto;
+                height: 100% !important;
+                min-height: 0;
+            }
+            /* ---- CCN ADDITION END ---- */
             .pygwalker-container [id^="ifr-pyg-"],
             .pygwalker-container iframe {
                 width: 100% !important;
