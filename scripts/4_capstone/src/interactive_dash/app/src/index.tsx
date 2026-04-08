@@ -419,6 +419,7 @@ function GWalkerComponent(props: IAppProps) {
     return (
         <React.StrictMode>
             <RuncellBanner env={props.env} />
+            { props.gwMode === "explore"  && <ExploreApp {...props} dataSource={dataSource} initChartFlag={initChartFlag} /> }
             { props.gwMode === "renderer" && <PureRednererApp {...props} dataSource={dataSource}  /> }
             { props.gwMode === "filter_renderer" && <GraphicRendererApp {...props} dataSource={dataSource} /> }
             { props.gwMode === "table" && <TableWalkerApp {...props} dataSource={dataSource} /> }

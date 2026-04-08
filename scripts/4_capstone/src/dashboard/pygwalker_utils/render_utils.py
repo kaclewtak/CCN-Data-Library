@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -12,40 +11,6 @@ if _local_pygwalker.is_dir() and str(_local_pygwalker) not in sys.path:
     sys.path.insert(0, str(_local_pygwalker))
 
 import pygwalker as pyg
-
-_DEFAULT_SPEC = json.dumps(
-    [
-        {
-            "name": "Chart 1",
-            "visId": "vis1",
-            "config": {
-                "coordSystem": "generic",
-                "defaultAggregated": False,
-                "geoms": ["auto"],
-                "limit": -1,
-                "timezoneDisplayOffset": 0,
-            },
-            "encodings": {
-                "dimensions": [],
-                "measures": [],
-                "rows": [],
-                "columns": [],
-                "color": [],
-                "opacity": [],
-                "size": [],
-                "shape": [],
-                "radius": [],
-                "theta": [],
-                "longitude": [],
-                "latitude": [],
-                "geoId": [],
-                "details": [],
-                "filters": [],
-                "text": [],
-            },
-        }
-    ]
-)
 
 
 def get_pygwalker_html(df: pl.DataFrame) -> str:
