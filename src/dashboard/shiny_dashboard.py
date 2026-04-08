@@ -1,5 +1,5 @@
-from eo_panel import eo_server, eo_ui
 from data_inventory import data_inventory_server, data_inventory_ui
+from eo_panel import eo_server, eo_ui
 from map_panel import map_server, map_ui
 from pygwalker_page import pygwalker_server, pygwalker_ui
 from shiny import App, reactive, ui
@@ -151,10 +151,8 @@ def server(input, output, session):
     )
     eo_server(
         "eo_search",
-        table_points_getter=table_state["map_points"],
+        table_points_getter=table_state["all_geo_points"],
     )
-    table_state = table_server("data_editor", selected_point=selected_point)
-    map_server("map_viewer", table_points_getter=table_state["map_points"], selected_point=selected_point)
     pygwalker_server("pygwalker_explorer", data_getter=table_state["data"])
     data_inventory_server("inventory")
 

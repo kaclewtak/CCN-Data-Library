@@ -646,6 +646,15 @@ def table_server(input, output, session, selected_point):
         return map_points_cache.get()
 
     @reactive.calc
+    def all_geo_points() -> pd.DataFrame:
+        """All lat/lon points from the loaded table, regardless of the map toggle."""
+        return dataframe_to_map_points(
+            df=data_pl.get(),
+            lat_lon_cols=lat_lon_cols.get(),
+            enabled=True,
+        )
+
+    @reactive.calc
     def data() -> pl.DataFrame | None:
         return data_pl.get()
 
@@ -666,5 +675,6 @@ def table_server(input, output, session, selected_point):
 
     return {
         "map_points": map_points,
+        "all_geo_points": all_geo_points,
         "data": data,
     }
