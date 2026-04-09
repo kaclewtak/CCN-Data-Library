@@ -1,0 +1,53 @@
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+
+import { CcnSpreadsheetPanel } from './CcnSpreadsheetPanel'
+import type { ICcnSpreadsheetState } from './useCcnSpreadsheetState'
+
+function createState(): ICcnSpreadsheetState {
+    return {
+        graphRows: [{ study_id: 'A1' }],
+        graphFields: [{ fid: 'study_id', name: 'Study ID', offset: 0, semanticType: 'nominal', analyticType: 'dimension' } as any],
+        rows: [{ study_id: 'A1' }],
+        fields: [{ fid: 'study_id', name: 'Study ID', offset: 0, semanticType: 'nominal', analyticType: 'dimension' } as any],
+        sheetName: 'Uploaded dataset',
+        isDirty: true,
+        canUndo: true,
+        canRedo: false,
+        loadDialogOpen: false,
+        savedSheets: [],
+        lastSavedAt: 0,
+        selectedRowIndex: null,
+        selectedColumnFid: null,
+        selectedCell: null,
+        selectionLabel: 'Sheet',
+        setLoadDialogOpen: vi.fn(),
+        selectRow: vi.fn(),
+        selectColumn: vi.fn(),
+        selectCell: vi.fn(),
+        commitCellValue: vi.fn(),
+        handleNewSheet: vi.fn(),
+        handleSaveSheet: vi.fn(async () => undefined),
+        handleLoadSheet: vi.fn(),
+        handleUndo: vi.fn(),
+        handleRedo: vi.fn(),
+        handleAddRow: vi.fn(),
+        handleRemoveRow: vi.fn(),
+        handleAddColumn: vi.fn(),
+        handleRemoveColumn: vi.fn(),
+        handleRenameColumn: vi.fn(),
+        handleCopySelection: vi.fn(async () => undefined),
+        handlePasteSelection: vi.fn(async () => undefined),
+    }
+}
+
+describe('CcnSpreadsheetPanel', () => {
+    it('renders the CCN addition panel chrome and spreadsheet controls', () => {
+        render(<CcnSpreadsheetPanel state={createState()} />)
+
+        expect(screen.getByText('Spreadsheet Editor')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /New Sheet/i })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /Add Column/i })).toBeInTheDocument()
+        expect(screen.getByLabelText('Spreadsheet cell 1-Study ID')).toHaveValue('A1')
+    })
+})

@@ -45,4 +45,25 @@ def build_pygwalker_html(df: pl.DataFrame, gid: str) -> str:
     Using a stable ``gid`` avoids creating a brand-new container div each
     time, which is the key to keeping the React app alive in the DOM.
     """
-    return pyg.to_html(df, gid=gid, spec="", width="100%", height="100%")
+    # ------------------------------------------------------------------
+    # CCN ADDITION — spreadsheet configuration is injected through the
+    # local pygwalker ``extraConfig`` pass-through so the in-frame React
+    # app can render the spreadsheet editor beside GraphicWalker without
+    # any Shiny-side split layout.
+    # ------------------------------------------------------------------
+    fingerprint = data_fingerprint(df)
+    return pyg.to_html(
+        df,
+        gid=gid,
+        spec="",
+        width="100%",
+        height="100%",
+        ccnSpreadsheet={
+            "enabled": True,
+            "datasetFingerprint": fingerprint,
+            "datasetLabel": "Uploaded dataset",
+            "autosaveDebounceMs": 2500,
+            "syncDebounceMs": 350,
+            "historyLimit": 50,
+        },
+    )

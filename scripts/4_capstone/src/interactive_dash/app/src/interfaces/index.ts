@@ -1,6 +1,17 @@
 import type { IRow, IMutField } from '@kanaries/graphic-walker/interfaces'
 import type { IDarkMode, IThemeKey, IComputationFunction } from '@kanaries/graphic-walker/interfaces';
 
+import type { ICCNSpreadsheetConfig } from '@/features/ccnSpreadsheet'
+
+export interface ICCNExtraConfig {
+    ccnSpreadsheet?: ICCNSpreadsheetConfig
+    defaultConfig?: {
+        config?: Record<string, unknown>
+        layout?: Record<string, unknown>
+    }
+    [key: string]: any
+}
+
 export interface IAppProps {
     // graphic-walker props
     fieldkeyGuard: boolean;
@@ -28,7 +39,7 @@ export interface IAppProps {
     communicationUrl: string;
     gwMode: "explore" | "renderer" | "filter_renderer" | "table";
     needLoadLastSpec: boolean;
-    extraConfig?: any;
+    extraConfig?: ICCNExtraConfig;
     fieldMetas: any;
     isExportDataFrame: boolean;
     defaultTab: "data" | "vis";
