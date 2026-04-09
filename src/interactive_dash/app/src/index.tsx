@@ -52,6 +52,7 @@ import { AppContext, darkModeContext } from './store/context';
 import FormatSpec from './utils/formatSpec';
 import { getOpenDesktopTool } from './tools/openDesktop';
 import RuncellBanner from './components/runcellBanner';
+import { CcnSpreadsheetPanel, useCcnSpreadsheetState } from '@/features/ccnSpreadsheet'
 
 // ---- CCN ADDITION START: default config type ----
 import type { IDefaultConfig } from '@kanaries/graphic-walker/interfaces';
@@ -91,6 +92,17 @@ const getComputationCallback = (props: IAppProps) => {
         return getDatasFromKernelByPayload;
     }
 }
+
+// ---- CCN ADDITION START: split CCN-only config from GraphicWalker props ----
+const splitExtraConfig = (extraConfig?: IAppProps['extraConfig']) => {
+    const { ccnSpreadsheet, ...graphicWalkerExtraConfig } = extraConfig ?? {};
+
+    return {
+        ccnSpreadsheet,
+        graphicWalkerExtraConfig,
+    };
+};
+// ---- CCN ADDITION END ----
 
 const MainApp = observer((props: {children: React.ReactNode, darkMode: "dark" | "light" | "media", hideToolBar?: boolean, gid?: string, sendMessage?: boolean}) => {
     const [portal, setPortal] = useState<HTMLDivElement | null>(null);
@@ -163,6 +175,7 @@ const MainApp = observer((props: {children: React.ReactNode, darkMode: "dark" | 
 const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     const gwRef = React.useRef<IGWHandler|null>(null);
     const { userConfig } = props;
+    const appearance = useContext(darkModeContext);
     const [exportOpen, setExportOpen] = useState(false);
     const [mode, setMode] = useState<string>("walker");
     const [visSpec, setVisSpec] = useState(props.visSpec);
@@ -172,7 +185,20 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     const [coordSystem, setCoordSystem] = useState<string>('generic');
     // ---- CCN ADDITION END ----
     const storeRef = React.useRef<VizSpecStore|null>(null);
-    const disposerRef = React.useRef<() => void>();
+    const disposerRef = React.useRef<(() => void) | undefined>(undefined);
+    const { ccnSpreadsheet, graphicWalkerExtraConfig } = React.useMemo(
+        () => splitExtraConfig(props.extraConfig),
+        [props.extraConfig],
+    );
+    const spreadsheetEnabled = Boolean(ccnSpreadsheet?.enabled && !props.useKernelCalc);
+    const spreadsheetState = useCcnSpreadsheetState({
+        enabled: spreadsheetEnabled,
+        config: ccnSpreadsheet,
+        initialRows: props.dataSource,
+        initialFields: props.rawFields,
+    });
+    const activeDataSource = spreadsheetEnabled ? spreadsheetState.graphRows : props.dataSource;
+    const activeFields = spreadsheetEnabled ? spreadsheetState.graphFields : props.rawFields;
     const storeRefProxied = React.useMemo(
         () =>
             new Proxy(storeRef, {
@@ -239,7 +265,7 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
         tools.push(exportDataFrameTool);
     }
 
-    const toolbarConfig = {
+    const toolbarConfig: any = {
         // ---- CCN ADDITION START: hide built-in coord_system dropdown ----
         // The built-in coord_system dropdown is excluded because our
         // two toggle items (ccn_coord_generic / ccn_coord_geographic)
@@ -324,11 +350,11 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
         config: {
             timezoneDisplayOffset: 0,
             defaultAggregated: false,                    // CCN: aggregation off by default
-            ...(props.extraConfig?.defaultConfig?.config ?? {}),
+            ...(graphicWalkerExtraConfig.defaultConfig?.config ?? {}),
         },
         layout: {
             size: { mode: 'fixed', width: 600, height: 600 }, // CCN: 600×600 fixed layout
-            ...(props.extraConfig?.defaultConfig?.layout ?? {}),
+            ...(graphicWalkerExtraConfig.defaultConfig?.layout ?? {}),
         },
     };
     // ---- CCN ADDITION END ----
@@ -339,6 +365,30 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
         }
         setMode(value);
     }
+
+    const walkerView = (
+        <GraphicWalker
+            {...graphicWalkerExtraConfig}
+            appearance={appearance}
+            vizThemeConfig={props.themeKey}
+            fieldKeyGuard={props.fieldkeyGuard}
+            fields={activeFields}
+            storeRef={storeRefProxied}
+            ref={gwRef}
+            toolbar={toolbarConfig}
+            enhanceAPI={enhanceAPI}
+            chart={visSpec.length === 0 ? undefined : visSpec}
+            experimentalFeatures={{ computedField: props.useKernelCalc }}
+            {...(props.useKernelCalc ? { computation: computationCallback! } : { data: activeDataSource })}
+            // ---- CCN SOFT-DISABLED START: original hardcoded defaultConfig ----
+            // Replaced by ccnDefaultConfig which sets 600×600 fixed layout and
+            // disables aggregation by default.  Restore this line and remove
+            // ccnDefaultConfig above to revert to upstream behaviour.
+            // defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
+            // ---- CCN SOFT-DISABLED END ----
+            defaultConfig={ccnDefaultConfig}
+        />
+    );
   
     return (
         <React.StrictMode>
@@ -367,28 +417,16 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
             }
             {
                 mode === "walker" ? 
-                <GraphicWalker
-                    {...props.extraConfig}
-                    appearance={useContext(darkModeContext)}
-                    vizThemeConfig={props.themeKey}
-                    fieldkeyGuard={props.fieldkeyGuard}
-                    fields={props.rawFields}
-                    data={props.useKernelCalc ? undefined : props.dataSource}
-                    storeRef={storeRefProxied}
-                    ref={gwRef}
-                    toolbar={toolbarConfig}
-                    computation={computationCallback}
-                    enhanceAPI={enhanceAPI}
-                    chart={visSpec.length === 0 ? undefined : visSpec}
-                    experimentalFeatures={{ computedField: props.useKernelCalc }}
-                    // ---- CCN SOFT-DISABLED START: original hardcoded defaultConfig ----
-                    // Replaced by ccnDefaultConfig which sets 600×600 fixed layout and
-                    // disables aggregation by default.  Restore this line and remove
-                    // ccnDefaultConfig above to revert to upstream behaviour.
-                    // defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
-                    // ---- CCN SOFT-DISABLED END ----
-                    defaultConfig={ccnDefaultConfig}
-                /> :
+                (spreadsheetEnabled ?
+                    // ---- CCN ADDITION START: in-frame spreadsheet + walker split layout ----
+                    <div className="ccn-explore-layout">
+                        <CcnSpreadsheetPanel state={spreadsheetState} />
+                        <div className="ccn-graphicwalker-panel">
+                            {walkerView}
+                        </div>
+                    </div>
+                    // ---- CCN ADDITION END ----
+                    : walkerView) :
                 <GraphicRendererApp
                     {...props}
                     dataSource={props.dataSource}
@@ -402,16 +440,21 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
 
 const PureRednererApp: React.FC<IAppProps> = observer((props) => {
     const computationCallback = getComputationCallback(props);
+    const appearance = useContext(darkModeContext);
     const spec = props.visSpec[0];
     const [expand, setExpand] = useState(false);
+    const { graphicWalkerExtraConfig } = React.useMemo(
+        () => splitExtraConfig(props.extraConfig),
+        [props.extraConfig],
+    );
 
     return (
         <React.StrictMode>
             <div className='flex'>
                 {
                     !expand && (<PureRenderer
-                        {...props.extraConfig}
-                        appearance={useContext(darkModeContext)}
+                        {...graphicWalkerExtraConfig}
+                        appearance={appearance}
                         vizThemeConfig={props.themeKey}
                         name={spec.name}
                         visualConfig={spec.config}
@@ -425,15 +468,14 @@ const PureRednererApp: React.FC<IAppProps> = observer((props) => {
                     expand && commonStore.isStreamlitComponent && (
                         <div style={{minWidth: "96%"}}>
                             <GraphicWalker
-                                {...props.extraConfig}
-                                appearance={useContext(darkModeContext)}
+                                {...graphicWalkerExtraConfig}
+                                appearance={appearance}
                                 vizThemeConfig={props.themeKey}
-                                fieldkeyGuard={props.fieldkeyGuard}
+                                fieldKeyGuard={props.fieldkeyGuard}
                                 fields={props.rawFields}
-                                data={props.useKernelCalc ? undefined : props.dataSource}
-                                computation={computationCallback}
                                 chart={props.visSpec}
                                 experimentalFeatures={{ computedField: props.useKernelCalc }}
+                                {...(props.useKernelCalc ? { computation: computationCallback! } : { data: props.dataSource })}
                                 // ---- CCN SOFT-DISABLED START: original hardcoded defaultConfig ----
                                 // defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
                                 // ---- CCN SOFT-DISABLED END ----
@@ -517,7 +559,6 @@ function GWalkerComponent(props: IAppProps) {
     return (
         <React.StrictMode>
             <RuncellBanner env={props.env} />
-            { props.gwMode === "explore"  && <ExploreApp {...props} dataSource={dataSource} initChartFlag={initChartFlag} /> }
             { props.gwMode === "renderer" && <PureRednererApp {...props} dataSource={dataSource}  /> }
             { props.gwMode === "filter_renderer" && <GraphicRendererApp {...props} dataSource={dataSource} /> }
             { props.gwMode === "table" && <TableWalkerApp {...props} dataSource={dataSource} /> }

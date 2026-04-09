@@ -3,9 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 
 import polars as pl
-from shiny import module, reactive, ui
-
 from panels.pygwalker_persistence import build_pygwalker_html, data_fingerprint
+from shiny import module, reactive, ui
 
 # ---------------------------------------------------------------------------
 # CCN ADDITION — JavaScript handler for persistent PyGWalker rendering
