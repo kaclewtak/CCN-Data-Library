@@ -8,6 +8,12 @@ export const DEFAULT_AUTOSAVE_DEBOUNCE_MS = 2500
 export const DEFAULT_HISTORY_LIMIT = 50
 export const DEFAULT_SYNC_DEBOUNCE_MS = 350
 
+export interface IInsertedColumnData {
+    name: string
+    values: unknown[]
+    field?: IMutField
+}
+
 export function cloneRows(rows: IRow[]): IRow[] {
     return rows.map((row) => ({ ...row }))
 }
@@ -48,6 +54,16 @@ export function makeBlankRow(fields: IMutField[]): IRow {
         row[field.fid] = null
         return row
     }, {})
+}
+
+export function createBlankSheet(columnName = 'Column 1'): ISpreadsheetSnapshot {
+    const fieldId = makeUniqueFieldId(columnName, [])
+    const field = inferField(fieldId, columnName, [])
+
+    return {
+        rows: [makeBlankRow([field])],
+        fields: [field],
+    }
 }
 
 export function makeUniqueFieldId(preferredName: string, fields: IMutField[]): string {
@@ -212,6 +228,198 @@ export function updateCellValue(
     }
 }
 
+function clampInsertIndex(index: number, max: number): number {
+    return Math.max(0, Math.min(index, max))
+}
+
+function normalizeValueForField(value: unknown, field: IMutField): unknown {
+    if (value == null) {
+        return null
+    }
+
+    if (typeof value === 'string') {
+        return coerceEditedValue(value, null, field)
+    }
+
+    if (value instanceof Date) {
+        return field.semanticType === 'temporal' ? value.toISOString() : value
+    }
+
+    return value
+}
+
+function buildRowFromValues(fields: IMutField[], values: unknown[]): IRow {
+    return fields.reduce<IRow>((row, field, columnIndex) => {
+        row[field.fid] = normalizeValueForField(values[columnIndex], field)
+        return row
+    }, {})
+}
+
+export function rowToValues(row: IRow, fields: IMutField[]): unknown[] {
+    return fields.map((field) => row[field.fid] ?? null)
+}
+
+export function columnToValues(rows: IRow[], field: IMutField): unknown[] {
+    return rows.map((row) => row[field.fid] ?? null)
+}
+
+export function parseDelimitedText(text: string): string[][] {
+    const normalizedText = text.replace(/\r\n/g, '\n')
+    if (normalizedText.trim().length === 0) {
+        return []
+    }
+
+    const rawLines = normalizedText.split('\n')
+    const lines = rawLines.at(-1) === '' ? rawLines.slice(0, -1) : rawLines
+
+    return lines.map((line) => line.split('\t'))
+}
+
+export function matrixToInsertedColumns(
+    matrix: unknown[][],
+    fallbackFieldStart: number,
+    suggestedNames: string[] = [],
+): IInsertedColumnData[] {
+    const columnCount = matrix.reduce((max, row) => Math.max(max, row.length), 0)
+
+    return Array.from({ length: columnCount }, (_, columnIndex) => ({
+        name: suggestedNames[columnIndex] ?? `Column ${fallbackFieldStart + columnIndex + 1}`,
+        values: matrix.map((row) => row[columnIndex] ?? null),
+    }))
+}
+
+export function insertRows(
+    rows: IRow[],
+    fields: IMutField[],
+    targetRowIndex: number,
+    valuesMatrix: unknown[][],
+): ISpreadsheetSnapshot & { insertedRowCount: number; truncatedColumns: boolean } {
+    if (valuesMatrix.length === 0) {
+        return {
+            rows: cloneRows(rows),
+            fields: cloneFields(fields),
+            insertedRowCount: 0,
+            truncatedColumns: false,
+        }
+    }
+
+    const insertIndex = clampInsertIndex(targetRowIndex, rows.length)
+    const insertedRows = valuesMatrix.map((values) => buildRowFromValues(fields, values))
+    const truncatedColumns = valuesMatrix.some((values) => values.length > fields.length)
+    const existingRows = cloneRows(rows)
+    const nextRows = [
+        ...existingRows.slice(0, insertIndex),
+        ...insertedRows,
+        ...existingRows.slice(insertIndex),
+    ]
+
+    return {
+        rows: nextRows,
+        fields: rebuildFields(nextRows, cloneFields(fields)),
+        insertedRowCount: insertedRows.length,
+        truncatedColumns,
+    }
+}
+
+export function insertBlankRow(
+    rows: IRow[],
+    fields: IMutField[],
+    targetRowIndex: number,
+): ISpreadsheetSnapshot & { rowIndex: number } {
+    const insertIndex = clampInsertIndex(targetRowIndex, rows.length)
+    const nextSnapshot = insertRows(rows, fields, insertIndex, [[]])
+
+    return {
+        rows: nextSnapshot.rows,
+        fields: nextSnapshot.fields,
+        rowIndex: insertIndex,
+    }
+}
+
+export function insertColumns(
+    rows: IRow[],
+    fields: IMutField[],
+    targetColumnIndex: number,
+    columns: IInsertedColumnData[],
+): ISpreadsheetSnapshot & { insertedFieldIds: string[]; insertedFieldIndex: number } {
+    if (columns.length === 0) {
+        return {
+            rows: cloneRows(rows),
+            fields: cloneFields(fields),
+            insertedFieldIds: [],
+            insertedFieldIndex: clampInsertIndex(targetColumnIndex, fields.length),
+        }
+    }
+
+    const insertIndex = clampInsertIndex(targetColumnIndex, fields.length)
+    const baseFields = cloneFields(fields)
+    const nextRows = cloneRows(rows)
+    const rowCount = Math.max(nextRows.length, 1, ...columns.map((column) => column.values.length))
+
+    while (nextRows.length < rowCount) {
+        nextRows.push(makeBlankRow(baseFields))
+    }
+
+    const insertedFields: IMutField[] = []
+
+    columns.forEach((column, columnOffset) => {
+        const columnName = column.name.trim() || `Column ${baseFields.length + columnOffset + 1}`
+        const fieldId = makeUniqueFieldId(columnName, [...baseFields, ...insertedFields])
+        const fallbackField = inferField(fieldId, columnName, column.values)
+
+        insertedFields.push(
+            column.field
+                ? ({
+                    ...column.field,
+                    fid: fieldId,
+                    name: columnName,
+                    offset: 0,
+                } as IMutField)
+                : fallbackField,
+        )
+    })
+
+    insertedFields.forEach((field, fieldIndex) => {
+        const column = columns[fieldIndex]
+
+        nextRows.forEach((row, rowIndex) => {
+            row[field.fid] = normalizeValueForField(column.values[rowIndex], field)
+        })
+    })
+
+    return {
+        rows: nextRows,
+        fields: [
+            ...baseFields.slice(0, insertIndex),
+            ...insertedFields,
+            ...baseFields.slice(insertIndex),
+        ],
+        insertedFieldIds: insertedFields.map((field) => field.fid),
+        insertedFieldIndex: insertIndex,
+    }
+}
+
+export function insertBlankColumn(
+    rows: IRow[],
+    fields: IMutField[],
+    targetColumnIndex: number,
+    requestedName: string,
+): ISpreadsheetSnapshot & { field: IMutField; fieldIndex: number } {
+    const nextSnapshot = insertColumns(rows, fields, targetColumnIndex, [
+        {
+            name: requestedName.trim() || `Column ${fields.length + 1}`,
+            values: new Array(Math.max(rows.length, 1)).fill(null),
+        },
+    ])
+
+    return {
+        rows: nextSnapshot.rows,
+        fields: nextSnapshot.fields,
+        field: nextSnapshot.fields[nextSnapshot.insertedFieldIndex],
+        fieldIndex: nextSnapshot.insertedFieldIndex,
+    }
+}
+
 export function addBlankRow(rows: IRow[], fields: IMutField[]): ISpreadsheetSnapshot {
     return {
         rows: [...cloneRows(rows), makeBlankRow(fields)],
@@ -321,6 +529,10 @@ export function sheetToTsv(rows: IRow[], fields: IMutField[]): string {
 
 export function rowToTsv(row: IRow, fields: IMutField[]): string {
     return fields.map((field) => displayCellValue(row[field.fid])).join('\t')
+}
+
+export function columnToTsv(rows: IRow[], field: IMutField): string {
+    return rows.map((row) => displayCellValue(row[field.fid])).join('\n')
 }
 
 export function applyPaste(

@@ -4,25 +4,43 @@ import type { IMutField, IRow } from '@kanaries/graphic-walker/interfaces'
 
 import commonStore from '@/store/common'
 
+import { saveSpreadsheetToComputer } from './fileTransfer'
 import { getAutosaveSheetId, listSheetsForFingerprint, saveSheetRecord } from './persistence'
-import type { ICCNSpreadsheetConfig, IPersistedSheet, ISpreadsheetSelection, ISpreadsheetSnapshot } from './types'
+import type {
+    ICCNSpreadsheetConfig,
+    IImportedSpreadsheetSheet,
+    IPersistedSheet,
+    ISpreadsheetExternalFile,
+    ISpreadsheetSelection,
+    ISpreadsheetSnapshot,
+    TSpreadsheetSaveFormat,
+} from './types'
 import {
     DEFAULT_AUTOSAVE_DEBOUNCE_MS,
     DEFAULT_HISTORY_LIMIT,
     DEFAULT_SYNC_DEBOUNCE_MS,
-    addBlankRow,
-    addColumn,
     applyPaste,
     cloneFields,
     cloneRows,
     cloneSnapshot,
+    columnToTsv,
+    columnToValues,
+    createBlankSheet,
+    insertBlankColumn,
+    insertBlankRow,
+    insertColumns,
+    insertRows,
+    matrixToInsertedColumns,
+    parseDelimitedText,
     removeColumn,
     removeRow,
     renameColumn,
     rowToTsv,
+    rowToValues,
     sheetToTsv,
     updateCellValue,
 } from './utils'
+import type { IInsertedColumnData } from './utils'
 
 interface IUseCcnSpreadsheetStateOptions {
     enabled: boolean
@@ -38,6 +56,18 @@ interface ICommitOptions {
     nextSheetName?: string
 }
 
+type TSpreadsheetClipboard =
+    | {
+        kind: 'row'
+        text: string
+        rows: unknown[][]
+    }
+    | {
+        kind: 'column'
+        text: string
+        columns: IInsertedColumnData[]
+    }
+
 export interface ICcnSpreadsheetState {
     graphRows: IRow[]
     graphFields: IMutField[]
@@ -48,20 +78,27 @@ export interface ICcnSpreadsheetState {
     canUndo: boolean
     canRedo: boolean
     loadDialogOpen: boolean
+    saveDialogOpen: boolean
     savedSheets: IPersistedSheet[]
+    currentExternalFile: ISpreadsheetExternalFile | null
     lastSavedAt: number | null
+    selectionKind: ISpreadsheetSelection['kind']
     selectedRowIndex: number | null
     selectedColumnFid: string | null
     selectedCell: ISpreadsheetSelection['cell']
     selectionLabel: string
     setLoadDialogOpen: (open: boolean) => void
+    setSaveDialogOpen: (open: boolean) => void
     selectRow: (rowIndex: number) => void
     selectColumn: (columnFid: string) => void
     selectCell: (rowIndex: number, columnFid: string) => void
     commitCellValue: (rowIndex: number, columnFid: string, rawValue: string) => void
     handleNewSheet: () => void
     handleSaveSheet: () => Promise<void>
+    handleSaveBrowserSheet: (name: string) => Promise<void>
+    handleSaveComputerSheet: (format: TSpreadsheetSaveFormat) => Promise<void>
     handleLoadSheet: (sheet: IPersistedSheet) => void
+    handleImportSheet: (sheet: IImportedSpreadsheetSheet) => Promise<void>
     handleUndo: () => void
     handleRedo: () => void
     handleAddRow: () => void
@@ -74,47 +111,62 @@ export interface ICcnSpreadsheetState {
 }
 
 const EMPTY_SELECTION: ISpreadsheetSelection = {
+    kind: 'sheet',
     rowIndex: null,
     columnFid: null,
     cell: null,
 }
 
+const NEW_SHEET_NAME_PATTERN = /^NewSheet(?:\[(\d+)\]|(\d+))$/i
+
 function createBaseSheetName(config?: ICCNSpreadsheetConfig): string {
     return config?.datasetLabel?.trim() || 'Uploaded dataset'
 }
 
-function getTargetRowIndex(selection: ISpreadsheetSelection, rowCount: number): number {
-    if (selection.cell) {
-        return selection.cell.rowIndex
-    }
-
-    if (selection.rowIndex != null) {
+function getActiveRowIndex(selection: ISpreadsheetSelection): number | null {
+    if (selection.kind === 'row') {
         return selection.rowIndex
     }
 
-    return Math.max(0, rowCount - 1)
-}
-
-function getTargetColumnId(selection: ISpreadsheetSelection, fields: IMutField[]): string | null {
-    if (selection.cell) {
-        return selection.cell.columnFid
+    if (selection.kind === 'cell') {
+        return selection.cell?.rowIndex ?? null
     }
 
-    if (selection.columnFid) {
+    return null
+}
+
+function getActiveColumnId(selection: ISpreadsheetSelection): string | null {
+    if (selection.kind === 'column') {
         return selection.columnFid
     }
 
-    return fields.at(-1)?.fid ?? null
-}
-
-function getTargetColumnIndex(selection: ISpreadsheetSelection, fields: IMutField[]): number {
-    const columnFid = getTargetColumnId(selection, fields)
-    if (!columnFid) {
-        return 0
+    if (selection.kind === 'cell') {
+        return selection.cell?.columnFid ?? null
     }
 
-    const columnIndex = fields.findIndex((field) => field.fid === columnFid)
-    return columnIndex >= 0 ? columnIndex : 0
+    return null
+}
+
+function getColumnIndex(fields: IMutField[], columnFid: string | null): number {
+    if (!columnFid) {
+        return -1
+    }
+
+    return fields.findIndex((field) => field.fid === columnFid)
+}
+
+function getNextGeneratedSheetName(names: string[]): string {
+    const nextIndex = names.reduce((maxIndex, name) => {
+        const match = NEW_SHEET_NAME_PATTERN.exec(name.trim())
+        if (!match) {
+            return maxIndex
+        }
+
+        const parsedIndex = Number(match[1] ?? match[2])
+        return Number.isFinite(parsedIndex) ? Math.max(maxIndex, parsedIndex) : maxIndex
+    }, 0)
+
+    return `NewSheet[${nextIndex + 1}]`
 }
 
 export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions): ICcnSpreadsheetState {
@@ -129,13 +181,17 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
     const [sheetName, setSheetName] = useState(createBaseSheetName(options.config))
     const [isDirty, setIsDirty] = useState(false)
     const [loadDialogOpen, setLoadDialogOpen] = useState(false)
+    const [saveDialogOpen, setSaveDialogOpen] = useState(false)
     const [savedSheets, setSavedSheets] = useState<IPersistedSheet[]>([])
+    const [currentExternalFile, setCurrentExternalFile] = useState<ISpreadsheetExternalFile | null>(null)
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
     const [selection, setSelection] = useState<ISpreadsheetSelection>(EMPTY_SELECTION)
     const [historyVersion, setHistoryVersion] = useState(0)
     const [persistenceReady, setPersistenceReady] = useState(false)
     const historyRef = useRef<ISpreadsheetSnapshot[]>([cloneSnapshot(baseSnapshotRef.current)])
     const historyIndexRef = useRef(0)
+    const changeVersionRef = useRef(0)
+    const clipboardRef = useRef<TSpreadsheetClipboard | null>(null)
 
     const currentSnapshot = useMemo<ISpreadsheetSnapshot>(
         () => ({ rows, fields }),
@@ -173,6 +229,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 setSheetName(commitOptions.nextSheetName)
             }
 
+            changeVersionRef.current += 1
             setHistoryVersion((value) => value + 1)
         },
         [options.config?.historyLimit],
@@ -188,12 +245,38 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         setSavedSheets(nextSheets)
     }, [options.config?.datasetFingerprint, options.enabled])
 
+    const persistAutosaveSnapshot = useCallback(
+        async (snapshot: ISpreadsheetSnapshot, nextSheetName: string, updatedAt = Date.now()) => {
+            if (!options.enabled || !options.config?.datasetFingerprint) {
+                return null
+            }
+
+            await saveSheetRecord({
+                id: getAutosaveSheetId(options.config.datasetFingerprint),
+                kind: 'autosave',
+                name: nextSheetName,
+                datasetFingerprint: options.config.datasetFingerprint,
+                datasetLabel: options.config.datasetLabel,
+                updatedAt,
+                rows: cloneRows(snapshot.rows),
+                fields: cloneFields(snapshot.fields),
+            })
+
+            return updatedAt
+        },
+        [options.config, options.enabled],
+    )
+
     useEffect(() => {
+        setCurrentExternalFile(null)
+        setSaveDialogOpen(false)
+
         if (!options.enabled || !options.config?.datasetFingerprint) {
             setPersistenceReady(true)
             return
         }
 
+        setPersistenceReady(false)
         let cancelled = false
 
         const hydratePersistence = async () => {
@@ -209,7 +292,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 commitSnapshot(
                     { rows: autosaveSheet.rows, fields: autosaveSheet.fields },
                     {
-                        dirty: true,
+                        dirty: false,
                         historyMode: 'replace',
                         lastSavedAt: autosaveSheet.updatedAt,
                         nextSheetName: autosaveSheet.name,
@@ -228,7 +311,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             setPersistenceReady(true)
         }
 
-        hydratePersistence()
+        void hydratePersistence()
 
         return () => {
             cancelled = true
@@ -253,20 +336,16 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             return
         }
 
+        const snapshotVersion = changeVersionRef.current
         const timeoutId = window.setTimeout(async () => {
             const updatedAt = Date.now()
-            await saveSheetRecord({
-                id: getAutosaveSheetId(options.config!.datasetFingerprint),
-                kind: 'autosave',
-                name: `${sheetName} Autosave`,
-                datasetFingerprint: options.config!.datasetFingerprint,
-                datasetLabel: options.config?.datasetLabel,
-                updatedAt,
-                rows: cloneRows(currentSnapshot.rows),
-                fields: cloneFields(currentSnapshot.fields),
-            })
+            await persistAutosaveSnapshot(currentSnapshot, sheetName, updatedAt)
             await refreshSavedSheets()
-            setLastSavedAt(updatedAt)
+
+            if (changeVersionRef.current === snapshotVersion) {
+                setLastSavedAt(updatedAt)
+                setIsDirty(false)
+            }
         }, options.config?.autosaveDebounceMs ?? DEFAULT_AUTOSAVE_DEBOUNCE_MS)
 
         return () => window.clearTimeout(timeoutId)
@@ -275,6 +354,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         isDirty,
         options.config,
         options.enabled,
+        persistAutosaveSnapshot,
         persistenceReady,
         refreshSavedSheets,
         sheetName,
@@ -282,6 +362,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
 
     const selectRow = useCallback((rowIndex: number) => {
         setSelection({
+            kind: 'row',
             rowIndex,
             columnFid: null,
             cell: null,
@@ -290,6 +371,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
 
     const selectColumn = useCallback((columnFid: string) => {
         setSelection({
+            kind: 'column',
             rowIndex: null,
             columnFid,
             cell: null,
@@ -298,6 +380,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
 
     const selectCell = useCallback((rowIndex: number, columnFid: string) => {
         setSelection({
+            kind: 'cell',
             rowIndex,
             columnFid,
             cell: { rowIndex, columnFid },
@@ -352,34 +435,30 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
     }, [commitSnapshot])
 
     const handleNewSheet = useCallback(() => {
-        if (!window.confirm('Reset the spreadsheet to the uploaded dataset?')) {
-            return
-        }
+        const nextSheetName = getNextGeneratedSheetName([...savedSheets.map((sheet) => sheet.name), sheetName])
+        const blankSnapshot = createBlankSheet()
 
+        clipboardRef.current = null
+        setCurrentExternalFile(null)
         setSelection(EMPTY_SELECTION)
-        commitSnapshot(baseSnapshotRef.current, {
-            dirty: false,
+        commitSnapshot(blankSnapshot, {
+            dirty: true,
             historyMode: 'replace',
-            nextSheetName: createBaseSheetName(options.config),
+            nextSheetName: nextSheetName,
         })
         commonStore.setNotification(
             {
                 type: 'info',
                 title: 'CCN Addition',
-                message: 'Reset the spreadsheet to the uploaded dataset.',
+                message: `Created ${nextSheetName}.`,
             },
-            4000,
+            3500,
         )
-    }, [commitSnapshot, options.config])
+    }, [commitSnapshot, savedSheets, sheetName])
 
-    const handleSaveSheet = useCallback(async () => {
+    const persistManualSheet = useCallback(async (requestedName: string) => {
         if (!options.enabled || !options.config?.datasetFingerprint) {
-            return
-        }
-
-        const requestedName = window.prompt('Save sheet as', sheetName)
-        if (requestedName == null) {
-            return
+            return null
         }
 
         const normalizedName = requestedName.trim()
@@ -392,7 +471,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 },
                 4000,
             )
-            return
+            return null
         }
 
         const existingSheet = savedSheets.find((sheet) => sheet.kind === 'manual' && sheet.name === normalizedName)
@@ -408,34 +487,90 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             rows: cloneRows(currentSnapshot.rows),
             fields: cloneFields(currentSnapshot.fields),
         })
+        await persistAutosaveSnapshot(currentSnapshot, normalizedName, updatedAt)
         await refreshSavedSheets()
         setSheetName(normalizedName)
         setIsDirty(false)
         setLastSavedAt(updatedAt)
+
+        return {
+            normalizedName,
+            updatedAt,
+        }
+    }, [currentSnapshot, options.config, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, savedSheets])
+
+    const handleSaveSheet = useCallback(async () => {
+        setSaveDialogOpen(true)
+    }, [])
+
+    const handleSaveBrowserSheet = useCallback(async (requestedName: string) => {
+        const persistedSheet = await persistManualSheet(requestedName)
+        if (!persistedSheet) {
+            return
+        }
+
+        setSaveDialogOpen(false)
         commonStore.setNotification(
             {
                 type: 'success',
                 title: 'CCN Addition',
-                message: `Saved ${normalizedName}.`,
+                message: `Saved ${persistedSheet.normalizedName}.`,
             },
             3500,
         )
-    }, [currentSnapshot, options.config, options.enabled, refreshSavedSheets, savedSheets, sheetName])
+    }, [persistManualSheet])
+
+    const handleSaveComputerSheet = useCallback(async (format: TSpreadsheetSaveFormat) => {
+        const savedFile = await saveSpreadsheetToComputer({
+            snapshot: currentSnapshot,
+            sheetName,
+            format,
+            currentFile: currentExternalFile,
+        })
+
+        if (!savedFile) {
+            return
+        }
+
+        const updatedAt = Date.now()
+
+        if (options.enabled && options.config?.datasetFingerprint) {
+            await persistAutosaveSnapshot(currentSnapshot, sheetName, updatedAt)
+            await refreshSavedSheets()
+        }
+
+        setCurrentExternalFile(savedFile.externalFile)
+        setIsDirty(false)
+        setLastSavedAt(updatedAt)
+        setSaveDialogOpen(false)
+        commonStore.setNotification(
+            {
+                type: 'success',
+                title: 'CCN Addition',
+                message: savedFile.method === 'file-system-access'
+                    ? `Saved ${savedFile.externalFile.fileName}.`
+                    : `Downloaded ${savedFile.externalFile.fileName}.`,
+            },
+            3500,
+        )
+    }, [currentExternalFile, currentSnapshot, options.config, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, sheetName])
 
     const handleLoadSheet = useCallback(
         (sheet: IPersistedSheet) => {
+            clipboardRef.current = null
             commitSnapshot(
                 {
                     rows: sheet.rows,
                     fields: sheet.fields,
                 },
                 {
-                    dirty: sheet.kind !== 'manual',
+                    dirty: false,
                     historyMode: 'replace',
                     lastSavedAt: sheet.updatedAt,
                     nextSheetName: sheet.name,
                 },
             )
+            setCurrentExternalFile(null)
             setSelection(EMPTY_SELECTION)
             setLoadDialogOpen(false)
             commonStore.setNotification(
@@ -450,11 +585,64 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         [commitSnapshot],
     )
 
+    const handleImportSheet = useCallback(
+        async (sheet: IImportedSpreadsheetSheet) => {
+            const updatedAt = Date.now()
+
+            if (options.enabled && options.config?.datasetFingerprint) {
+                const existingSheet = savedSheets.find((savedSheet) => savedSheet.kind === 'manual' && savedSheet.name === sheet.name)
+                await saveSheetRecord({
+                    id: existingSheet?.id ?? `manual::${options.config.datasetFingerprint}::${sheet.name.toLowerCase().replace(/\s+/g, '_')}`,
+                    kind: 'manual',
+                    name: sheet.name,
+                    datasetFingerprint: options.config.datasetFingerprint,
+                    datasetLabel: options.config.datasetLabel,
+                    updatedAt,
+                    rows: cloneRows(sheet.rows),
+                    fields: cloneFields(sheet.fields),
+                })
+                await persistAutosaveSnapshot(sheet, sheet.name, updatedAt)
+                await refreshSavedSheets()
+            }
+
+            clipboardRef.current = null
+            commitSnapshot(
+                { rows: sheet.rows, fields: sheet.fields },
+                {
+                    dirty: false,
+                    historyMode: 'replace',
+                    lastSavedAt: updatedAt,
+                    nextSheetName: sheet.name,
+                },
+            )
+            setCurrentExternalFile({
+                fileName: sheet.fileName,
+                source: sheet.source,
+                worksheetName: sheet.worksheetName,
+                fileHandle: sheet.fileHandle ?? null,
+            })
+            setSelection(EMPTY_SELECTION)
+            setLoadDialogOpen(false)
+            commonStore.setNotification(
+                {
+                    type: 'success',
+                    title: 'CCN Addition',
+                    message: `Imported ${sheet.name}.`,
+                },
+                3500,
+            )
+        },
+        [commitSnapshot, options.config, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, savedSheets],
+    )
+
     const handleAddRow = useCallback(() => {
-        const nextSnapshot = addBlankRow(rows, fields)
+        const selectedRowIndex = getActiveRowIndex(selection)
+        const insertIndex = selection.kind === 'row' || selection.kind === 'cell' ? (selectedRowIndex ?? rows.length - 1) + 1 : rows.length
+        const nextSnapshot = insertBlankRow(rows, fields, insertIndex)
+
         commitSnapshot(nextSnapshot)
-        selectRow(nextSnapshot.rows.length - 1)
-    }, [commitSnapshot, fields, rows, selectRow])
+        selectRow(nextSnapshot.rowIndex)
+    }, [commitSnapshot, fields, rows, selectRow, selection])
 
     const handleRemoveRow = useCallback(() => {
         if (rows.length === 0) {
@@ -469,8 +657,10 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             return
         }
 
-        const rowIndex = getTargetRowIndex(selection, rows.length)
+        const rowIndex = getActiveRowIndex(selection) ?? (rows.length - 1)
         const nextSnapshot = removeRow(rows, fields, rowIndex)
+
+        clipboardRef.current = null
         commitSnapshot(nextSnapshot)
         setSelection(EMPTY_SELECTION)
     }, [commitSnapshot, fields, rows, selection])
@@ -481,11 +671,14 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             return
         }
 
-        const nextSnapshot = addColumn(rows, fields, requestedName)
+        const activeColumnIndex = getColumnIndex(fields, getActiveColumnId(selection))
+        const insertIndex = activeColumnIndex >= 0 ? activeColumnIndex + 1 : fields.length
+        const nextSnapshot = insertBlankColumn(rows, fields, insertIndex, requestedName)
+
         commitSnapshot(nextSnapshot)
         selectColumn(nextSnapshot.field.fid)
         notifyStructureChange('Added a column. Existing charts may need a quick review if they depend on column ordering or field names.')
-    }, [commitSnapshot, fields, notifyStructureChange, rows, selectColumn])
+    }, [commitSnapshot, fields, notifyStructureChange, rows, selectColumn, selection])
 
     const handleRemoveColumn = useCallback(() => {
         if (fields.length <= 1) {
@@ -500,18 +693,27 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             return
         }
 
-        const columnFid = getTargetColumnId(selection, fields)
+        const columnFid = getActiveColumnId(selection)
         if (!columnFid) {
+            commonStore.setNotification(
+                {
+                    type: 'warning',
+                    title: 'CCN Addition',
+                    message: 'Select a column header or cell before removing a column.',
+                },
+                4000,
+            )
             return
         }
 
+        clipboardRef.current = null
         commitSnapshot(removeColumn(rows, fields, columnFid))
         setSelection(EMPTY_SELECTION)
         notifyStructureChange('Removed a column. Existing charts may need to be adjusted if that field was in use.')
     }, [commitSnapshot, fields, notifyStructureChange, rows, selection])
 
     const handleRenameColumn = useCallback(() => {
-        const columnFid = getTargetColumnId(selection, fields)
+        const columnFid = getActiveColumnId(selection)
         const field = fields.find((item) => item.fid === columnFid)
 
         if (!field) {
@@ -519,7 +721,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 {
                     type: 'warning',
                     title: 'CCN Addition',
-                    message: 'Select a column header before renaming a column.',
+                    message: 'Select a column header or cell before renaming a column.',
                 },
                 4000,
             )
@@ -551,11 +753,33 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         }
 
         let valueToCopy = sheetToTsv(rows, fields)
+        clipboardRef.current = null
 
-        if (selection.cell) {
+        if (selection.kind === 'cell' && selection.cell) {
             valueToCopy = String(rows[selection.cell.rowIndex]?.[selection.cell.columnFid] ?? '')
-        } else if (selection.rowIndex != null) {
+        } else if (selection.kind === 'row' && selection.rowIndex != null) {
             valueToCopy = rowToTsv(rows[selection.rowIndex], fields)
+            clipboardRef.current = {
+                kind: 'row',
+                text: valueToCopy,
+                rows: [rowToValues(rows[selection.rowIndex], fields)],
+            }
+        } else if (selection.kind === 'column' && selection.columnFid) {
+            const field = fields.find((item) => item.fid === selection.columnFid)
+            if (field) {
+                valueToCopy = columnToTsv(rows, field)
+                clipboardRef.current = {
+                    kind: 'column',
+                    text: valueToCopy,
+                    columns: [
+                        {
+                            name: field.name ?? field.fid,
+                            values: columnToValues(rows, field),
+                            field,
+                        },
+                    ],
+                }
+            }
         }
 
         await navigator.clipboard.writeText(valueToCopy)
@@ -587,9 +811,50 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             return
         }
 
-        const rowIndex = selection.cell?.rowIndex ?? selection.rowIndex ?? 0
-        const columnIndex = getTargetColumnIndex(selection, fields)
-        const nextSnapshot = applyPaste(rows, fields, rowIndex, columnIndex, clipboardText)
+        const structuredClipboard = clipboardRef.current != null && clipboardRef.current.text === clipboardText ? clipboardRef.current : null
+
+        if (selection.kind === 'row' && selection.rowIndex != null) {
+            const nextSnapshot = structuredClipboard?.kind === 'row'
+                ? insertRows(rows, fields, selection.rowIndex, structuredClipboard.rows)
+                : insertRows(rows, fields, selection.rowIndex, parseDelimitedText(clipboardText))
+
+            commitSnapshot(nextSnapshot)
+            selectRow(selection.rowIndex)
+
+            if (nextSnapshot.truncatedColumns) {
+                commonStore.setNotification(
+                    {
+                        type: 'warning',
+                        title: 'CCN Addition',
+                        message: 'Pasted values that extended beyond the current columns were truncated.',
+                    },
+                    4500,
+                )
+            }
+
+            return
+        }
+
+        if (selection.kind === 'column' && selection.columnFid) {
+            const insertIndex = getColumnIndex(fields, selection.columnFid)
+            if (insertIndex < 0) {
+                return
+            }
+
+            const nextSnapshot = structuredClipboard?.kind === 'column'
+                ? insertColumns(rows, fields, insertIndex, structuredClipboard.columns)
+                : insertColumns(rows, fields, insertIndex, matrixToInsertedColumns(parseDelimitedText(clipboardText), fields.length))
+
+            commitSnapshot(nextSnapshot)
+            if (nextSnapshot.insertedFieldIds.length > 0) {
+                selectColumn(nextSnapshot.insertedFieldIds[0])
+            }
+            return
+        }
+
+        const activeRowIndex = getActiveRowIndex(selection) ?? 0
+        const activeColumnIndex = Math.max(0, getColumnIndex(fields, getActiveColumnId(selection)))
+        const nextSnapshot = applyPaste(rows, fields, activeRowIndex, activeColumnIndex, clipboardText)
 
         commitSnapshot(nextSnapshot)
 
@@ -603,19 +868,19 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 4500,
             )
         }
-    }, [commitSnapshot, fields, rows, selection])
+    }, [commitSnapshot, fields, rows, selectRow, selectColumn, selection])
 
     const selectionLabel = useMemo(() => {
-        if (selection.cell) {
+        if (selection.kind === 'cell' && selection.cell) {
             const field = fields.find((item) => item.fid === selection.cell?.columnFid)
             return `Cell R${selection.cell.rowIndex + 1}, ${field?.name ?? selection.cell.columnFid}`
         }
 
-        if (selection.rowIndex != null) {
+        if (selection.kind === 'row' && selection.rowIndex != null) {
             return `Row ${selection.rowIndex + 1}`
         }
 
-        if (selection.columnFid) {
+        if (selection.kind === 'column' && selection.columnFid) {
             const field = fields.find((item) => item.fid === selection.columnFid)
             return `Column ${field?.name ?? selection.columnFid}`
         }
@@ -633,20 +898,27 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         canUndo: historyIndexRef.current > 0,
         canRedo: historyIndexRef.current < historyRef.current.length - 1,
         loadDialogOpen,
+        saveDialogOpen,
         savedSheets,
+        currentExternalFile,
         lastSavedAt,
-        selectedRowIndex: selection.rowIndex,
-        selectedColumnFid: selection.columnFid,
-        selectedCell: selection.cell,
+        selectionKind: selection.kind,
+        selectedRowIndex: selection.kind === 'row' ? selection.rowIndex : null,
+        selectedColumnFid: selection.kind === 'column' ? selection.columnFid : null,
+        selectedCell: selection.kind === 'cell' ? selection.cell : null,
         selectionLabel,
         setLoadDialogOpen,
+        setSaveDialogOpen,
         selectRow,
         selectColumn,
         selectCell,
         commitCellValue,
         handleNewSheet,
         handleSaveSheet,
+        handleSaveBrowserSheet,
+        handleSaveComputerSheet,
         handleLoadSheet,
+        handleImportSheet,
         handleUndo,
         handleRedo,
         handleAddRow,

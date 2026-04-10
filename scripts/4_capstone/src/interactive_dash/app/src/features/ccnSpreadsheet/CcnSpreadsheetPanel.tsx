@@ -16,6 +16,7 @@ import {
 
 import { Button } from '@/components/ui/button'
 
+import { SaveSheetDialog } from './SaveSheetDialog'
 import { SavedSheetsDialog } from './SavedSheetsDialog'
 import type { ICcnSpreadsheetState } from './useCcnSpreadsheetState'
 import { displayCellValue, serializeCellValue } from './utils'
@@ -52,7 +53,17 @@ export function CcnSpreadsheetPanel(props: ICcnSpreadsheetPanelProps) {
 
     return (
         <div className="ccn-spreadsheet-panel">
+            <SaveSheetDialog
+                currentExternalFile={props.state.currentExternalFile}
+                onOpenChange={props.state.setSaveDialogOpen}
+                onSaveBrowserSheet={props.state.handleSaveBrowserSheet}
+                onSaveComputerSheet={props.state.handleSaveComputerSheet}
+                open={props.state.saveDialogOpen}
+                sheetName={props.state.sheetName}
+                sheets={props.state.savedSheets}
+            />
             <SavedSheetsDialog
+                onImportSheet={props.state.handleImportSheet}
                 onLoadSheet={props.state.handleLoadSheet}
                 onOpenChange={props.state.setLoadDialogOpen}
                 open={props.state.loadDialogOpen}
@@ -103,7 +114,8 @@ export function CcnSpreadsheetPanel(props: ICcnSpreadsheetPanelProps) {
                             {props.state.fields.map((field) => (
                                 <th key={field.fid}>
                                     <button
-                                        className={field.fid === props.state.selectedColumnFid ? 'ccn-spreadsheet-grid__selected' : undefined}
+                                        aria-pressed={props.state.selectionKind === 'column' && field.fid === props.state.selectedColumnFid}
+                                        className={props.state.selectionKind === 'column' && field.fid === props.state.selectedColumnFid ? 'ccn-spreadsheet-grid__selected' : undefined}
                                         onClick={() => props.state.selectColumn(field.fid)}
                                         type="button"
                                     >
@@ -127,9 +139,10 @@ export function CcnSpreadsheetPanel(props: ICcnSpreadsheetPanelProps) {
                         ) : (
                             props.state.rows.map((row, rowIndex) => (
                                 <tr key={`row-${rowIndex}`}>
-                                    <td className="ccn-spreadsheet-grid__row-header ccn-spreadsheet-grid__sticky-cell">
+                                    <td className={props.state.selectionKind === 'row' && rowIndex === props.state.selectedRowIndex ? 'ccn-spreadsheet-grid__row-header ccn-spreadsheet-grid__sticky-cell ccn-spreadsheet-grid__band-selected' : 'ccn-spreadsheet-grid__row-header ccn-spreadsheet-grid__sticky-cell'}>
                                         <button
-                                            className={rowIndex === props.state.selectedRowIndex ? 'ccn-spreadsheet-grid__selected' : undefined}
+                                            aria-pressed={props.state.selectionKind === 'row' && rowIndex === props.state.selectedRowIndex}
+                                            className={props.state.selectionKind === 'row' && rowIndex === props.state.selectedRowIndex ? 'ccn-spreadsheet-grid__selected' : undefined}
                                             onClick={() => props.state.selectRow(rowIndex)}
                                             type="button"
                                         >
@@ -138,11 +151,13 @@ export function CcnSpreadsheetPanel(props: ICcnSpreadsheetPanelProps) {
                                     </td>
                                     {props.state.fields.map((field) => {
                                         const cellKey = `${rowIndex}-${field.fid}-${serializeCellValue(row[field.fid])}`
+                                        const isSelectedRow = props.state.selectionKind === 'row' && rowIndex === props.state.selectedRowIndex
+                                        const isSelectedColumn = props.state.selectionKind === 'column' && field.fid === props.state.selectedColumnFid
                                         const isSelectedCell =
                                             props.state.selectedCell?.rowIndex === rowIndex && props.state.selectedCell?.columnFid === field.fid
 
                                         return (
-                                            <td key={`${rowIndex}-${field.fid}`}>
+                                            <td className={isSelectedRow || isSelectedColumn ? 'ccn-spreadsheet-grid__band-selected' : undefined} key={`${rowIndex}-${field.fid}`}>
                                                 <input
                                                     aria-label={`Spreadsheet cell ${rowIndex + 1}-${field.name}`}
                                                     className={isSelectedCell ? 'ccn-spreadsheet-grid__input ccn-spreadsheet-grid__input--selected' : 'ccn-spreadsheet-grid__input'}
