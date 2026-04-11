@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { tracker } from '@/utils/tracker'
+import type { IViewField } from '@kanaries/graphic-walker/interfaces'
 import type { VizSpecStore } from '@kanaries/graphic-walker/store/visualSpecStore'
 import type { ToolbarSelectButtonItem } from '@kanaries/graphic-walker/components/toolbar/toolbar-select-button'
 
@@ -8,10 +9,10 @@ import commonStore from '../store/common'
 
 import {
     buildCcnFormulaChart,
-    CCN_FORMULA_PRESETS,
-    getCcnFormulaPreset,
+    getAvailableCcnFormulaEntries,
+    getCcnFormulaSelection,
     getCcnMetricLabel,
-    type CcnFormulaPresetKey,
+    type CcnFormulaSelectionKey,
 } from './ccnFormulas'
 
 function CcnFormulaIcon(iconProps: React.SVGProps<SVGSVGElement>) {
@@ -48,28 +49,42 @@ function DepthProfileIcon(iconProps: React.SVGProps<SVGSVGElement>) {
     )
 }
 
-function formatMissingMetrics(presetKey: CcnFormulaPresetKey, missing: string[]): string {
-    const preset = getCcnFormulaPreset(presetKey)
+function formatMissingMetrics(selectionKey: CcnFormulaSelectionKey, missing: string[]): string {
+    const selection = getCcnFormulaSelection(selectionKey)
     const labels = missing.map((metric) => getCcnMetricLabel(metric as Parameters<typeof getCcnMetricLabel>[0]))
     const noun = labels.length === 1 ? 'field' : 'fields'
 
-    return `Could not apply ${preset.label}. Missing ${noun}: ${labels.join(', ')}.`
+    return `Could not apply ${selection.label}. Missing ${noun}: ${labels.join(', ')}.`
 }
 
-export function getCcnFormulaTool(storeRef: React.MutableRefObject<VizSpecStore | null>): ToolbarSelectButtonItem<CcnFormulaPresetKey> {
-    const [selectedPreset, setSelectedPreset] = useState<CcnFormulaPresetKey>('carbon_vs_organic_matter')
+export function getCcnFormulaTool(
+    storeRef: React.MutableRefObject<VizSpecStore | null>,
+    availableFields: IViewField[],
+): ToolbarSelectButtonItem<CcnFormulaSelectionKey> {
+    const [selectedPreset, setSelectedPreset] = useState<CcnFormulaSelectionKey>('carbon_vs_organic_matter')
+
+    const formulaEntries = useMemo(() => getAvailableCcnFormulaEntries(availableFields), [availableFields])
+    const activeSelectedPreset = formulaEntries.some((entry) => entry.key === selectedPreset)
+        ? selectedPreset
+        : (formulaEntries[0]?.key ?? selectedPreset)
+
+    useEffect(() => {
+        if (selectedPreset !== activeSelectedPreset) {
+            setSelectedPreset(activeSelectedPreset)
+        }
+    }, [activeSelectedPreset, selectedPreset])
 
     const options = useMemo(
         () =>
-            CCN_FORMULA_PRESETS.map((preset) => ({
-                key: preset.key,
-                label: preset.label,
-                icon: preset.key.includes('depth_profile') ? DepthProfileIcon : RelationshipIcon,
+            formulaEntries.map((entry) => ({
+                key: entry.key,
+                label: entry.label,
+                icon: entry.preset.key.includes('depth_profile') ? DepthProfileIcon : RelationshipIcon,
             })),
-        []
+        [formulaEntries]
     )
 
-    const onSelect = (presetKey: CcnFormulaPresetKey) => {
+    const onSelect = (presetKey: CcnFormulaSelectionKey) => {
         setSelectedPreset(presetKey)
         tracker.track('click', { entity: `ccn_formula_${presetKey}` })
 
@@ -101,7 +116,7 @@ export function getCcnFormulaTool(storeRef: React.MutableRefObject<VizSpecStore 
             {
                 type: 'success',
                 title: 'CCN formulas',
-                message: `Applied ${result.preset.label}${detail}`,
+                message: `Applied ${result.selection.label}${detail}`,
             },
             3_000
         )
@@ -112,7 +127,7 @@ export function getCcnFormulaTool(storeRef: React.MutableRefObject<VizSpecStore 
         label: 'CCN formulas',
         icon: (iconProps?: React.SVGProps<SVGSVGElement>) => <CcnFormulaIcon {...iconProps} />,
         options,
-        value: selectedPreset,
+        value: activeSelectedPreset,
         onSelect,
     }
 }
