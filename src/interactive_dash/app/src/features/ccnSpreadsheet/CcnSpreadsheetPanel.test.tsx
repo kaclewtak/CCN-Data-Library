@@ -8,6 +8,7 @@ function createState(): ICcnSpreadsheetState {
     return {
         graphRows: [{ study_id: 'A1' }],
         graphFields: [{ fid: 'study_id', name: 'Study ID', offset: 0, semanticType: 'nominal', analyticType: 'dimension' } as any],
+        visualizationDatasetFingerprint: 'dataset::test',
         rows: [{ study_id: 'A1' }],
         fields: [{ fid: 'study_id', name: 'Study ID', offset: 0, semanticType: 'nominal', analyticType: 'dimension' } as any],
         sheetName: 'Uploaded dataset',

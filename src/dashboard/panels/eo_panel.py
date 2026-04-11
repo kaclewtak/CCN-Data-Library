@@ -131,7 +131,7 @@ def eo_ui():
                 ),
                 ui.input_action_button(
                     "search_eo",
-                    "Search Granules from Table Points",
+                    "Search Granules from Uploaded Points",
                     class_="btn-primary",
                 ),
                 ui.output_text("search_status"),
@@ -156,7 +156,7 @@ def eo_ui():
 
 
 @module.server
-def eo_server(input, output, session, table_points_getter: Callable[[], pd.DataFrame]):
+def eo_server(input_, _output, _session, table_points_getter: Callable[[], pd.DataFrame]):
     granules = reactive.Value([])
     status = reactive.Value("Select a dataset and click 'Search'.")
     granule_color = reactive.Value("#e05c00")
@@ -164,11 +164,11 @@ def eo_server(input, output, session, table_points_getter: Callable[[], pd.DataF
     # Search trigger from EO collections
 
     @reactive.effect
-    @reactive.event(input.search_eo)
+    @reactive.event(input_.search_eo)
     def _do_search():
         points = table_points_getter()
         if points is None or points.empty:
-            status.set("No points found. Upload a file with lat/lon columns first.")
+            status.set("No points found. Import a dataset in Data Explorer with latitude/longitude columns first.")
             return
 
         bbox = _get_bounding_box(points)
@@ -176,7 +176,7 @@ def eo_server(input, output, session, table_points_getter: Callable[[], pd.DataF
             status.set("Could not compute bounding box from points.")
             return
 
-        collection_name = input.collection()
+        collection_name = input_.collection()
         collection = COLLECTIONS[collection_name]
         granule_color.set(collection["color"])
         status.set(f"Searching {collection_name}...")
@@ -185,7 +185,7 @@ def eo_server(input, output, session, table_points_getter: Callable[[], pd.DataF
             results = _search_granules(bbox, collection)
             granules.set(results)
             status.set(f"Found {len(results)} granule(s)." if results else "No granules found for this region.")
-        except Exception as e:
+        except requests.RequestException as e:
             status.set(f"Error: {e}")
 
     @render.text

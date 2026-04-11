@@ -15,6 +15,7 @@ pygwalker_persistence = import_module("panels.pygwalker_persistence")
 
 _PYGWALKER_RENDER_SCRIPT = getattr(pygwalker_page, "_PYGWALKER_RENDER_SCRIPT")
 build_pygwalker_html = pygwalker_persistence.build_pygwalker_html
+build_pygwalker_html_with_config = pygwalker_persistence.build_pygwalker_html_with_config
 data_fingerprint = pygwalker_persistence.data_fingerprint
 
 
@@ -65,6 +66,33 @@ def test_build_pygwalker_html_includes_ccn_spreadsheet_config(monkeypatch) -> No
     assert ccn_config["datasetLabel"] == "Uploaded dataset"
 
 
+def test_build_pygwalker_html_with_config_includes_bridge_config(monkeypatch) -> None:
+    df = _sample_df()
+    captured: dict[str, object] = {}
+
+    def fake_to_html(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+        return "<div>mock-html</div>"
+
+    monkeypatch.setattr(pygwalker_persistence.pyg, "to_html", fake_to_html)
+
+    build_pygwalker_html_with_config(
+        df,
+        "ccn-test-gid",
+        spreadsheet_dataset_fingerprint="startup::ccn-test-gid",
+        bridge_config={"enabled": True, "bridgeId": "bridge-123", "targetOrigin": "*"},
+    )
+
+    bridge_config = captured["kwargs"]["ccnSharedDatasetBridge"]
+    ccn_config = captured["kwargs"]["ccnSpreadsheet"]
+    assert bridge_config["bridgeId"] == "bridge-123"
+    assert bridge_config["enabled"] is True
+    assert ccn_config["datasetFingerprint"] == "startup::ccn-test-gid"
+
+
 def test_render_script_uses_persistent_message_handler() -> None:
     assert "ccn_pygwalker_render" in _PYGWALKER_RENDER_SCRIPT
     assert "data-ccn-fp" in _PYGWALKER_RENDER_SCRIPT
+    assert "Shiny.setInputValue" in _PYGWALKER_RENDER_SCRIPT
+    assert "ccn:shared-dataset-sync" in _PYGWALKER_RENDER_SCRIPT

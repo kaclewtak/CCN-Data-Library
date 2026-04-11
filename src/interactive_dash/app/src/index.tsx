@@ -96,10 +96,11 @@ const getComputationCallback = (props: IAppProps) => {
 
 // ---- CCN ADDITION START: split CCN-only config from GraphicWalker props ----
 const splitExtraConfig = (extraConfig?: IAppProps['extraConfig']) => {
-    const { ccnSpreadsheet, ...graphicWalkerExtraConfig } = extraConfig ?? {};
+    const { ccnSpreadsheet, ccnSharedDatasetBridge, ...graphicWalkerExtraConfig } = extraConfig ?? {};
 
     return {
         ccnSpreadsheet,
+        ccnSharedDatasetBridge,
         graphicWalkerExtraConfig,
     };
 };
@@ -187,7 +188,7 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     // ---- CCN ADDITION END ----
     const storeRef = React.useRef<VizSpecStore|null>(null);
     const disposerRef = React.useRef<(() => void) | undefined>(undefined);
-    const { ccnSpreadsheet, graphicWalkerExtraConfig } = React.useMemo(
+    const { ccnSpreadsheet, ccnSharedDatasetBridge, graphicWalkerExtraConfig } = React.useMemo(
         () => splitExtraConfig(props.extraConfig),
         [props.extraConfig],
     );
@@ -195,11 +196,16 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     const spreadsheetState = useCcnSpreadsheetState({
         enabled: spreadsheetEnabled,
         config: ccnSpreadsheet,
+        bridgeConfig: ccnSharedDatasetBridge,
         initialRows: props.dataSource,
         initialFields: props.rawFields,
     });
     const activeDataSource = spreadsheetEnabled ? spreadsheetState.graphRows : props.dataSource;
     const activeFields = spreadsheetEnabled ? spreadsheetState.graphFields : props.rawFields;
+    const walkerDatasetKey = spreadsheetEnabled
+        ? `ccn-spreadsheet-${spreadsheetState.visualizationDatasetFingerprint}`
+        : 'ccn-static-dataset';
+    const previousWalkerDatasetKeyRef = React.useRef<string | null>(null);
     const storeRefProxied = React.useMemo(
         () =>
             new Proxy(storeRef, {
@@ -251,6 +257,23 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
             storeRef.current?.setSegmentKey(props.defaultTab as ISegmentKey);
         }, 0);
     }, [mode]);
+
+    useEffect(() => {
+        if (!spreadsheetEnabled) {
+            previousWalkerDatasetKeyRef.current = walkerDatasetKey;
+            return;
+        }
+
+        if (previousWalkerDatasetKeyRef.current == null) {
+            previousWalkerDatasetKeyRef.current = walkerDatasetKey;
+            return;
+        }
+
+        if (previousWalkerDatasetKeyRef.current !== walkerDatasetKey) {
+            previousWalkerDatasetKeyRef.current = walkerDatasetKey;
+            setVisSpec([]);
+        }
+    }, [spreadsheetEnabled, walkerDatasetKey]);
 
     const runcellTool = getRuncellTool();
     const exportTool = getExportTool(setExportOpen);
@@ -372,11 +395,13 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
 
     const walkerView = (
         <GraphicWalker
+            key={walkerDatasetKey}
             {...graphicWalkerExtraConfig}
             appearance={appearance}
             vizThemeConfig={props.themeKey}
             fieldKeyGuard={props.fieldkeyGuard}
             fields={activeFields}
+            keepAlive={walkerDatasetKey}
             storeRef={storeRefProxied}
             ref={gwRef}
             toolbar={toolbarConfig}

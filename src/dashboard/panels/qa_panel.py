@@ -90,8 +90,9 @@ def qa_ui():
 
 
 @module.server
-def qa_server(input, output, session, data_getter: Callable[[], pl.DataFrame | None]):
+def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.DataFrame | None]):
     # Lazy-load reference data on first access
+    _ = (_output, _session)
     ref_data = reactive.Value(None)
 
     @reactive.calc
@@ -133,9 +134,9 @@ def qa_server(input, output, session, data_getter: Callable[[], pl.DataFrame | N
     def qa_chart():
         data = _ensure_ref()
         ref_merged = data["ref_merged"]
-        var = input.chart_var()
-        chart_type = input.chart_type()
-        habitats = list(input.chart_habitat()) if input.chart_habitat() else []
+        var = module_input.chart_var()
+        chart_type = module_input.chart_type()
+        habitats = list(module_input.chart_habitat()) if module_input.chart_habitat() else []
         mapping = resolved_col_map()
         df = user_pandas()
 
@@ -177,11 +178,11 @@ def qa_server(input, output, session, data_getter: Callable[[], pl.DataFrame | N
     def stats_panel():
         data = _ensure_ref()
         ref_merged = data["ref_merged"]
-        var = input.chart_var()
+        var = module_input.chart_var()
         if var == "__all__":
             return ui.HTML("")
 
-        habitats = list(input.chart_habitat()) if input.chart_habitat() else []
+        habitats = list(module_input.chart_habitat()) if module_input.chart_habitat() else []
         ref = ref_merged.copy()
         if habitats:
             ref = ref[ref["habitat"].isin(habitats)]
@@ -218,7 +219,7 @@ def qa_server(input, output, session, data_getter: Callable[[], pl.DataFrame | N
         w = validation_results()
         if w.empty:
             return render.DataGrid(
-                pd.DataFrame({"Status": ["No validation issues. Load data in the Table & Map tab."]}),
+                pd.DataFrame({"Status": ["No validation issues. Import or edit data in the Data Explorer tab."]}),
             )
         return render.DataGrid(w)
 
@@ -237,21 +238,21 @@ def qa_server(input, output, session, data_getter: Callable[[], pl.DataFrame | N
         data = _ensure_ref()
         mapping = resolved_col_map()
         df = user_pandas()
-        habitats = list(input.map_habitat()) if input.map_habitat() else []
+        habitats = list(module_input.map_habitat()) if module_input.map_habitat() else []
 
         lat_c = mapping.get("latitude")
         lon_c = mapping.get("longitude")
 
-        html, ref_n, user_n = build_map_html(
+        map_result = build_map_html(
             data["ref_cores_valid"],
             df,
             lat_c,
             lon_c,
-            show_ref=input.show_ref(),
-            show_user=input.show_user(),
+            show_ref=module_input.show_ref(),
+            show_user=module_input.show_user(),
             habitat_filter=habitats,
         )
-        return ui.HTML(html)
+        return ui.HTML(map_result[0])
 
     @render.ui
     def map_status():

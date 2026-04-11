@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
-
 import pandas as pd
 import polars as pl
-
-from utils.dataframe import polars_to_pandas
 
 
 def find_lat_lon_columns(columns: list[str]) -> tuple[str, str] | None:
@@ -78,36 +74,18 @@ def find_lat_lon_columns(columns: list[str]) -> tuple[str, str] | None:
     return best_pair
 
 
-def parse_coordinate(value: Any) -> float | None:
-    if value in (None, ""):
-        return None
-    try:
-        parsed = float(value)
-    except (TypeError, ValueError):
-        return None
-    if pd.isna(parsed):
-        return None
-    return parsed
-
-
-def row_has_complete_lat_lon(df: pl.DataFrame, row_idx: int, lat_col: str, lon_col: str) -> bool:
-    if row_idx < 0 or row_idx >= df.height:
-        return False
-    lat_value = parse_coordinate(df[row_idx, lat_col])
-    lon_value = parse_coordinate(df[row_idx, lon_col])
-    return lat_value is not None and lon_value is not None
-
-
-def dataframe_to_map_points(
+def dataframe_to_geo_points(
     df: pl.DataFrame | None,
     lat_lon_cols: tuple[str, str] | None,
-    enabled: bool,
 ) -> pd.DataFrame:
-    if df is None or lat_lon_cols is None or not enabled:
+    if df is None or lat_lon_cols is None:
         return pd.DataFrame(columns=["latitude", "longitude"])
 
     lat_col, lon_col = lat_lon_cols
-    points = polars_to_pandas(df.select([lat_col, lon_col]))
+    try:
+        points = df.select([lat_col, lon_col]).to_pandas()
+    except ModuleNotFoundError:
+        points = pd.DataFrame(df.select([lat_col, lon_col]).to_dicts())
     points = points.rename(columns={lat_col: "latitude", lon_col: "longitude"})
     points["latitude"] = pd.to_numeric(points["latitude"], errors="coerce")
     points["longitude"] = pd.to_numeric(points["longitude"], errors="coerce")

@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import sys
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 
@@ -45,6 +46,18 @@ def build_pygwalker_html(df: pl.DataFrame, gid: str) -> str:
     Using a stable ``gid`` avoids creating a brand-new container div each
     time, which is the key to keeping the React app alive in the DOM.
     """
+    return build_pygwalker_html_with_config(df, gid)
+
+
+def build_pygwalker_html_with_config(
+    df: pl.DataFrame,
+    gid: str,
+    *,
+    spreadsheet_dataset_fingerprint: str | None = None,
+    spreadsheet_dataset_label: str = "Uploaded dataset",
+    bridge_config: dict[str, Any] | None = None,
+) -> str:
+    """Generate PyGWalker HTML with CCN spreadsheet and bridge config."""
     # ------------------------------------------------------------------
     # CCN ADDITION — spreadsheet configuration is injected through the
     # local pygwalker ``extraConfig`` pass-through so the in-frame React
@@ -52,18 +65,24 @@ def build_pygwalker_html(df: pl.DataFrame, gid: str) -> str:
     # any Shiny-side split layout.
     # ------------------------------------------------------------------
     fingerprint = data_fingerprint(df)
+    extra_config: dict[str, Any] = {
+        "ccnSpreadsheet": {
+            "enabled": True,
+            "datasetFingerprint": spreadsheet_dataset_fingerprint or fingerprint,
+            "datasetLabel": spreadsheet_dataset_label,
+            "autosaveDebounceMs": 2500,
+            "syncDebounceMs": 350,
+            "historyLimit": 50,
+        }
+    }
+    if bridge_config:
+        extra_config["ccnSharedDatasetBridge"] = bridge_config
+
     return pyg.to_html(
         df,
         gid=gid,
         spec="",
         width="100%",
         height="100%",
-        ccnSpreadsheet={
-            "enabled": True,
-            "datasetFingerprint": fingerprint,
-            "datasetLabel": "Uploaded dataset",
-            "autosaveDebounceMs": 2500,
-            "syncDebounceMs": 350,
-            "historyLimit": 50,
-        },
+        **extra_config,
     )
