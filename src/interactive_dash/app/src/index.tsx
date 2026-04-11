@@ -278,7 +278,7 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     const runcellTool = getRuncellTool();
     const exportTool = getExportTool(setExportOpen);
     const openInDesktopTool = getOpenDesktopTool(props, storeRef);
-    const ccnFormulaTool = getCcnFormulaTool(storeRef);
+    const ccnFormulaTool = getCcnFormulaTool(storeRef, activeFields as IViewField[]);
 
     const tools = [runcellTool, exportTool, openInDesktopTool];
     if (props.env && ["jupyter_widgets", "streamlit", "gradio", "marimo", "anywidget", "web_server"].indexOf(props.env) !== -1 && props.useSaveTool) {

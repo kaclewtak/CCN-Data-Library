@@ -1,14 +1,16 @@
 import type { DraggableFieldState, IChart, IViewField } from '@kanaries/graphic-walker/interfaces'
 
 type CcnMetricKey = 'carbon' | 'organicMatter' | 'bulkDensity' | 'depth'
+type CcnDepthVariant = 'depth' | 'midpoint' | 'depth_min' | 'depth_max'
+type CcnDepthProfilePresetKey = 'carbon_depth_profile' | 'organic_matter_depth_profile' | 'bulk_density_depth_profile'
 
 export type CcnFormulaPresetKey =
     | 'carbon_vs_organic_matter'
     | 'carbon_vs_bulk_density'
     | 'bulk_density_vs_organic_matter'
-    | 'carbon_depth_profile'
-    | 'organic_matter_depth_profile'
-    | 'bulk_density_depth_profile'
+    | CcnDepthProfilePresetKey
+
+export type CcnFormulaSelectionKey = CcnFormulaPresetKey | `${CcnDepthProfilePresetKey}__${CcnDepthVariant}`
 
 type MetricMatcher = {
     exact: string[]
@@ -25,14 +27,23 @@ type CcnFormulaPreset = {
 }
 
 type BuildDepthFieldResult = {
+    variant?: CcnDepthVariant
     field?: IViewField
     addToMeasures?: boolean
     derived?: boolean
 }
 
+export type CcnFormulaSelection = {
+    key: CcnFormulaSelectionKey
+    label: string
+    preset: CcnFormulaPreset
+    depthVariant?: CcnDepthVariant
+}
+
 export type BuildCcnFormulaChartResult = {
     chart?: IChart
     preset: CcnFormulaPreset
+    selection: CcnFormulaSelection
     axisFields?: {
         columns: IViewField
         rows: IViewField
@@ -89,6 +100,20 @@ export const CCN_FORMULA_PRESETS: readonly CcnFormulaPreset[] = [
 
 export const CCN_DEPTH_MIDPOINT_FID = 'ccn_depth_midpoint'
 export const CCN_DEPTH_MIDPOINT_NAME = 'CCN Depth Midpoint'
+const CCN_DEPTH_VARIANT_ORDER: readonly CcnDepthVariant[] = ['depth', 'midpoint', 'depth_min', 'depth_max'] as const
+const CCN_DEPTH_VARIANT_LABELS: Record<CcnDepthVariant, string> = {
+    depth: 'Depth',
+    midpoint: 'Midpoint',
+    depth_min: 'Depth min',
+    depth_max: 'Depth max',
+}
+const DEPTH_PROFILE_PRESET_KEYS = new Set<CcnDepthProfilePresetKey>([
+    'carbon_depth_profile',
+    'organic_matter_depth_profile',
+    'bulk_density_depth_profile',
+])
+const FORMULA_SELECTION_SEPARATOR = '__'
+const FORMULA_PRESET_KEY_SET = new Set<CcnFormulaPresetKey>(CCN_FORMULA_PRESETS.map((preset) => preset.key))
 
 const FIELD_LABELS: Record<CcnMetricKey, string> = {
     carbon: 'carbon',
@@ -126,9 +151,30 @@ const METRIC_MATCHERS: Record<Exclude<CcnMetricKey, 'depth'>, MetricMatcher> = {
     },
 }
 
+const DEPTH_MATCHER: MetricMatcher = {
+    exact: ['depth_cm', 'sample_depth', 'core_depth', 'depth'],
+    contains: ['depth_cm', 'sample_depth', 'core_depth', 'depth'],
+    bad: [
+        'depth_midpoint',
+        'depth_mid',
+        'mid_depth',
+        'midpoint_depth',
+        'depth_center',
+        'depth_centre',
+        'depth_min',
+        'depth_max',
+        'top_depth',
+        'bottom_depth',
+        'upper_depth',
+        'lower_depth',
+        'min_depth',
+        'max_depth',
+    ],
+}
+
 const DEPTH_MID_MATCHER: MetricMatcher = {
-    exact: ['depth_midpoint', 'depth_mid', 'mid_depth', 'depth_center', 'depth_centre', 'depth_cm', 'sample_depth', 'core_depth', 'depth'],
-    contains: ['depth_midpoint', 'depth_mid', 'mid_depth', 'midpoint_depth', 'depth_center', 'depth_centre', 'sample_depth', 'core_depth', 'depth_cm', 'depth'],
+    exact: ['depth_midpoint', 'depth_mid', 'mid_depth', 'depth_center', 'depth_centre'],
+    contains: ['depth_midpoint', 'depth_mid', 'mid_depth', 'midpoint_depth', 'depth_center', 'depth_centre'],
     bad: ['depth_min', 'depth_max', 'top_depth', 'bottom_depth', 'upper_depth', 'lower_depth', 'min_depth', 'max_depth'],
 }
 
@@ -205,10 +251,6 @@ function findBestField(fields: IViewField[], matcher: MetricMatcher): IViewField
     return bestScore === Number.NEGATIVE_INFINITY ? undefined : bestField
 }
 
-function quoteSqlIdentifier(value: string): string {
-    return `"${value.replace(/"/g, '""')}"`
-}
-
 function toMeasureField(field: IViewField): IViewField {
     return {
         ...field,
@@ -217,55 +259,84 @@ function toMeasureField(field: IViewField): IViewField {
     }
 }
 
-function buildDepthMidpointField(depthMin: IViewField, depthMax: IViewField): IViewField {
-    const minName = depthMin.name ?? depthMin.fid
-    const maxName = depthMax.name ?? depthMax.fid
-
-    return {
-        fid: CCN_DEPTH_MIDPOINT_FID,
-        name: CCN_DEPTH_MIDPOINT_NAME,
-        basename: CCN_DEPTH_MIDPOINT_NAME,
-        semanticType: 'quantitative',
-        analyticType: 'measure',
-        aggName: 'sum',
-        computed: true,
-        expression: {
-            op: 'expr',
-            as: CCN_DEPTH_MIDPOINT_FID,
-            params: [
-                {
-                    type: 'sql',
-                    value: `(${quoteSqlIdentifier(minName)} + ${quoteSqlIdentifier(maxName)}) / 2`,
-                },
-            ],
-        },
-    }
+function isDepthProfilePresetKey(presetKey: CcnFormulaPresetKey): presetKey is CcnDepthProfilePresetKey {
+    return DEPTH_PROFILE_PRESET_KEYS.has(presetKey as CcnDepthProfilePresetKey)
 }
 
-function resolveDepthField(fields: IViewField[]): BuildDepthFieldResult {
-    const existingMidpoint = fields.find((field) => field.fid === CCN_DEPTH_MIDPOINT_FID)
-    if (existingMidpoint) {
-        return { field: toMeasureField(existingMidpoint), derived: Boolean(existingMidpoint.computed) }
+function isDepthVariant(value: string): value is CcnDepthVariant {
+    return CCN_DEPTH_VARIANT_ORDER.includes(value as CcnDepthVariant)
+}
+
+function buildFormulaSelectionLabel(preset: CcnFormulaPreset, depthVariant?: CcnDepthVariant): string {
+    if (!depthVariant) {
+        return preset.label
     }
 
+    return `${preset.label} (${CCN_DEPTH_VARIANT_LABELS[depthVariant]})`
+}
+
+function buildDepthSelectionKey(presetKey: CcnDepthProfilePresetKey, depthVariant: CcnDepthVariant): CcnFormulaSelectionKey {
+    return `${presetKey}${FORMULA_SELECTION_SEPARATOR}${depthVariant}`
+}
+
+function parseFormulaSelectionKey(selectionKey: CcnFormulaSelectionKey): { presetKey: CcnFormulaPresetKey; depthVariant?: CcnDepthVariant } {
+    const [rawPresetKey, rawDepthVariant, ...remaining] = selectionKey.split(FORMULA_SELECTION_SEPARATOR)
+    if (
+        remaining.length === 0
+        && rawDepthVariant
+        && FORMULA_PRESET_KEY_SET.has(rawPresetKey as CcnFormulaPresetKey)
+        && isDepthProfilePresetKey(rawPresetKey as CcnFormulaPresetKey)
+        && isDepthVariant(rawDepthVariant)
+    ) {
+        return {
+            presetKey: rawPresetKey as CcnDepthProfilePresetKey,
+            depthVariant: rawDepthVariant,
+        }
+    }
+
+    return { presetKey: selectionKey as CcnFormulaPresetKey }
+}
+
+function collectChartFields(chart: IChart): IViewField[] {
+    return [...chart.encodings.dimensions, ...chart.encodings.measures]
+}
+
+function resolveAvailableDepthFields(fields: IViewField[]): BuildDepthFieldResult[] {
+    const results = new Map<CcnDepthVariant, BuildDepthFieldResult>()
+    const directDepth = findBestField(fields, DEPTH_MATCHER)
     const midpointField = findBestField(fields, DEPTH_MID_MATCHER)
-    if (midpointField) {
-        return { field: toMeasureField(midpointField) }
-    }
-
     const depthMin = findBestField(fields, DEPTH_MIN_MATCHER)
     const depthMax = findBestField(fields, DEPTH_MAX_MATCHER)
-    if (depthMin && depthMax) {
-        const derivedField = buildDepthMidpointField(depthMin, depthMax)
-        return { field: derivedField, addToMeasures: true, derived: true }
+
+    if (directDepth) {
+        results.set('depth', { variant: 'depth', field: toMeasureField(directDepth) })
     }
 
-    const fallback = depthMin ?? depthMax
-    if (fallback) {
-        return { field: toMeasureField(fallback) }
+    if (midpointField) {
+        results.set('midpoint', { variant: 'midpoint', field: toMeasureField(midpointField) })
     }
 
-    return {}
+    if (depthMin) {
+        results.set('depth_min', { variant: 'depth_min', field: toMeasureField(depthMin) })
+    }
+
+    if (depthMax) {
+        results.set('depth_max', { variant: 'depth_max', field: toMeasureField(depthMax) })
+    }
+
+    return CCN_DEPTH_VARIANT_ORDER.flatMap((variant) => {
+        const match = results.get(variant)
+        return match ? [match] : []
+    })
+}
+
+function resolveDepthField(fields: IViewField[], preferredVariant?: CcnDepthVariant): BuildDepthFieldResult {
+    const depthFields = resolveAvailableDepthFields(fields)
+    if (preferredVariant) {
+        return depthFields.find((field) => field.variant === preferredVariant) ?? {}
+    }
+
+    return depthFields[0] ?? {}
 }
 
 function resetViewChannels(encodings: DraggableFieldState): DraggableFieldState {
@@ -307,9 +378,48 @@ export function getCcnMetricLabel(metric: CcnMetricKey): string {
     return FIELD_LABELS[metric]
 }
 
-export function buildCcnFormulaChart(chart: IChart, presetKey: CcnFormulaPresetKey): BuildCcnFormulaChartResult {
+export function getCcnFormulaSelection(selectionKey: CcnFormulaSelectionKey): CcnFormulaSelection {
+    const { presetKey, depthVariant } = parseFormulaSelectionKey(selectionKey)
     const preset = getCcnFormulaPreset(presetKey)
-    const allFields = [...chart.encodings.dimensions, ...chart.encodings.measures]
+
+    return {
+        key: selectionKey,
+        label: buildFormulaSelectionLabel(preset, depthVariant),
+        preset,
+        depthVariant,
+    }
+}
+
+export function getAvailableCcnFormulaEntries(fields: IViewField[]): CcnFormulaSelection[] {
+    const depthFields = resolveAvailableDepthFields(fields)
+
+    return CCN_FORMULA_PRESETS.flatMap<CcnFormulaSelection>((preset) => {
+        if (!isDepthProfilePresetKey(preset.key)) {
+            return [
+                {
+                    key: preset.key,
+                    label: preset.label,
+                    preset,
+                    depthVariant: undefined,
+                },
+            ]
+        }
+
+        const depthPresetKey = preset.key
+
+        return depthFields.map((depthField) => ({
+            key: buildDepthSelectionKey(depthPresetKey, depthField.variant!),
+            label: buildFormulaSelectionLabel(preset, depthField.variant),
+            preset,
+            depthVariant: depthField.variant,
+        }))
+    })
+}
+
+export function buildCcnFormulaChart(chart: IChart, selectionKey: CcnFormulaSelectionKey): BuildCcnFormulaChartResult {
+    const selection = getCcnFormulaSelection(selectionKey)
+    const preset = selection.preset
+    const allFields = collectChartFields(chart)
 
     const matched: Partial<Record<CcnMetricKey, IViewField>> = {
         carbon: findBestField(allFields, METRIC_MATCHERS.carbon),
@@ -317,7 +427,7 @@ export function buildCcnFormulaChart(chart: IChart, presetKey: CcnFormulaPresetK
         bulkDensity: findBestField(allFields, METRIC_MATCHERS.bulkDensity),
     }
 
-    const depthField = resolveDepthField(allFields)
+    const depthField = resolveDepthField(allFields, selection.depthVariant)
     if (depthField.field) {
         matched.depth = depthField.field
     }
@@ -327,6 +437,7 @@ export function buildCcnFormulaChart(chart: IChart, presetKey: CcnFormulaPresetK
     if (missing.length > 0) {
         return {
             preset,
+            selection,
             matched,
             missing,
             ...(depthField.derived && depthField.field ? { derivedDepthField: depthField.field } : {}),
@@ -346,6 +457,7 @@ export function buildCcnFormulaChart(chart: IChart, presetKey: CcnFormulaPresetK
 
     return {
         preset,
+        selection,
         matched,
         missing: [],
         axisFields: {
