@@ -24,6 +24,7 @@ import { Preview, ChartPreview } from './components/preview';
 import UploadSpecModal from "./components/uploadSpecModal"
 import UploadChartModal from './components/uploadChartModal';
 import InitModal from './components/initModal';
+import { getCcnFormulaTool } from './tools/ccnFormulaTool';
 import { getSaveTool } from './tools/saveTool';
 import { getExportTool } from './tools/exportTool';
 import { getExportDataframeTool } from './tools/exportDataframe';
@@ -254,6 +255,7 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     const runcellTool = getRuncellTool();
     const exportTool = getExportTool(setExportOpen);
     const openInDesktopTool = getOpenDesktopTool(props, storeRef);
+    const ccnFormulaTool = getCcnFormulaTool(storeRef);
 
     const tools = [runcellTool, exportTool, openInDesktopTool];
     if (props.env && ["jupyter_widgets", "streamlit", "gradio", "marimo", "anywidget", "web_server"].indexOf(props.env) !== -1 && props.useSaveTool) {
@@ -316,6 +318,8 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
             // ---- CCN ADDITION END ----
             '-',
             ...tools,
+            '-',
+            ccnFormulaTool,
         ],
     }
 
