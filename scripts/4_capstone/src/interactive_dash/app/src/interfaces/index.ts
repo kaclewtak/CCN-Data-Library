@@ -1,10 +1,11 @@
 import type { IRow, IMutField } from '@kanaries/graphic-walker/interfaces'
 import type { IDarkMode, IThemeKey, IComputationFunction } from '@kanaries/graphic-walker/interfaces';
 
-import type { ICCNSpreadsheetConfig } from '@/features/ccnSpreadsheet'
+import type { ICCNSharedDatasetBridgeConfig, ICCNSpreadsheetConfig } from '@/features/ccnSpreadsheet'
 
 export interface ICCNExtraConfig {
     ccnSpreadsheet?: ICCNSpreadsheetConfig
+    ccnSharedDatasetBridge?: ICCNSharedDatasetBridgeConfig
     defaultConfig?: {
         config?: Record<string, unknown>
         layout?: Record<string, unknown>

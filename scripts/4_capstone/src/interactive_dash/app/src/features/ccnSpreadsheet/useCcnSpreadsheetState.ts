@@ -4,9 +4,18 @@ import type { IMutField, IRow } from '@kanaries/graphic-walker/interfaces'
 
 import commonStore from '@/store/common'
 
+import {
+    buildImportedDatasetIdentity,
+    buildPersistedDatasetIdentity,
+    createSharedDatasetSyncPayload,
+    postSharedDatasetSyncPayload,
+    resolveVisualizationDatasetFingerprint,
+    type ISharedDatasetIdentity,
+} from './bridge'
 import { saveSpreadsheetToComputer } from './fileTransfer'
 import { getAutosaveSheetId, listSheetsForFingerprint, saveSheetRecord } from './persistence'
 import type {
+    ICCNSharedDatasetBridgeConfig,
     ICCNSpreadsheetConfig,
     IImportedSpreadsheetSheet,
     IPersistedSheet,
@@ -45,6 +54,7 @@ import type { IInsertedColumnData } from './utils'
 interface IUseCcnSpreadsheetStateOptions {
     enabled: boolean
     config?: ICCNSpreadsheetConfig
+    bridgeConfig?: ICCNSharedDatasetBridgeConfig
     initialRows: IRow[]
     initialFields: IMutField[]
 }
@@ -54,6 +64,17 @@ interface ICommitOptions {
     historyMode?: 'push' | 'replace' | 'none'
     lastSavedAt?: number | null
     nextSheetName?: string
+    syncGraphSnapshot?: boolean
+}
+
+export function createSheetActivationCommitOptions(lastSavedAt: number, sheetName: string): ICommitOptions {
+    return {
+        dirty: false,
+        historyMode: 'replace',
+        lastSavedAt,
+        nextSheetName: sheetName,
+        syncGraphSnapshot: true,
+    }
 }
 
 type TSpreadsheetClipboard =
@@ -71,6 +92,7 @@ type TSpreadsheetClipboard =
 export interface ICcnSpreadsheetState {
     graphRows: IRow[]
     graphFields: IMutField[]
+    visualizationDatasetFingerprint: string
     rows: IRow[]
     fields: IMutField[]
     sheetName: string
@@ -185,17 +207,29 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
     const [savedSheets, setSavedSheets] = useState<IPersistedSheet[]>([])
     const [currentExternalFile, setCurrentExternalFile] = useState<ISpreadsheetExternalFile | null>(null)
     const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
+    const [activeDatasetIdentity, setActiveDatasetIdentity] = useState<ISharedDatasetIdentity | null>(null)
+    const [bridgeActive, setBridgeActive] = useState(false)
     const [selection, setSelection] = useState<ISpreadsheetSelection>(EMPTY_SELECTION)
     const [historyVersion, setHistoryVersion] = useState(0)
     const [persistenceReady, setPersistenceReady] = useState(false)
     const historyRef = useRef<ISpreadsheetSnapshot[]>([cloneSnapshot(baseSnapshotRef.current)])
     const historyIndexRef = useRef(0)
     const changeVersionRef = useRef(0)
+    const bridgeSequenceRef = useRef(0)
     const clipboardRef = useRef<TSpreadsheetClipboard | null>(null)
 
     const currentSnapshot = useMemo<ISpreadsheetSnapshot>(
         () => ({ rows, fields }),
         [fields, rows],
+    )
+
+    const visualizationDatasetFingerprint = useMemo(
+        () =>
+            resolveVisualizationDatasetFingerprint({
+                activeDatasetIdentity,
+                defaultDatasetFingerprint: options.config?.datasetFingerprint,
+            }),
+        [activeDatasetIdentity, options.config?.datasetFingerprint],
     )
 
     const commitSnapshot = useCallback(
@@ -222,6 +256,10 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
 
             setRows(nextSnapshot.rows)
             setFields(nextSnapshot.fields)
+            if (commitOptions.syncGraphSnapshot) {
+                setGraphRows(cloneRows(nextSnapshot.rows))
+                setGraphFields(cloneFields(nextSnapshot.fields))
+            }
             setIsDirty(commitOptions.dirty ?? true)
             setLastSavedAt(commitOptions.lastSavedAt ?? null)
 
@@ -235,28 +273,53 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         [options.config?.historyLimit],
     )
 
-    const refreshSavedSheets = useCallback(async () => {
-        if (!options.enabled || !options.config?.datasetFingerprint) {
+    const getCurrentDatasetIdentity = useCallback(
+        (fallbackSheetName?: string): ISharedDatasetIdentity | null => {
+            if (activeDatasetIdentity) {
+                return activeDatasetIdentity
+            }
+
+            if (!options.config?.datasetFingerprint) {
+                return null
+            }
+
+            return {
+                datasetFingerprint: options.config.datasetFingerprint,
+                datasetLabel: options.config.datasetLabel?.trim() || fallbackSheetName || 'Uploaded dataset',
+            }
+        },
+        [activeDatasetIdentity, options.config?.datasetFingerprint, options.config?.datasetLabel],
+    )
+
+    const refreshSavedSheets = useCallback(async (datasetFingerprint?: string | null) => {
+        const effectiveFingerprint = datasetFingerprint ?? getCurrentDatasetIdentity()?.datasetFingerprint
+        if (!options.enabled || !effectiveFingerprint) {
             setSavedSheets([])
             return
         }
 
-        const nextSheets = await listSheetsForFingerprint(options.config.datasetFingerprint)
+        const nextSheets = await listSheetsForFingerprint(effectiveFingerprint)
         setSavedSheets(nextSheets)
-    }, [options.config?.datasetFingerprint, options.enabled])
+    }, [getCurrentDatasetIdentity, options.enabled])
 
     const persistAutosaveSnapshot = useCallback(
-        async (snapshot: ISpreadsheetSnapshot, nextSheetName: string, updatedAt = Date.now()) => {
-            if (!options.enabled || !options.config?.datasetFingerprint) {
+        async (
+            snapshot: ISpreadsheetSnapshot,
+            nextSheetName: string,
+            updatedAt = Date.now(),
+            datasetIdentity?: ISharedDatasetIdentity | null,
+        ) => {
+            const effectiveIdentity = datasetIdentity ?? getCurrentDatasetIdentity(nextSheetName)
+            if (!options.enabled || !effectiveIdentity?.datasetFingerprint) {
                 return null
             }
 
             await saveSheetRecord({
-                id: getAutosaveSheetId(options.config.datasetFingerprint),
+                id: getAutosaveSheetId(effectiveIdentity.datasetFingerprint),
                 kind: 'autosave',
                 name: nextSheetName,
-                datasetFingerprint: options.config.datasetFingerprint,
-                datasetLabel: options.config.datasetLabel,
+                datasetFingerprint: effectiveIdentity.datasetFingerprint,
+                datasetLabel: effectiveIdentity.datasetLabel,
                 updatedAt,
                 rows: cloneRows(snapshot.rows),
                 fields: cloneFields(snapshot.fields),
@@ -264,7 +327,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
 
             return updatedAt
         },
-        [options.config, options.enabled],
+        [getCurrentDatasetIdentity, options.enabled],
     )
 
     useEffect(() => {
@@ -291,12 +354,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             if (autosaveSheet) {
                 commitSnapshot(
                     { rows: autosaveSheet.rows, fields: autosaveSheet.fields },
-                    {
-                        dirty: false,
-                        historyMode: 'replace',
-                        lastSavedAt: autosaveSheet.updatedAt,
-                        nextSheetName: autosaveSheet.name,
-                    },
+                    createSheetActivationCommitOptions(autosaveSheet.updatedAt, autosaveSheet.name),
                 )
                 commonStore.setNotification(
                     {
@@ -324,12 +382,40 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         }
 
         const timeoutId = window.setTimeout(() => {
-            setGraphRows(cloneRows(currentSnapshot.rows))
-            setGraphFields(cloneFields(currentSnapshot.fields))
+            const nextGraphRows = cloneRows(currentSnapshot.rows)
+            const nextGraphFields = cloneFields(currentSnapshot.fields)
+
+            setGraphRows(nextGraphRows)
+            setGraphFields(nextGraphFields)
+
+            if (!bridgeActive || !options.bridgeConfig?.enabled) {
+                return
+            }
+
+            const datasetIdentity = getCurrentDatasetIdentity(sheetName)
+            if (!datasetIdentity) {
+                return
+            }
+
+            bridgeSequenceRef.current += 1
+            postSharedDatasetSyncPayload(
+                createSharedDatasetSyncPayload({
+                    bridgeConfig: options.bridgeConfig,
+                    sequence: bridgeSequenceRef.current,
+                    datasetIdentity,
+                    sheetName,
+                    snapshot: {
+                        rows: nextGraphRows,
+                        fields: nextGraphFields,
+                    },
+                    currentExternalFile,
+                }),
+                options.bridgeConfig,
+            )
         }, options.config?.syncDebounceMs ?? DEFAULT_SYNC_DEBOUNCE_MS)
 
         return () => window.clearTimeout(timeoutId)
-    }, [currentSnapshot, options.config?.syncDebounceMs, options.enabled])
+    }, [bridgeActive, currentExternalFile, currentSnapshot, getCurrentDatasetIdentity, options.bridgeConfig, options.config?.syncDebounceMs, options.enabled, sheetName])
 
     useEffect(() => {
         if (!options.enabled || !options.config?.datasetFingerprint || !persistenceReady || !isDirty) {
@@ -457,7 +543,8 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
     }, [commitSnapshot, savedSheets, sheetName])
 
     const persistManualSheet = useCallback(async (requestedName: string) => {
-        if (!options.enabled || !options.config?.datasetFingerprint) {
+        const datasetIdentity = getCurrentDatasetIdentity(sheetName)
+        if (!options.enabled || !datasetIdentity?.datasetFingerprint) {
             return null
         }
 
@@ -478,17 +565,17 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         const updatedAt = Date.now()
 
         await saveSheetRecord({
-            id: existingSheet?.id ?? `manual::${options.config.datasetFingerprint}::${normalizedName.toLowerCase().replace(/\s+/g, '_')}`,
+            id: existingSheet?.id ?? `manual::${datasetIdentity.datasetFingerprint}::${normalizedName.toLowerCase().replace(/\s+/g, '_')}`,
             kind: 'manual',
             name: normalizedName,
-            datasetFingerprint: options.config.datasetFingerprint,
-            datasetLabel: options.config.datasetLabel,
+            datasetFingerprint: datasetIdentity.datasetFingerprint,
+            datasetLabel: datasetIdentity.datasetLabel,
             updatedAt,
             rows: cloneRows(currentSnapshot.rows),
             fields: cloneFields(currentSnapshot.fields),
         })
-        await persistAutosaveSnapshot(currentSnapshot, normalizedName, updatedAt)
-        await refreshSavedSheets()
+        await persistAutosaveSnapshot(currentSnapshot, normalizedName, updatedAt, datasetIdentity)
+        await refreshSavedSheets(datasetIdentity.datasetFingerprint)
         setSheetName(normalizedName)
         setIsDirty(false)
         setLastSavedAt(updatedAt)
@@ -497,7 +584,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             normalizedName,
             updatedAt,
         }
-    }, [currentSnapshot, options.config, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, savedSheets])
+    }, [currentSnapshot, getCurrentDatasetIdentity, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, savedSheets, sheetName])
 
     const handleSaveSheet = useCallback(async () => {
         setSaveDialogOpen(true)
@@ -533,10 +620,11 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         }
 
         const updatedAt = Date.now()
+        const datasetIdentity = getCurrentDatasetIdentity(sheetName)
 
-        if (options.enabled && options.config?.datasetFingerprint) {
-            await persistAutosaveSnapshot(currentSnapshot, sheetName, updatedAt)
-            await refreshSavedSheets()
+        if (options.enabled && datasetIdentity?.datasetFingerprint) {
+            await persistAutosaveSnapshot(currentSnapshot, sheetName, updatedAt, datasetIdentity)
+            await refreshSavedSheets(datasetIdentity.datasetFingerprint)
         }
 
         setCurrentExternalFile(savedFile.externalFile)
@@ -553,22 +641,19 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             },
             3500,
         )
-    }, [currentExternalFile, currentSnapshot, options.config, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, sheetName])
+    }, [currentExternalFile, currentSnapshot, getCurrentDatasetIdentity, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, sheetName])
 
     const handleLoadSheet = useCallback(
         (sheet: IPersistedSheet) => {
             clipboardRef.current = null
+            setActiveDatasetIdentity(buildPersistedDatasetIdentity(sheet))
+            setBridgeActive(true)
             commitSnapshot(
                 {
                     rows: sheet.rows,
                     fields: sheet.fields,
                 },
-                {
-                    dirty: false,
-                    historyMode: 'replace',
-                    lastSavedAt: sheet.updatedAt,
-                    nextSheetName: sheet.name,
-                },
+                createSheetActivationCommitOptions(sheet.updatedAt, sheet.name),
             )
             setCurrentExternalFile(null)
             setSelection(EMPTY_SELECTION)
@@ -588,32 +673,30 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
     const handleImportSheet = useCallback(
         async (sheet: IImportedSpreadsheetSheet) => {
             const updatedAt = Date.now()
+            const nextDatasetIdentity = buildImportedDatasetIdentity(sheet)
 
-            if (options.enabled && options.config?.datasetFingerprint) {
+            if (options.enabled) {
                 const existingSheet = savedSheets.find((savedSheet) => savedSheet.kind === 'manual' && savedSheet.name === sheet.name)
                 await saveSheetRecord({
-                    id: existingSheet?.id ?? `manual::${options.config.datasetFingerprint}::${sheet.name.toLowerCase().replace(/\s+/g, '_')}`,
+                    id: existingSheet?.id ?? `manual::${nextDatasetIdentity.datasetFingerprint}::${sheet.name.toLowerCase().replace(/\s+/g, '_')}`,
                     kind: 'manual',
                     name: sheet.name,
-                    datasetFingerprint: options.config.datasetFingerprint,
-                    datasetLabel: options.config.datasetLabel,
+                    datasetFingerprint: nextDatasetIdentity.datasetFingerprint,
+                    datasetLabel: nextDatasetIdentity.datasetLabel,
                     updatedAt,
                     rows: cloneRows(sheet.rows),
                     fields: cloneFields(sheet.fields),
                 })
-                await persistAutosaveSnapshot(sheet, sheet.name, updatedAt)
-                await refreshSavedSheets()
+                await persistAutosaveSnapshot(sheet, sheet.name, updatedAt, nextDatasetIdentity)
+                await refreshSavedSheets(nextDatasetIdentity.datasetFingerprint)
             }
 
             clipboardRef.current = null
+            setActiveDatasetIdentity(nextDatasetIdentity)
+            setBridgeActive(true)
             commitSnapshot(
                 { rows: sheet.rows, fields: sheet.fields },
-                {
-                    dirty: false,
-                    historyMode: 'replace',
-                    lastSavedAt: updatedAt,
-                    nextSheetName: sheet.name,
-                },
+                createSheetActivationCommitOptions(updatedAt, sheet.name),
             )
             setCurrentExternalFile({
                 fileName: sheet.fileName,
@@ -632,7 +715,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 3500,
             )
         },
-        [commitSnapshot, options.config, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, savedSheets],
+        [commitSnapshot, options.enabled, persistAutosaveSnapshot, refreshSavedSheets, savedSheets],
     )
 
     const handleAddRow = useCallback(() => {
@@ -891,6 +974,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
     return {
         graphRows,
         graphFields,
+        visualizationDatasetFingerprint,
         rows,
         fields,
         sheetName,

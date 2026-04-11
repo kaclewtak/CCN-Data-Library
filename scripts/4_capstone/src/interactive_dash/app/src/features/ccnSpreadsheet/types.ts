@@ -9,6 +9,13 @@ export interface ICCNSpreadsheetConfig {
     historyLimit?: number
 }
 
+export interface ICCNSharedDatasetBridgeConfig {
+    enabled?: boolean
+    bridgeId: string
+    targetOrigin?: string
+    messageType?: string
+}
+
 export interface ISpreadsheetCellSelection {
     rowIndex: number
     columnFid: string
@@ -58,4 +65,17 @@ export interface IPersistedSheet extends ISpreadsheetSnapshot {
 
 export interface IImportedSpreadsheetSheet extends ISpreadsheetSnapshot, ISpreadsheetExternalFile {
     name: string
+}
+
+export interface ISharedDatasetSyncPayload extends ISpreadsheetSnapshot {
+    type: string
+    bridgeId: string
+    sequence: number
+    hasUploadedData: boolean
+    datasetFingerprint: string
+    datasetLabel: string
+    sheetName: string
+    fileName?: string
+    source?: TSpreadsheetFileSource
+    worksheetName?: string
 }

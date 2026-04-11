@@ -1,10 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+import json
 
-import polars as pl
-from panels.pygwalker_persistence import build_pygwalker_html, data_fingerprint
+from dashboard_shared_dataset import (
+    SharedDatasetState,
+    build_explorer_bootstrap_frame,
+    build_startup_dataset_fingerprint,
+)
 from shiny import module, reactive, ui
+
+from panels.pygwalker_persistence import (
+    build_pygwalker_html_with_config,
+    data_fingerprint,
+)
+
 
 # ---------------------------------------------------------------------------
 # CCN ADDITION — JavaScript handler for persistent PyGWalker rendering
@@ -14,22 +23,28 @@ from shiny import module, reactive, ui
 # data fingerprint actually changes, keeping the iframe (and all user
 # chart settings inside it) alive across Shiny tab switches.
 # ---------------------------------------------------------------------------
-_PYGWALKER_RENDER_SCRIPT = """\
-(function() {
+def _build_pygwalker_render_script(host_id: str, placeholder_id: str, dataset_sync_input_id: str) -> str:
+    host_id_json = json.dumps(host_id)
+    placeholder_id_json = json.dumps(placeholder_id)
+    dataset_sync_input_id_json = json.dumps(dataset_sync_input_id)
+
+    return f"""\
+(function() {{
     if (window.__ccnPygwalkerHandlerRegistered) return;
     window.__ccnPygwalkerHandlerRegistered = true;
 
-    Shiny.addCustomMessageHandler("ccn_pygwalker_render", function(msg) {
-        var host = document.getElementById("ccn-pygwalker-host");
-        var placeholder = document.getElementById("ccn-pygwalker-placeholder");
+    Shiny.addCustomMessageHandler("ccn_pygwalker_render", function(msg) {{
+        var host = document.getElementById({host_id_json});
+        var placeholder = document.getElementById({placeholder_id_json});
         if (!host) return;
 
-        if (msg.action === "clear") {
+        if (msg.action === "clear") {{
             host.innerHTML = "";
             host.removeAttribute("data-ccn-fp");
+            host.removeAttribute("data-ccn-bridge-id");
             if (placeholder) placeholder.style.display = "";
             return;
-        }
+        }}
 
         // Skip if the same data fingerprint is already rendered — this is
         // what keeps the iframe (and all user chart settings) alive when
@@ -38,14 +53,44 @@ _PYGWALKER_RENDER_SCRIPT = """\
 
         if (placeholder) placeholder.style.display = "none";
         host.setAttribute("data-ccn-fp", msg.fingerprint);
+        if (msg.bridgeId) {{
+            host.setAttribute("data-ccn-bridge-id", msg.bridgeId);
+        }}
         host.innerHTML = msg.html;
-    });
-})();
+    }});
+
+    window.addEventListener("message", function(event) {{
+        var host = document.getElementById({host_id_json});
+        if (!host) return;
+
+        var iframe = host.querySelector("iframe");
+        if (!iframe || event.source !== iframe.contentWindow) return;
+
+        var payload = event.data;
+        if (!payload || payload.type !== "ccn:shared-dataset-sync") return;
+
+        var expectedBridgeId = host.getAttribute("data-ccn-bridge-id");
+        if (expectedBridgeId && payload.bridgeId !== expectedBridgeId) return;
+
+        Shiny.setInputValue({dataset_sync_input_id_json}, payload, {{ priority: "event" }});
+    }});
+}})();
 """
+
+
+_PYGWALKER_RENDER_SCRIPT = _build_pygwalker_render_script(
+    "ccn_pygwalker_host",
+    "ccn_pygwalker_placeholder",
+    "ccn_pygwalker_dataset_sync",
+)
 
 
 @module.ui
 def pygwalker_ui():
+    host_id = "ccn_pygwalker_host"
+    placeholder_id = "ccn_pygwalker_placeholder"
+    dataset_sync_input_id = module.resolve_id("dataset_sync")
+
     return ui.div(
         ui.div(
             # ------ CCN ADDITION START: persistent container ------
@@ -54,12 +99,12 @@ def pygwalker_ui():
             # handler so that the PyGWalker iframe survives Shiny tab
             # switches unchanged.
             ui.div(
-                ui.p("Upload a file on the Table Editor tab to explore data here."),
+                ui.p("Loading Data Explorer..."),
                 style="padding: 2rem; color: #666;",
-                id="ccn-pygwalker-placeholder",
+                id=placeholder_id,
             ),
-            ui.div(id="ccn-pygwalker-host"),
-            ui.tags.script(_PYGWALKER_RENDER_SCRIPT),
+            ui.div(id=host_id),
+            ui.tags.script(_build_pygwalker_render_script(host_id, placeholder_id, dataset_sync_input_id)),
             # ------ CCN ADDITION END ------
             # ------ CCN SOFT-DISABLED START: original Shiny output_ui ------
             # Replaced by the persistent container + custom-message pattern
@@ -77,41 +122,47 @@ def pygwalker_ui():
 
 @module.server
 def pygwalker_server(
-    input,
-    output,
+    input_,
+    _output,
     session,
-    data_getter: Callable[[], pl.DataFrame | None],
 ):
     # Mutable (non-reactive) state — keeps track of what is already
     # rendered so we only push new HTML when data genuinely changes.
-    _state: dict = {"hash": ""}
+    _state: dict = {"hash": "", "rendered": False}
     _stable_gid = f"ccn-pgw-{id(session)}"
+    _bridge_id = f"ccn-pgw-bridge-{id(session)}"
+    _shared_dataset = SharedDatasetState()
+    _boot_df = build_explorer_bootstrap_frame()
+    _boot_fp = data_fingerprint(_boot_df)
+    _startup_dataset_fingerprint = build_startup_dataset_fingerprint(_stable_gid)
 
     @reactive.effect
-    async def _push_pygwalker():
-        """Push PyGWalker HTML only when the underlying data changes.
-
-        The JS-side handler skips replacement when the fingerprint matches
-        what is already rendered, so Shiny tab switches are free.
-        """
-        df = data_getter()
-
-        if df is None:
-            if _state["hash"]:
-                _state["hash"] = ""
-                await session.send_custom_message("ccn_pygwalker_render", {"action": "clear"})
+    async def _render_pygwalker_bootstrap():
+        if _state["rendered"]:
             return
 
-        fp = data_fingerprint(df)
-        if fp == _state["hash"]:
-            return  # data unchanged — keep the existing iframe alive
-
-        _state["hash"] = fp
-        html = build_pygwalker_html(df, _stable_gid)
+        _state["rendered"] = True
+        _state["hash"] = _boot_fp
+        html = build_pygwalker_html_with_config(
+            _boot_df,
+            _stable_gid,
+            spreadsheet_dataset_fingerprint=_startup_dataset_fingerprint,
+            bridge_config={
+                "enabled": True,
+                "bridgeId": _bridge_id,
+                "targetOrigin": "*",
+            },
+        )
         await session.send_custom_message(
             "ccn_pygwalker_render",
-            {"html": html, "fingerprint": fp},
+            {"html": html, "fingerprint": _boot_fp, "bridgeId": _bridge_id},
         )
+
+    @reactive.effect
+    @reactive.event(input_.dataset_sync)
+    def _sync_shared_dataset():
+        payload = input_.dataset_sync()
+        _shared_dataset.update_from_payload(payload)
 
     # ------ CCN SOFT-DISABLED START: original @render.ui ------
     # The @render.ui / pygwalker_view pattern has been replaced by the
@@ -120,13 +171,9 @@ def pygwalker_server(
     # changed (or the tab became visible), destroying all user chart
     # settings.
     #
-    # @render.ui
-    # def pygwalker_view():
-    #     df = data_getter()
-    #     if df is None:
-    #         return ui.div(
-    #             ui.p("Upload a file on the Table Editor tab ..."),
-    #             style="padding: 2rem; color: #666;",
-    #         )
-    #     return ui.HTML(get_pygwalker_html(df))
+    return {
+        "data": _shared_dataset.data,
+        "all_geo_points": _shared_dataset.geo_points,
+        "metadata": _shared_dataset.metadata,
+    }
     # ------ CCN SOFT-DISABLED END ------

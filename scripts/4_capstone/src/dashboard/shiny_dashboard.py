@@ -1,10 +1,19 @@
+from typing import Any
+
 from panels.data_inventory import data_inventory_server, data_inventory_ui
 from panels.eo_panel import eo_server, eo_ui
-from panels.map_panel import map_server, map_ui
 from panels.pygwalker_page import pygwalker_server, pygwalker_ui
 from panels.qa_panel import qa_server, qa_ui
-from panels.table import table_server, table_ui
-from shiny import App, reactive, ui
+from shiny import App, ui
+
+
+def _call_module_ui(module_ui: Any, module_id: str) -> Any:
+    return module_ui(module_id)
+
+
+def _call_module_server(module_server: Any, module_id: str, /, **kwargs: Any) -> Any:
+    return module_server(module_id, **kwargs)
+
 
 app_ui = ui.page_fluid(
     ui.head_content(
@@ -54,7 +63,7 @@ app_ui = ui.page_fluid(
                resolution for all descendants. Override it here. */
             /* ---- CCN SOFT-DISABLED START: original .shiny-html-output rules ----
              * The output_ui element no longer exists; replaced by the persistent
-             * #ccn-pygwalker-host div.  Restore these if reverting to the original
+             * #ccn_pygwalker_host div.  Restore these if reverting to the original
              * output_ui approach in pygwalker_page.py.
             .pygwalker-container > .shiny-html-output,
             .pygwalker-container > .shiny-html-output > [id^="ifr-pyg-"] {
@@ -66,13 +75,13 @@ app_ui = ui.page_fluid(
              * ---- CCN SOFT-DISABLED END ---- */
 
             /* ---- CCN ADDITION START: flex sizing for persistent host div ---- */
-            #ccn-pygwalker-host {
+            #ccn_pygwalker_host {
                 display: flex;
                 flex: 1 1 auto;
                 height: 100%;
                 min-height: 0;
             }
-            #ccn-pygwalker-host > [id^="ifr-pyg-"] {
+            #ccn_pygwalker_host > [id^="ifr-pyg-"] {
                 display: flex !important;
                 flex: 1 1 auto;
                 height: 100% !important;
@@ -95,53 +104,24 @@ app_ui = ui.page_fluid(
     ui.panel_title("CCN Data Library Dashboard"),
     ui.navset_tab(
         ui.nav_panel(
-            "Table & Map",
-            ui.layout_columns(
-                ui.div(
-                    table_ui("data_editor"),
-                    style="height: 88vh; overflow: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;",
-                ),
-                ui.div(
-                    map_ui("map_viewer"),
-                    style="height: 88vh; overflow: auto; border: 1px solid #ddd; border-radius: 8px; padding: 8px;",
-                ),
-                col_widths=[6, 6],
-            ),
+            "Data Explorer",
+            _call_module_ui(pygwalker_ui, "pygwalker_explorer"),
         ),
         ui.nav_panel(
             "Satellite Search",
-            eo_ui("eo_search"),
-        ),
-        ui.nav_panel(
-            "Data Explorer",
-            pygwalker_ui("pygwalker_explorer"),
+            _call_module_ui(eo_ui, "eo_search"),
         ),
         ui.nav_panel(
             "Data Inventory",
-            data_inventory_ui("inventory"),
+            _call_module_ui(data_inventory_ui, "inventory"),
         ),
         ui.nav_panel(
             "QA Dashboard",
-            qa_ui("qa_dashboard"),
+            _call_module_ui(qa_ui, "qa_dashboard"),
         ),
     ),
-    # JS handler so table can scroll to a row when map marker is clicked
     ui.tags.script(
         """
-        Shiny.addCustomMessageHandler("scroll_to_row", function(rowIndex) {
-            setTimeout(function() {
-                const grids = document.querySelectorAll(".shiny-data-grid-output, [data-testid='data-grid']");
-                grids.forEach(function(grid) {
-                    const rows = grid.querySelectorAll("tbody tr");
-                    if (rows[rowIndex]) {
-                        rows[rowIndex].scrollIntoView({ behavior: "smooth", block: "center" });
-                        rows[rowIndex].style.outline = "2px solid #ff3333";
-                        setTimeout(() => rows[rowIndex].style.outline = "", 1500);
-                    }
-                });
-            }, 100);
-        });
-
         document.addEventListener("shown.bs.tab", function(event) {
             if (event.target?.getAttribute("data-value") !== "Data Explorer") {
                 return;
@@ -163,25 +143,15 @@ app_ui = ui.page_fluid(
 )
 
 
-def server(input, output, session):
-    selected_point = reactive.Value(None)
-
-    table_state = table_server(
-        "data_editor",
-        selected_point=selected_point,
-    )
-    map_server(
-        "map_viewer",
-        table_points_getter=table_state["map_points"],
-        selected_point=selected_point,
-    )
-    eo_server(
+def server(_input, _output, _session):
+    explorer_state = _call_module_server(pygwalker_server, "pygwalker_explorer")
+    _call_module_server(
+        eo_server,
         "eo_search",
-        table_points_getter=table_state["all_geo_points"],
+        table_points_getter=explorer_state["all_geo_points"],
     )
-    pygwalker_server("pygwalker_explorer", data_getter=table_state["data"])
-    data_inventory_server("inventory")
-    qa_server("qa_dashboard", data_getter=table_state["data"])
+    _call_module_server(data_inventory_server, "inventory")
+    _call_module_server(qa_server, "qa_dashboard", data_getter=explorer_state["data"])
 
 
 app = App(app_ui, server)
