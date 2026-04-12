@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from scipy import stats
 
 # ---------------------------------------------------------------------------
 # Schema constants
@@ -307,6 +308,113 @@ def run_validation(df: pd.DataFrame, col_map: dict[str, str | None]) -> pd.DataF
     return pd.DataFrame(warnings) if warnings else pd.DataFrame(columns=["Row", "Column", "Value", "Issue"])
 
 
+def matched_numeric_variables(
+    user_df: pd.DataFrame | None,
+    col_map: dict[str, str | None],
+) -> list[dict[str, str]]:
+    """Return matched numeric QA variables in canonical display order."""
+    if user_df is None:
+        return []
+
+    matches: list[dict[str, str]] = []
+    for variable, info in QA_NUMERIC_COLS.items():
+        user_column = col_map.get(variable)
+        if user_column and user_column in user_df.columns:
+            matches.append(
+                {
+                    "variable": variable,
+                    "user_column": user_column,
+                    "unit": info["unit"],
+                }
+            )
+    return matches
+
+
+def compare_user_to_reference(
+    user_values: pd.Series,
+    ref_values: pd.Series,
+    test_name: str = "ks",
+) -> dict[str, float | int | str | None]:
+    """Compare a user series to the CCN reference series."""
+    user_clean = pd.to_numeric(user_values, errors="coerce").dropna()
+    ref_clean = pd.to_numeric(ref_values, errors="coerce").dropna()
+
+    result: dict[str, float | int | str | None] = {
+        "test": test_name,
+        "n_user": len(user_clean),
+        "n_ref": len(ref_clean),
+        "statistic": None,
+        "p_value": None,
+        "interpretation": "Insufficient data for comparison.",
+    }
+    if len(user_clean) < 2 or len(ref_clean) < 2:
+        return result
+
+    if test_name == "anderson":
+        try:
+            comparison = stats.anderson_ksamp([user_clean.values, ref_clean.values])
+            statistic = comparison.statistic
+            p_value = comparison.pvalue
+        except ValueError as exc:
+            result["interpretation"] = f"Test failed: {exc}"
+            return result
+    else:
+        statistic, p_value = stats.ks_2samp(user_clean, ref_clean)
+
+    if p_value < 0.01:
+        interpretation = "Distributions are significantly different (p < 0.01)."
+    elif p_value < 0.05:
+        interpretation = "Distributions differ at the 5% significance level."
+    else:
+        interpretation = "No significant difference detected between distributions."
+
+    result.update(
+        {
+            "statistic": round(float(statistic), 4),
+            "p_value": round(float(p_value), 4),
+            "interpretation": interpretation,
+        }
+    )
+    return result
+
+
+def build_comparison_results(
+    ref_merged: pd.DataFrame,
+    user_df: pd.DataFrame | None,
+    col_map: dict[str, str | None],
+    habitats: list[str] | None = None,
+    variable: str = "__all__",
+    test_name: str = "ks",
+) -> list[dict[str, float | int | str | None]]:
+    """Build statistical comparison rows for the matched QA variables."""
+    matches = matched_numeric_variables(user_df, col_map)
+    if user_df is None or not matches:
+        return []
+
+    ref = ref_merged.copy()
+    if habitats:
+        ref = ref[ref["habitat"].isin(habitats)]
+
+    selected_variables = [variable] if variable != "__all__" else [match["variable"] for match in matches]
+    results: list[dict[str, float | int | str | None]] = []
+    for selected in selected_variables:
+        user_column = col_map.get(selected)
+        if user_column is None or user_column not in user_df.columns or selected not in ref.columns:
+            continue
+
+        comparison = compare_user_to_reference(user_df[user_column], ref[selected], test_name=test_name)
+        comparison.update(
+            {
+                "variable": selected,
+                "user_column": user_column,
+                "unit": QA_NUMERIC_COLS.get(selected, {}).get("unit", ""),
+            }
+        )
+        results.append(comparison)
+
+    return results
+
+
 # ---------------------------------------------------------------------------
 # Chart builders
 # ---------------------------------------------------------------------------
@@ -329,6 +437,68 @@ def _user_hover_texts(
                         parts.append(f"{id_col}: {id_val}")
         texts.append("<br>".join(parts))
     return texts
+
+
+def _user_distribution_trace(
+    user_values: pd.Series,
+    chart_type: str,
+    *,
+    name: str,
+    hover_text: list[str] | None = None,
+    showlegend: bool = True,
+    category_label: str | None = None,
+):
+    if chart_type == "Point Cloud":
+        user_y = np.linspace(0.52, 0.68, len(user_values)) if len(user_values) > 1 else [0.6]
+        return go.Scattergl(
+            x=user_values.values,
+            y=user_y,
+            mode="markers",
+            marker=dict(symbol="diamond-dot", size=5, color="#E74C3C", line=dict(color="black", width=1.2)),
+            name=name,
+            hovertemplate="%{text}<extra></extra>",
+            text=hover_text or [],
+            showlegend=showlegend,
+        )
+
+    if chart_type == "Histogram + Strip":
+        return go.Histogram(
+            x=user_values,
+            nbinsx=80,
+            histnorm="probability density",
+            marker_color="rgba(231, 76, 60, 0.35)",
+            name=name,
+            hovertemplate="Bin: %{x:.4f}<br>Density: %{y:.4f}<extra></extra>",
+            showlegend=showlegend,
+        )
+
+    if chart_type == "Violin + Strip":
+        y_values = [category_label] * len(user_values) if category_label is not None else None
+        return go.Violin(
+            x=user_values,
+            y=y_values,
+            orientation="h",
+            line_color="#E74C3C",
+            fillcolor="rgba(231, 76, 60, 0.25)",
+            name=name,
+            side="both",
+            meanline_visible=True,
+            hoveron="kde",
+            hoverinfo="x",
+            points=False,
+            showlegend=showlegend,
+        )
+
+    return go.Box(
+        x=user_values,
+        line_color="#E74C3C",
+        fillcolor="rgba(231, 76, 60, 0.2)",
+        marker_color="#E74C3C",
+        name=name,
+        boxmean=True,
+        boxpoints=False,
+        showlegend=showlegend,
+    )
 
 
 def build_qa_chart(
@@ -437,13 +607,16 @@ def build_qa_chart(
         fig.add_trace(
             go.Violin(
                 x=ref_clean,
+                y=[variable_name] * len(ref_clean),
+                orientation="h",
                 line_color="#4C72B0",
                 fillcolor="rgba(76, 114, 176, 0.25)",
                 name=f"CCN Reference (n={n_ref:,})",
-                side="positive",
+                side="both",
                 meanline_visible=True,
                 hoveron="kde",
                 hoverinfo="x",
+                points=False,
             )
         )
 
@@ -474,18 +647,13 @@ def build_qa_chart(
         user_clean = pd.to_numeric(user_values, errors="coerce").dropna()
         if len(user_clean) > 0:
             hover = _user_hover_texts(user_clean, user_df, col_map or {})
-            y_user = [0] * len(user_clean)
-            if chart_type == "Point Cloud":
-                y_user = [0.55] * len(user_clean)
             fig.add_trace(
-                go.Scatter(
-                    x=user_clean.values,
-                    y=y_user,
-                    mode="markers",
-                    marker=dict(symbol="diamond", size=13, color="#E74C3C", line=dict(color="black", width=1.2)),
+                _user_distribution_trace(
+                    user_clean,
+                    chart_type,
                     name=f"Your Data (n={len(user_clean)})",
-                    hovertemplate="%{text}<extra></extra>",
-                    text=hover,
+                    hover_text=hover,
+                    category_label=variable_name,
                 )
             )
             user_med = float(user_clean.median())
@@ -501,6 +669,14 @@ def build_qa_chart(
             )
 
     is_cloud = chart_type == "Point Cloud"
+    layout_updates = {}
+    if chart_type == "Histogram + Strip":
+        layout_updates["barmode"] = "overlay"
+    elif chart_type == "Violin + Strip":
+        layout_updates["violinmode"] = "overlay"
+    elif chart_type == "Box + Strip":
+        layout_updates["boxmode"] = "overlay"
+
     fig.update_layout(
         title=dict(text=f"QA Distribution: {variable_name}", font_size=15),
         xaxis_title=f"{variable_name} ({unit})",
@@ -510,6 +686,7 @@ def build_qa_chart(
         template="plotly_white",
         legend=dict(yanchor="top", y=0.98, xanchor="right", x=0.98, font_size=10),
         margin=dict(t=60, b=50),
+        **layout_updates,
     )
     return fig.to_html(full_html=False, include_plotlyjs=False)
 
@@ -556,7 +733,7 @@ def build_overview_grid(
     if habitats:
         ref = ref[ref["habitat"].isin(habitats)]
 
-    grid_type = chart_type if chart_type != "Point Cloud" else "Histogram + Strip"
+    grid_type = chart_type
 
     variables = list(QA_NUMERIC_COLS.keys())
     n = len(variables)
@@ -577,7 +754,26 @@ def build_overview_grid(
         ref_vals = pd.to_numeric(ref.get(var, pd.Series(dtype=float)), errors="coerce").dropna()
 
         if len(ref_vals) > 0:
-            if grid_type == "Histogram + Strip":
+            if grid_type == "Point Cloud":
+                rng = np.random.default_rng(42 + i)
+                ref_sample = ref_vals
+                if len(ref_sample) > POINT_CLOUD_MAX:
+                    sample_idx = rng.choice(ref_sample.index, POINT_CLOUD_MAX, replace=False)
+                    ref_sample = ref_sample.loc[sample_idx]
+                fig.add_trace(
+                    go.Scattergl(
+                        x=ref_sample.values,
+                        y=rng.uniform(-0.35, 0.35, len(ref_sample)),
+                        mode="markers",
+                        marker=dict(size=4, color="rgba(76, 114, 176, 0.6)"),
+                        name=var,
+                        showlegend=False,
+                        hovertemplate=f"<b>{var}: %{{x:.4f}}</b><extra></extra>",
+                    ),
+                    row=r,
+                    col=c,
+                )
+            elif grid_type == "Histogram + Strip":
                 fig.add_trace(
                     go.Histogram(
                         x=ref_vals,
@@ -595,13 +791,17 @@ def build_overview_grid(
                 fig.add_trace(
                     go.Violin(
                         x=ref_vals,
+                        y=[var] * len(ref_vals),
+                        orientation="h",
                         line_color="#4C72B0",
                         fillcolor="rgba(76, 114, 176, 0.25)",
                         name=var,
                         showlegend=False,
+                        side="both",
                         meanline_visible=True,
                         hoveron="kde",
                         hoverinfo="x",
+                        points=False,
                     ),
                     row=r,
                     col=c,
@@ -625,29 +825,37 @@ def build_overview_grid(
         if user_df is not None and ucol and ucol in user_df.columns:
             user_vals = pd.to_numeric(user_df[ucol], errors="coerce").dropna()
             if len(user_vals) > 0:
-                hover = _user_hover_texts(user_vals, user_df, col_map or {})
                 fig.add_trace(
-                    go.Scatter(
-                        x=user_vals.values,
-                        y=[0] * len(user_vals),
-                        mode="markers",
-                        marker=dict(symbol="diamond", size=10, color="#E74C3C", line=dict(color="black", width=0.8)),
+                    _user_distribution_trace(
+                        user_vals,
+                        grid_type,
                         name="Your data",
                         showlegend=False,
-                        hovertemplate="%{text}<extra></extra>",
-                        text=hover,
+                        hover_text=None,
+                        category_label=var,
                     ),
                     row=r,
                     col=c,
                 )
 
-    title_suffix = " (Point Cloud: select a single variable)" if chart_type == "Point Cloud" else ""
+    title_suffix = ""
+    layout_updates = {}
+    if grid_type == "Point Cloud":
+        fig.update_yaxes(showticklabels=False, showgrid=False)
+    elif grid_type == "Histogram + Strip":
+        layout_updates["barmode"] = "overlay"
+    elif grid_type == "Violin + Strip":
+        layout_updates["violinmode"] = "overlay"
+    elif grid_type == "Box + Strip":
+        layout_updates["boxmode"] = "overlay"
+
     fig.update_layout(
         height=340 * n_rows,
         title_text=f"CCN Reference Distributions vs Your Data{title_suffix}",
         template="plotly_white",
         showlegend=False,
         margin=dict(t=80, b=40),
+        **layout_updates,
     )
     return fig.to_html(full_html=False, include_plotlyjs=False)
 

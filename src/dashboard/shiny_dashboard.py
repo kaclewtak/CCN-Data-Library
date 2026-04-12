@@ -108,16 +108,16 @@ app_ui = ui.page_fluid(
             _call_module_ui(pygwalker_ui, "pygwalker_explorer"),
         ),
         ui.nav_panel(
+            "QA Dashboard",
+            _call_module_ui(qa_ui, "qa_dashboard"),
+        ),
+        ui.nav_panel(
             "Satellite Search",
             _call_module_ui(eo_ui, "eo_search"),
         ),
         ui.nav_panel(
             "Data Inventory",
             _call_module_ui(data_inventory_ui, "inventory"),
-        ),
-        ui.nav_panel(
-            "QA Dashboard",
-            _call_module_ui(qa_ui, "qa_dashboard"),
         ),
     ),
     ui.tags.script(
