@@ -19,8 +19,8 @@ The dashboard is now explorer-first.
 2. Import a CSV, JSON, or Excel file from the embedded spreadsheet inside PyGWalker.
 3. The imported spreadsheet snapshot becomes the session dataset for the rest of the dashboard.
 4. **Satellite Search** consumes detected latitude/longitude columns from that same dataset.
-5. **QA Dashboard** consumes that same dataset for validation, charts, and map overlays.
-6. **Data Inventory** remains independent and continues to work from its own inputs.
+5. **QA Dashboard** consumes that same dataset for validation, statistical comparisons, charts, and map overlays.
+6. **Data Inventory** remains independent and focuses on repository inventory, synthesis summaries, and coverage diagnostics.
 
 The Data Explorer remains the source of truth after import. Later spreadsheet edits and formula-driven changes are mirrored back to the Shiny session and reused by downstream panels without replacing the embedded iframe.
 

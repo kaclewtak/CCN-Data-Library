@@ -12,17 +12,22 @@ from utils.qa import (
     QA_NUMERIC_COLS,
     VARIABLE_CHOICES,
     auto_match_columns,
+    build_comparison_results,
     build_map_html,
     build_overview_grid,
     build_qa_chart,
     build_stats_html,
     load_reference_data,
+    matched_numeric_variables,
     run_validation,
 )
 
 
 @module.ui
 def qa_ui():
+    comparison_choices = {"__all__": "All matched variables"}
+    comparison_choices.update({k: f"{k}  ({v['unit']})" for k, v in QA_NUMERIC_COLS.items()})
+
     return ui.navset_tab(
         # --- QA Charts tab ---
         ui.nav_panel(
@@ -39,7 +44,7 @@ def qa_ui():
                     ui.input_selectize("chart_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
                     ui.hr(),
                     ui.p("Blue = CCN reference distributions", style="color:#4C72B0;font-size:0.85em;margin:0"),
-                    ui.p("Red diamonds = your uploaded data", style="color:#E74C3C;font-size:0.85em;margin:0"),
+                    ui.p("Red = your current session dataset", style="color:#E74C3C;font-size:0.85em;margin:0"),
                     width=280,
                 ),
                 ui.output_ui("qa_chart"),
@@ -66,6 +71,41 @@ def qa_ui():
                 class_="mt-2",
             ),
         ),
+        # --- Statistical Tests tab ---
+        ui.nav_panel(
+            "Statistical Tests",
+            ui.layout_sidebar(
+                ui.sidebar(
+                    ui.input_select(
+                        "comparison_var",
+                        "Variable",
+                        choices=comparison_choices,
+                        selected="__all__",
+                    ),
+                    ui.input_select(
+                        "comparison_test",
+                        "Statistical Test",
+                        choices={"ks": "Kolmogorov-Smirnov", "anderson": "Anderson-Darling"},
+                        selected="ks",
+                    ),
+                    ui.input_selectize("comparison_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
+                    ui.hr(),
+                    ui.p(
+                        "Comparisons use the current session dataset from the Data Explorer tab.",
+                        class_="text-muted small",
+                    ),
+                    width=300,
+                ),
+                ui.card(
+                    ui.card_header("Matched Dataset Columns"),
+                    ui.output_ui("comparison_mapping"),
+                ),
+                ui.card(
+                    ui.card_header("Statistical Comparison Results"),
+                    ui.output_ui("comparison_results_ui"),
+                ),
+            ),
+        ),
         # --- QA Map tab ---
         ui.nav_panel(
             "QA Map",
@@ -77,14 +117,6 @@ def qa_ui():
             ),
             ui.output_ui("map_status"),
             ui.output_ui("map_display"),
-        ),
-        # --- Reference Summary tab ---
-        ui.nav_panel(
-            "Reference Summary",
-            ui.card(
-                ui.card_header("CCN Reference Data Statistics"),
-                ui.output_ui("ref_summary"),
-            ),
         ),
     )
 
@@ -110,6 +142,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         data = _ensure_ref()
         choices = data["habitat_choices"]
         ui.update_selectize("chart_habitat", choices=choices)
+        ui.update_selectize("comparison_habitat", choices=choices)
         ui.update_selectize("map_habitat", choices=choices)
 
     # --- User data (Polars -> Pandas) + auto column matching ---
@@ -231,6 +264,148 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
             return
         yield w.to_csv(index=False)
 
+    # --- Statistical Tests ---
+
+    @render.ui
+    def comparison_mapping():
+        df = user_pandas()
+        if df is None:
+            return ui.p(
+                "Import or edit data in the Data Explorer tab to compare your session dataset against CCN reference data.",
+                class_="text-muted p-3",
+            )
+
+        matches = matched_numeric_variables(df, resolved_col_map())
+        if not matches:
+            return ui.div(
+                "No comparable QA variables were auto-matched. Add or rename numeric columns so they resemble CCN fields such as dry_bulk_density, fraction_carbon, or fraction_organic_matter.",
+                class_="alert alert-warning m-3",
+                role="alert",
+            )
+
+        rows = [
+            ui.tags.tr(
+                ui.tags.td(match["variable"], style="padding:8px 12px;"),
+                ui.tags.td(match["user_column"], style="padding:8px 12px;"),
+                ui.tags.td(match["unit"], style="padding:8px 12px;"),
+            )
+            for match in matches
+        ]
+        table = ui.tags.table(
+            ui.tags.thead(
+                ui.tags.tr(
+                    ui.tags.th("CCN variable", style="padding:8px 12px;"),
+                    ui.tags.th("Your column", style="padding:8px 12px;"),
+                    ui.tags.th("Unit", style="padding:8px 12px;"),
+                )
+            ),
+            ui.tags.tbody(*rows),
+            class_="table table-sm table-hover mb-0",
+        )
+        return ui.TagList(
+            ui.p(
+                "These are the session-dataset columns QA can benchmark against CCN reference distributions.",
+                class_="text-muted px-3 pt-3 pb-0 mb-2",
+            ),
+            table,
+        )
+
+    @render.ui
+    def comparison_results_ui():
+        data = _ensure_ref()
+        df = user_pandas()
+        if df is None:
+            return ui.p(
+                "Import or edit data in the Data Explorer tab to generate statistical comparisons.",
+                class_="text-muted p-3",
+            )
+
+        habitats = list(module_input.comparison_habitat()) if module_input.comparison_habitat() else []
+        results = build_comparison_results(
+            data["ref_merged"],
+            df,
+            resolved_col_map(),
+            habitats=habitats,
+            variable=module_input.comparison_var(),
+            test_name=module_input.comparison_test(),
+        )
+        if not results:
+            return ui.div(
+                "No statistical comparisons are available for the current dataset and filters.",
+                class_="alert alert-warning m-3",
+                role="alert",
+            )
+
+        test_label = {
+            "ks": "Kolmogorov-Smirnov",
+            "anderson": "Anderson-Darling",
+        }
+
+        def _p_color(p_value: float | None) -> str:
+            if p_value is None:
+                return "#6c757d"
+            if p_value >= 0.05:
+                return "#198754"
+            if p_value >= 0.01:
+                return "#ffc107"
+            return "#dc3545"
+
+        rows = []
+        for result in results:
+            p_value = result["p_value"]
+            color = _p_color(p_value if isinstance(p_value, float) else None)
+            rows.append(
+                ui.tags.tr(
+                    ui.tags.td(result["variable"], style="padding:8px 12px;"),
+                    ui.tags.td(result["user_column"], style="padding:8px 12px;"),
+                    ui.tags.td(str(result["n_user"]), style="padding:8px 12px; text-align:right;"),
+                    ui.tags.td(str(result["n_ref"]), style="padding:8px 12px; text-align:right;"),
+                    ui.tags.td(
+                        str(result["statistic"]) if result["statistic"] is not None else "-",
+                        style="padding:8px 12px; text-align:right;",
+                    ),
+                    ui.tags.td(
+                        str(p_value) if p_value is not None else "-",
+                        style=f"padding:8px 12px; text-align:right; font-weight:600; color:{color};",
+                    ),
+                    ui.tags.td(result["interpretation"], style=f"padding:8px 12px; color:{color};"),
+                )
+            )
+
+        table = ui.tags.table(
+            ui.tags.thead(
+                ui.tags.tr(
+                    ui.tags.th("Variable", style="padding:8px 12px;"),
+                    ui.tags.th("Your column", style="padding:8px 12px;"),
+                    ui.tags.th("n (you)", style="padding:8px 12px; text-align:right;"),
+                    ui.tags.th("n (CCN)", style="padding:8px 12px; text-align:right;"),
+                    ui.tags.th("Statistic", style="padding:8px 12px; text-align:right;"),
+                    ui.tags.th("p-value", style="padding:8px 12px; text-align:right;"),
+                    ui.tags.th("Interpretation", style="padding:8px 12px;"),
+                ),
+                style="border-bottom:2px solid #dee2e6;",
+            ),
+            ui.tags.tbody(*rows),
+            class_="table table-hover mb-0",
+            style="width:100%;",
+        )
+
+        habitat_label = ", ".join(habitats) if habitats else "All habitats"
+        summary = ui.p(
+            f"{test_label.get(module_input.comparison_test(), module_input.comparison_test())} against {habitat_label} reference data.",
+            class_="text-muted px-3 pt-3 pb-0 mb-2",
+        )
+        legend = ui.div(
+            ui.tags.span("■ ", style="color:#198754;"),
+            "p ≥ 0.05 — not significantly different   ",
+            ui.tags.span("■ ", style="color:#ffc107;"),
+            "p < 0.05 — significantly different   ",
+            ui.tags.span("■ ", style="color:#dc3545;"),
+            "p < 0.01 — extremely different",
+            style="font-size:0.85rem; padding:6px 16px 12px; color:#6c757d;",
+        )
+        return ui.TagList(summary, table, legend)
+
     # --- QA Map ---
 
     @render.ui
@@ -272,28 +447,4 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
             f'<p style="font-size:0.9em;color:#555">'
             f"Reference cores: {ref_n:,} | Your data points: {user_n} | "
             f"Lat col: {lat_c or dash} | Lon col: {lon_c or dash}</p>"
-        )
-
-    # --- Reference Summary ---
-
-    @render.ui
-    def ref_summary():
-        data = _ensure_ref()
-        ref_merged = data["ref_merged"]
-        rows = []
-        for var, info in QA_NUMERIC_COLS.items():
-            vals = pd.to_numeric(ref_merged.get(var, pd.Series(dtype=float)), errors="coerce").dropna()
-            if len(vals) == 0:
-                continue
-            rows.append(
-                f"<tr><td><b>{var}</b></td><td>{info['unit']}</td>"
-                f"<td>{len(vals):,}</td><td>{vals.mean():.4f}</td>"
-                f"<td>{vals.median():.4f}</td><td>{vals.std():.4f}</td>"
-                f"<td>{vals.min():.4f}</td><td>{vals.max():.4f}</td></tr>"
-            )
-        return ui.HTML(
-            '<table class="table table-sm table-bordered" style="font-size:0.85em">'
-            "<thead><tr><th>Variable</th><th>Unit</th><th>n</th><th>Mean</th>"
-            "<th>Median</th><th>Std</th><th>Min</th><th>Max</th></tr></thead>"
-            f'<tbody>{"".join(rows)}</tbody></table>'
         )
