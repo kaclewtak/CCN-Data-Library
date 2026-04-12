@@ -66,3 +66,164 @@
     }
 }
 
+  @layer components {
+    .ccn-explore-layout {
+      display: grid;
+      min-height: 720px;
+      gap: 0.75rem;
+      grid-template-columns: minmax(22rem, 0.95fr) minmax(0, 1.4fr);
+      align-items: stretch;
+    }
+
+    .ccn-spreadsheet-panel,
+    .ccn-graphicwalker-panel {
+      overflow: hidden;
+      border: 1px solid hsl(var(--border));
+      border-radius: calc(var(--radius) + 0.125rem);
+      background: hsl(var(--card));
+    }
+
+    .ccn-graphicwalker-panel {
+      min-height: 720px;
+      padding: 0.75rem;
+      overflow: auto;
+    }
+
+    .ccn-spreadsheet-panel {
+      --ccn-spreadsheet-header-height: 3.5rem;
+      --ccn-spreadsheet-row-height: 2.75rem;
+      display: flex;
+      min-height: 720px;
+      flex-direction: column;
+    }
+
+    .ccn-spreadsheet-panel__header {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.875rem;
+      border-bottom: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+    }
+
+    .ccn-spreadsheet-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border-bottom: 1px solid hsl(var(--border));
+      background: hsl(var(--muted));
+    }
+
+    .ccn-spreadsheet-grid {
+      flex: 0 0 auto;
+      max-height: calc(var(--ccn-spreadsheet-header-height) + (var(--ccn-spreadsheet-row-height) * 12));
+      overflow: auto;
+      scrollbar-gutter: stable both-edges;
+      background: hsl(var(--background));
+    }
+
+    .ccn-spreadsheet-grid table {
+      min-width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .ccn-spreadsheet-grid thead th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: hsl(var(--card));
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .ccn-spreadsheet-grid th,
+    .ccn-spreadsheet-grid td {
+      min-width: 10rem;
+      border-right: 1px solid hsl(var(--border));
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .ccn-spreadsheet-grid th button,
+    .ccn-spreadsheet-grid__row-header button {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      color: hsl(var(--foreground));
+      background: transparent;
+    }
+
+    .ccn-spreadsheet-grid th button {
+      min-height: var(--ccn-spreadsheet-header-height);
+      justify-content: center;
+    }
+
+    .ccn-spreadsheet-grid__row-header {
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      min-width: 3.5rem;
+      background: hsl(var(--card));
+    }
+
+    .ccn-spreadsheet-grid__row-header button {
+      align-items: center;
+      justify-content: center;
+      min-height: var(--ccn-spreadsheet-row-height);
+      padding: 0.625rem 0.5rem;
+    }
+
+    .ccn-spreadsheet-grid__sticky-cell {
+      background: hsl(var(--card));
+    }
+
+    .ccn-spreadsheet-grid__selected {
+      background: hsl(var(--accent));
+      color: hsl(var(--accent-foreground));
+    }
+
+    .ccn-spreadsheet-grid__band-selected {
+      background: hsl(var(--accent) / 0.45);
+      box-shadow: inset 0 0 0 1px hsl(var(--ring) / 0.12);
+    }
+
+    .ccn-spreadsheet-grid__input {
+      width: 100%;
+      min-width: 10rem;
+      min-height: var(--ccn-spreadsheet-row-height);
+      padding: 0.625rem 0.75rem;
+      color: hsl(var(--foreground));
+      background: transparent;
+      border: none;
+      outline: none;
+    }
+
+    .ccn-spreadsheet-grid__input:focus,
+    .ccn-spreadsheet-grid tbody tr:hover td {
+      background: hsl(var(--accent) / 0.5);
+    }
+
+    .ccn-spreadsheet-grid tbody tr:hover .ccn-spreadsheet-grid__row-header {
+      background: hsl(var(--accent) / 0.5);
+    }
+
+    .ccn-spreadsheet-grid tbody tr:hover td.ccn-spreadsheet-grid__band-selected,
+    .ccn-spreadsheet-grid tbody tr:hover .ccn-spreadsheet-grid__row-header.ccn-spreadsheet-grid__band-selected {
+      background: hsl(var(--accent) / 0.45);
+    }
+
+    .ccn-spreadsheet-grid__input--selected {
+      background: hsl(var(--accent));
+      box-shadow: inset 0 0 0 1px hsl(var(--ring));
+    }
+  }
+
+  @media (max-width: 1280px) {
+    .ccn-explore-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+

@@ -24,6 +24,7 @@ import { Preview, ChartPreview } from './components/preview';
 import UploadSpecModal from "./components/uploadSpecModal"
 import UploadChartModal from './components/uploadChartModal';
 import InitModal from './components/initModal';
+import { getCcnFormulaTool } from './tools/ccnFormulaTool';
 import { getSaveTool } from './tools/saveTool';
 import { getExportTool } from './tools/exportTool';
 import { getExportDataframeTool } from './tools/exportDataframe';
@@ -52,6 +53,16 @@ import { AppContext, darkModeContext } from './store/context';
 import FormatSpec from './utils/formatSpec';
 import { getOpenDesktopTool } from './tools/openDesktop';
 import RuncellBanner from './components/runcellBanner';
+import { CcnSpreadsheetPanel, useCcnSpreadsheetState } from '@/features/ccnSpreadsheet'
+
+// ---- CCN ADDITION START: default config type ----
+import type { IDefaultConfig } from '@kanaries/graphic-walker/interfaces';
+// CCN SOFT-DISABLED: CoordSystemToggle moved from standalone JSX into
+// the toolbar `extra` array as two toggle items.  The component file is
+// kept for reference but no longer imported here.
+// import CoordSystemToggle from './components/ccn/CoordSystemToggle';
+import { GlobeAltIcon } from '@heroicons/react/24/outline';
+// ---- CCN ADDITION END ----
 
 
 const initChart = async (gwRef: React.MutableRefObject<IGWHandler | null>, total: number, props: IAppProps) => {
@@ -82,6 +93,18 @@ const getComputationCallback = (props: IAppProps) => {
         return getDatasFromKernelByPayload;
     }
 }
+
+// ---- CCN ADDITION START: split CCN-only config from GraphicWalker props ----
+const splitExtraConfig = (extraConfig?: IAppProps['extraConfig']) => {
+    const { ccnSpreadsheet, ccnSharedDatasetBridge, ...graphicWalkerExtraConfig } = extraConfig ?? {};
+
+    return {
+        ccnSpreadsheet,
+        ccnSharedDatasetBridge,
+        graphicWalkerExtraConfig,
+    };
+};
+// ---- CCN ADDITION END ----
 
 const MainApp = observer((props: {children: React.ReactNode, darkMode: "dark" | "light" | "media", hideToolBar?: boolean, gid?: string, sendMessage?: boolean}) => {
     const [portal, setPortal] = useState<HTMLDivElement | null>(null);
@@ -154,13 +177,35 @@ const MainApp = observer((props: {children: React.ReactNode, darkMode: "dark" | 
 const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
     const gwRef = React.useRef<IGWHandler|null>(null);
     const { userConfig } = props;
+    const appearance = useContext(darkModeContext);
     const [exportOpen, setExportOpen] = useState(false);
     const [mode, setMode] = useState<string>("walker");
     const [visSpec, setVisSpec] = useState(props.visSpec);
     const [hideModeOption, _] = useState(true);
     const [isChanged, setIsChanged] = useState(false);
+    // ---- CCN ADDITION START: track coord system for toolbar toggle reactivity ----
+    const [coordSystem, setCoordSystem] = useState<string>('generic');
+    // ---- CCN ADDITION END ----
     const storeRef = React.useRef<VizSpecStore|null>(null);
-    const disposerRef = React.useRef<() => void>();
+    const disposerRef = React.useRef<(() => void) | undefined>(undefined);
+    const { ccnSpreadsheet, ccnSharedDatasetBridge, graphicWalkerExtraConfig } = React.useMemo(
+        () => splitExtraConfig(props.extraConfig),
+        [props.extraConfig],
+    );
+    const spreadsheetEnabled = Boolean(ccnSpreadsheet?.enabled && !props.useKernelCalc);
+    const spreadsheetState = useCcnSpreadsheetState({
+        enabled: spreadsheetEnabled,
+        config: ccnSpreadsheet,
+        bridgeConfig: ccnSharedDatasetBridge,
+        initialRows: props.dataSource,
+        initialFields: props.rawFields,
+    });
+    const activeDataSource = spreadsheetEnabled ? spreadsheetState.graphRows : props.dataSource;
+    const activeFields = spreadsheetEnabled ? spreadsheetState.graphFields : props.rawFields;
+    const walkerDatasetKey = spreadsheetEnabled
+        ? `ccn-spreadsheet-${spreadsheetState.visualizationDatasetFingerprint}`
+        : 'ccn-static-dataset';
+    const previousWalkerDatasetKeyRef = React.useRef<string | null>(null);
     const storeRefProxied = React.useMemo(
         () =>
             new Proxy(storeRef, {
@@ -173,6 +218,9 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
                                 () => store.currentVis,
                                 () => {
                                     setIsChanged((value as VizSpecStore).canUndo);
+                                    // ---- CCN ADDITION START: sync coord system to React state ----
+                                    setCoordSystem(store.currentVis?.config?.coordSystem ?? 'generic');
+                                    // ---- CCN ADDITION END ----
                                     streamlitComponentCallback({
                                         event: "spec_change",
                                         data: store.exportCode()
@@ -210,9 +258,27 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
         }, 0);
     }, [mode]);
 
+    useEffect(() => {
+        if (!spreadsheetEnabled) {
+            previousWalkerDatasetKeyRef.current = walkerDatasetKey;
+            return;
+        }
+
+        if (previousWalkerDatasetKeyRef.current == null) {
+            previousWalkerDatasetKeyRef.current = walkerDatasetKey;
+            return;
+        }
+
+        if (previousWalkerDatasetKeyRef.current !== walkerDatasetKey) {
+            previousWalkerDatasetKeyRef.current = walkerDatasetKey;
+            setVisSpec([]);
+        }
+    }, [spreadsheetEnabled, walkerDatasetKey]);
+
     const runcellTool = getRuncellTool();
     const exportTool = getExportTool(setExportOpen);
     const openInDesktopTool = getOpenDesktopTool(props, storeRef);
+    const ccnFormulaTool = getCcnFormulaTool(storeRef, activeFields as IViewField[]);
 
     const tools = [runcellTool, exportTool, openInDesktopTool];
     if (props.env && ["jupyter_widgets", "streamlit", "gradio", "marimo", "anywidget", "web_server"].indexOf(props.env) !== -1 && props.useSaveTool) {
@@ -224,9 +290,60 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
         tools.push(exportDataFrameTool);
     }
 
-    const toolbarConfig = {
-        exclude: ["export_code"],
-        extra: tools
+    const toolbarConfig: any = {
+        // ---- CCN ADDITION START: hide built-in coord_system dropdown ----
+        // The built-in coord_system dropdown is excluded because our
+        // two toggle items (ccn_coord_generic / ccn_coord_geographic)
+        // render both modes as always-visible icons in the toolbar.
+        // To restore the dropdown, remove "coord_system" from exclude
+        // and remove the two CCN coord tools from the extra array.
+        exclude: ["export_code", "coord_system"],
+        // ---- CCN ADDITION END ----
+        extra: [
+            // ---- CCN ADDITION START: coord system toolbar toggles ----
+            // These behave like radio buttons: clicking the inactive one
+            // switches modes; clicking the already-active one is a no-op.
+            // Both the MobX store AND the React state are updated directly
+            // to avoid timing issues with the MobX reaction roundtrip.
+            // Cartesian / crosshair icon  (matches graphic-walker built-in)
+            {
+                key: 'ccn_coord_generic',
+                label: 'Cartesian',
+                icon: (iconProps?: any) => (
+                    <svg stroke="currentColor" fill="none" strokeWidth="1.5"
+                         xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                         aria-hidden="true" {...iconProps}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h20M12 2v20" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 7h2M12 16h2M7 12v-2M16 12v-2" />
+                    </svg>
+                ),
+                checked: coordSystem === 'generic',
+                onChange: (checked: boolean) => {
+                    if (checked) {
+                        storeRef.current?.setCoordSystem('generic');
+                        setCoordSystem('generic');
+                    }
+                },
+            },
+            // Geographic / globe icon
+            {
+                key: 'ccn_coord_geographic',
+                label: 'Geographic',
+                icon: (iconProps?: any) => <GlobeAltIcon {...iconProps} />,
+                checked: coordSystem === 'geographic',
+                onChange: (checked: boolean) => {
+                    if (checked) {
+                        storeRef.current?.setCoordSystem('geographic');
+                        setCoordSystem('geographic');
+                    }
+                },
+            },
+            // ---- CCN ADDITION END ----
+            '-',
+            ...tools,
+            '-',
+            ccnFormulaTool,
+        ],
     }
 
     const enhanceAPI = React.useMemo(() => {
@@ -253,12 +370,54 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
 
     const computationCallback = React.useMemo(() => getComputationCallback(props), []);
 
+    // ---- CCN ADDITION START: custom default configuration ----
+    // Default layout: 600×600 fixed.  Aggregation: off.
+    // Allows future Python-side overrides via props.extraConfig.defaultConfig.
+    const ccnDefaultConfig: IDefaultConfig = {
+        config: {
+            timezoneDisplayOffset: 0,
+            defaultAggregated: false,                    // CCN: aggregation off by default
+            ...(graphicWalkerExtraConfig.defaultConfig?.config ?? {}),
+        },
+        layout: {
+            size: { mode: 'fixed', width: 600, height: 600 }, // CCN: 600×600 fixed layout
+            ...(graphicWalkerExtraConfig.defaultConfig?.layout ?? {}),
+        },
+    };
+    // ---- CCN ADDITION END ----
+
     const modeChange = (value: string) => {
         if (mode === "walker") {
             setVisSpec(storeRef.current?.exportCode());
         }
         setMode(value);
     }
+
+    const walkerView = (
+        <GraphicWalker
+            key={walkerDatasetKey}
+            {...graphicWalkerExtraConfig}
+            appearance={appearance}
+            vizThemeConfig={props.themeKey}
+            fieldKeyGuard={props.fieldkeyGuard}
+            fields={activeFields}
+            keepAlive={walkerDatasetKey}
+            storeRef={storeRefProxied}
+            ref={gwRef}
+            toolbar={toolbarConfig}
+            enhanceAPI={enhanceAPI}
+            chart={visSpec.length === 0 ? undefined : visSpec}
+            experimentalFeatures={{ computedField: props.useKernelCalc }}
+            {...(props.useKernelCalc ? { computation: computationCallback! } : { data: activeDataSource })}
+            // ---- CCN SOFT-DISABLED START: original hardcoded defaultConfig ----
+            // Replaced by ccnDefaultConfig which sets 600×600 fixed layout and
+            // disables aggregation by default.  Restore this line and remove
+            // ccnDefaultConfig above to revert to upstream behaviour.
+            // defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
+            // ---- CCN SOFT-DISABLED END ----
+            defaultConfig={ccnDefaultConfig}
+        />
+    );
   
     return (
         <React.StrictMode>
@@ -266,6 +425,12 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
             <UploadSpecModal storeRef={storeRef} setGwIsChanged={setIsChanged} />
             <UploadChartModal gwRef={gwRef} storeRef={storeRef} dark={useContext(darkModeContext)} />
             <CodeExportModal open={exportOpen} setOpen={setExportOpen} globalStore={storeRef} sourceCode={props["sourceInvokeCode"] || ""} />
+            {/* ---- CCN SOFT-DISABLED START: standalone coord toggle ----
+              * Moved into the toolbar `extra` array as two toggle items so the
+              * icons appear alongside the other toolbar options instead of at
+              * the top level.  See toolbarConfig above.
+              * <CoordSystemToggle storeRef={storeRefProxied} />
+              * ---- CCN SOFT-DISABLED END ---- */}
             {
                 !hideModeOption &&
                 <Select onValueChange={modeChange} defaultValue='walker' >
@@ -281,22 +446,16 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
             }
             {
                 mode === "walker" ? 
-                <GraphicWalker
-                    {...props.extraConfig}
-                    appearance={useContext(darkModeContext)}
-                    vizThemeConfig={props.themeKey}
-                    fieldkeyGuard={props.fieldkeyGuard}
-                    fields={props.rawFields}
-                    data={props.useKernelCalc ? undefined : props.dataSource}
-                    storeRef={storeRefProxied}
-                    ref={gwRef}
-                    toolbar={toolbarConfig}
-                    computation={computationCallback}
-                    enhanceAPI={enhanceAPI}
-                    chart={visSpec.length === 0 ? undefined : visSpec}
-                    experimentalFeatures={{ computedField: props.useKernelCalc }}
-                    defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
-                /> :
+                (spreadsheetEnabled ?
+                    // ---- CCN ADDITION START: in-frame spreadsheet + walker split layout ----
+                    <div className="ccn-explore-layout">
+                        <CcnSpreadsheetPanel state={spreadsheetState} />
+                        <div className="ccn-graphicwalker-panel">
+                            {walkerView}
+                        </div>
+                    </div>
+                    // ---- CCN ADDITION END ----
+                    : walkerView) :
                 <GraphicRendererApp
                     {...props}
                     dataSource={props.dataSource}
@@ -310,16 +469,21 @@ const ExploreApp: React.FC<IAppProps & {initChartFlag: boolean}> = (props) => {
 
 const PureRednererApp: React.FC<IAppProps> = observer((props) => {
     const computationCallback = getComputationCallback(props);
+    const appearance = useContext(darkModeContext);
     const spec = props.visSpec[0];
     const [expand, setExpand] = useState(false);
+    const { graphicWalkerExtraConfig } = React.useMemo(
+        () => splitExtraConfig(props.extraConfig),
+        [props.extraConfig],
+    );
 
     return (
         <React.StrictMode>
             <div className='flex'>
                 {
                     !expand && (<PureRenderer
-                        {...props.extraConfig}
-                        appearance={useContext(darkModeContext)}
+                        {...graphicWalkerExtraConfig}
+                        appearance={appearance}
                         vizThemeConfig={props.themeKey}
                         name={spec.name}
                         visualConfig={spec.config}
@@ -333,16 +497,21 @@ const PureRednererApp: React.FC<IAppProps> = observer((props) => {
                     expand && commonStore.isStreamlitComponent && (
                         <div style={{minWidth: "96%"}}>
                             <GraphicWalker
-                                {...props.extraConfig}
-                                appearance={useContext(darkModeContext)}
+                                {...graphicWalkerExtraConfig}
+                                appearance={appearance}
                                 vizThemeConfig={props.themeKey}
-                                fieldkeyGuard={props.fieldkeyGuard}
+                                fieldKeyGuard={props.fieldkeyGuard}
                                 fields={props.rawFields}
-                                data={props.useKernelCalc ? undefined : props.dataSource}
-                                computation={computationCallback}
                                 chart={props.visSpec}
                                 experimentalFeatures={{ computedField: props.useKernelCalc }}
-                                defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
+                                {...(props.useKernelCalc ? { computation: computationCallback! } : { data: props.dataSource })}
+                                // ---- CCN SOFT-DISABLED START: original hardcoded defaultConfig ----
+                                // defaultConfig={{ config: { timezoneDisplayOffset: 0 } }}
+                                // ---- CCN SOFT-DISABLED END ----
+                                defaultConfig={{
+                                    config: { timezoneDisplayOffset: 0, defaultAggregated: false },
+                                    layout: { size: { mode: 'fixed', width: 600, height: 600 } },
+                                }}
                             />
                         </div>
                     )
