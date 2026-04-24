@@ -51,6 +51,55 @@ POINT_CLOUD_MAX = 6000
 MAX_REF_MAP_POINTS = 8000
 
 # ---------------------------------------------------------------------------
+# Geographic region helpers
+# ---------------------------------------------------------------------------
+
+from utils.geo_gaps import CONTINENT_MAP  # noqa: E402 — kept near related constants
+
+# Approximate lat/lon bounding boxes for US sub-regions.
+# Checked in order; first match wins.
+US_SUBREGION_BOXES: list[tuple[str, tuple[float, float], tuple[float, float]]] = [
+    #  (label,              (lat_min, lat_max),  (lon_min, lon_max))
+    ("Pacific Islands", (17.0, 29.0), (-180.0, -150.0)),
+    ("West Coast", (32.0, 49.5), (-125.0, -115.0)),
+    ("Gulf Coast", (25.0, 31.0), (-98.0, -82.0)),
+    ("Southeast", (25.0, 39.0), (-82.0, -70.0)),
+    ("Northeast", (39.0, 47.5), (-80.0, -66.5)),
+    ("Alaska", (51.0, 72.0), (-180.0, -129.0)),
+]
+
+
+def classify_us_subregion(lat: float, lon: float) -> str:
+    """Return a US sub-region label for the given coordinates."""
+    for label, (lat_min, lat_max), (lon_min, lon_max) in US_SUBREGION_BOXES:
+        if lat_min <= lat <= lat_max and lon_min <= lon <= lon_max:
+            return label
+    return "Other US"
+
+
+def apply_geo_filters(
+    df: pd.DataFrame,
+    continents: list[str] | None = None,
+    countries: list[str] | None = None,
+    us_subregions: list[str] | None = None,
+    habitats: list[str] | None = None,
+) -> pd.DataFrame:
+    """Filter *df* by geographic region columns, then by habitat.
+
+    Each non-empty list narrows the dataframe via ``.isin()``.
+    """
+    if continents:
+        df = df[df["continent"].isin(continents)]
+    if countries:
+        df = df[df["country"].isin(countries)]
+    if us_subregions and "us_subregion" in df.columns:
+        df = df[df["us_subregion"].isin(us_subregions)]
+    if habitats:
+        df = df[df["habitat"].isin(habitats)]
+    return df
+
+
+# ---------------------------------------------------------------------------
 # Reference data — lazy singleton
 # ---------------------------------------------------------------------------
 
@@ -110,6 +159,7 @@ def load_reference_data() -> dict:
         "latitude",
         "longitude",
         "habitat",
+        "country",
         "vegetation_class",
         "salinity_class",
     ]
@@ -133,23 +183,47 @@ def load_reference_data() -> dict:
     for c in ["latitude", "longitude"]:
         ref_cores[c] = pd.to_numeric(ref_cores[c], errors="coerce")
 
+    # --- Normalize country & derive continent / US sub-region columns ---
+    ref_cores["country"] = ref_cores["country"].fillna("").str.strip().str.lower()
+    ref_cores["continent"] = ref_cores["country"].map(lambda c: CONTINENT_MAP.get(c, "other"))
+
+    us_mask = ref_cores["country"] == "united states"
+    ref_cores["us_subregion"] = ""
+    if us_mask.any():
+        ref_cores.loc[us_mask, "us_subregion"] = ref_cores.loc[us_mask].apply(
+            lambda r: (
+                classify_us_subregion(r["latitude"], r["longitude"])
+                if pd.notna(r["latitude"]) and pd.notna(r["longitude"])
+                else "Other US"
+            ),
+            axis=1,
+        )
+
     ref_merged = ref_ds.merge(
-        ref_cores[["study_id", "site_id", "core_id", "habitat"]],
+        ref_cores[["study_id", "site_id", "core_id", "habitat", "country", "continent", "us_subregion"]],
         on=["study_id", "site_id", "core_id"],
         how="left",
     )
     ref_cores_valid = ref_cores.dropna(subset=["latitude", "longitude"])
+
     habitat_choices = sorted(ref_cores["habitat"].dropna().unique().tolist())
+    continent_choices = sorted(ref_cores["continent"].replace("", pd.NA).dropna().unique().tolist())
+    country_choices = sorted(ref_cores["country"].replace("", pd.NA).dropna().unique().tolist())
+    us_subregion_choices = sorted(ref_cores.loc[us_mask, "us_subregion"].replace("", pd.NA).dropna().unique().tolist())
 
     print(
         f"[QA] Loaded: {len(ref_ds):,} depthseries rows, "
-        f"{len(ref_cores):,} cores, {len(habitat_choices)} habitat types."
+        f"{len(ref_cores):,} cores, {len(habitat_choices)} habitat types, "
+        f"{len(continent_choices)} continents, {len(country_choices)} countries."
     )
 
     _ref_cache = {
         "ref_merged": ref_merged,
         "ref_cores_valid": ref_cores_valid,
         "habitat_choices": habitat_choices,
+        "continent_choices": continent_choices,
+        "country_choices": country_choices,
+        "us_subregion_choices": us_subregion_choices,
     }
     return _ref_cache
 
@@ -385,15 +459,16 @@ def build_comparison_results(
     habitats: list[str] | None = None,
     variable: str = "__all__",
     test_name: str = "ks",
+    continents: list[str] | None = None,
+    countries: list[str] | None = None,
+    us_subregions: list[str] | None = None,
 ) -> list[dict[str, float | int | str | None]]:
     """Build statistical comparison rows for the matched QA variables."""
     matches = matched_numeric_variables(user_df, col_map)
     if user_df is None or not matches:
         return []
 
-    ref = ref_merged.copy()
-    if habitats:
-        ref = ref[ref["habitat"].isin(habitats)]
+    ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subregions, habitats)
 
     selected_variables = [variable] if variable != "__all__" else [match["variable"] for match in matches]
     results: list[dict[str, float | int | str | None]] = []
@@ -727,11 +802,12 @@ def build_overview_grid(
     col_map: dict[str, str | None],
     habitats: list[str],
     chart_type: str = "Histogram + Strip",
+    continents: list[str] | None = None,
+    countries: list[str] | None = None,
+    us_subregions: list[str] | None = None,
 ) -> str:
     """Build a 2x3 subplot grid showing all QA variables at once."""
-    ref = ref_merged.copy()
-    if habitats:
-        ref = ref[ref["habitat"].isin(habitats)]
+    ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subregions, habitats)
 
     grid_type = chart_type
 
@@ -873,6 +949,9 @@ def build_map_html(
     show_ref: bool,
     show_user: bool,
     habitat_filter: list[str],
+    continents: list[str] | None = None,
+    countries: list[str] | None = None,
+    us_subregions: list[str] | None = None,
 ) -> tuple[str, int, int]:
     """Build a folium map with reference cores (blue, clustered)
     and user data points (red, individual). Returns (html, ref_count, user_count)."""
@@ -889,9 +968,7 @@ def build_map_html(
     user_count = 0
 
     if show_ref:
-        ref = ref_cores.copy()
-        if habitat_filter:
-            ref = ref[ref["habitat"].isin(habitat_filter)]
+        ref = apply_geo_filters(ref_cores.copy(), continents, countries, us_subregions, habitat_filter)
         ref = ref.dropna(subset=["latitude", "longitude"])
         if len(ref) > MAX_REF_MAP_POINTS:
             ref = ref.sample(n=MAX_REF_MAP_POINTS, random_state=42)
