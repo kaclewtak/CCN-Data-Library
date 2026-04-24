@@ -11,6 +11,7 @@ from utils.qa import (
     ALL_CANONICAL,
     QA_NUMERIC_COLS,
     VARIABLE_CHOICES,
+    apply_geo_filters,
     auto_match_columns,
     build_comparison_results,
     build_map_html,
@@ -41,6 +42,11 @@ def qa_ui():
                         choices=["Histogram + Strip", "Point Cloud", "Violin + Strip", "Box + Strip"],
                         selected="Histogram + Strip",
                     ),
+                    ui.hr(),
+                    ui.tags.small("Geographic Filters", class_="text-muted fw-bold"),
+                    ui.input_selectize("chart_continent", "Continent", choices=[], multiple=True),
+                    ui.input_selectize("chart_country", "Country", choices=[], multiple=True),
+                    ui.output_ui("chart_us_subregion_ui"),
                     ui.input_selectize("chart_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
                     ui.hr(),
                     ui.p("Blue = CCN reference distributions", style="color:#4C72B0;font-size:0.85em;margin:0"),
@@ -90,6 +96,11 @@ def qa_ui():
                     ),
                     ui.input_selectize("comparison_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
                     ui.hr(),
+                    ui.tags.small("Geographic Filters", class_="text-muted fw-bold"),
+                    ui.input_selectize("comparison_continent", "Continent", choices=[], multiple=True),
+                    ui.input_selectize("comparison_country", "Country", choices=[], multiple=True),
+                    ui.output_ui("comparison_us_subregion_ui"),
+                    ui.hr(),
                     ui.p(
                         "Comparisons use the current session dataset from the Data Explorer tab.",
                         class_="text-muted small",
@@ -112,8 +123,11 @@ def qa_ui():
             ui.layout_columns(
                 ui.input_checkbox("show_ref", "Show CCN reference cores", value=True),
                 ui.input_checkbox("show_user", "Show my data", value=True),
+                ui.input_selectize("map_continent", "Continent", choices=[], multiple=True),
+                ui.input_selectize("map_country", "Country", choices=[], multiple=True),
+                ui.output_ui("map_us_subregion_ui"),
                 ui.input_selectize("map_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
-                col_widths=[3, 3, 6],
+                col_widths=[3, 3, 3, 3, 6, 6],
             ),
             ui.output_ui("map_status"),
             ui.output_ui("map_display"),
@@ -138,12 +152,88 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         return data
 
     @reactive.effect
-    def _populate_habitat_choices():
+    def _populate_initial_choices():
         data = _ensure_ref()
-        choices = data["habitat_choices"]
-        ui.update_selectize("chart_habitat", choices=choices)
-        ui.update_selectize("comparison_habitat", choices=choices)
-        ui.update_selectize("map_habitat", choices=choices)
+        for prefix in ("chart", "comparison", "map"):
+            ui.update_selectize(f"{prefix}_continent", choices=data["continent_choices"])
+            ui.update_selectize(f"{prefix}_country", choices=data["country_choices"])
+            ui.update_selectize(f"{prefix}_habitat", choices=data["habitat_choices"])
+
+    # --- Cascading geo filter helpers (one set per tab prefix) ---
+
+    def _read_geo_inputs(prefix: str):
+        """Return (continents, countries, us_subregions, habitats) lists for a tab."""
+        continents = list(getattr(module_input, f"{prefix}_continent")() or [])
+        countries = list(getattr(module_input, f"{prefix}_country")() or [])
+        try:
+            us_subs = list(getattr(module_input, f"{prefix}_us_subregion")() or [])
+        except Exception:
+            us_subs = []
+        habitats = list(getattr(module_input, f"{prefix}_habitat")() or [])
+        return continents, countries, us_subs, habitats
+
+    def _cascade_for(prefix: str):
+        """Wire cascading updates for continent→country→us_subregion→habitat."""
+        data = _ensure_ref()
+        ref = data["ref_merged"]
+
+        continents = list(getattr(module_input, f"{prefix}_continent")() or [])
+        countries_input = list(getattr(module_input, f"{prefix}_country")() or [])
+
+        # Narrow country choices by continent
+        subset = ref.copy()
+        if continents:
+            subset = subset[subset["continent"].isin(continents)]
+        avail_countries = sorted(subset["country"].replace("", pd.NA).dropna().unique().tolist())
+        ui.update_selectize(
+            f"{prefix}_country", choices=avail_countries, selected=[c for c in countries_input if c in avail_countries]
+        )
+
+        # Narrow habitat choices by continent + country
+        if countries_input:
+            subset = subset[subset["country"].isin(countries_input)]
+        avail_habitats = sorted(subset["habitat"].dropna().unique().tolist())
+        current_habitats = list(getattr(module_input, f"{prefix}_habitat")() or [])
+        ui.update_selectize(
+            f"{prefix}_habitat", choices=avail_habitats, selected=[h for h in current_habitats if h in avail_habitats]
+        )
+
+    @reactive.effect
+    def _cascade_chart():
+        _cascade_for("chart")
+
+    @reactive.effect
+    def _cascade_comparison():
+        _cascade_for("comparison")
+
+    @reactive.effect
+    def _cascade_map():
+        _cascade_for("map")
+
+    # Conditionally render US sub-region input (only when US data is in scope)
+
+    def _us_subregion_ui_for(prefix: str):
+        data = _ensure_ref()
+        continents = list(getattr(module_input, f"{prefix}_continent")() or [])
+        countries = list(getattr(module_input, f"{prefix}_country")() or [])
+        # Show if US is explicitly selected OR no country filter but North America continent selected
+        show = "united states" in countries or (not countries and "north america" in continents)
+        if not show:
+            return ui.TagList()
+        choices = data["us_subregion_choices"]
+        return ui.input_selectize(f"{prefix}_us_subregion", "US Sub-region", choices=choices, multiple=True)
+
+    @render.ui
+    def chart_us_subregion_ui():
+        return _us_subregion_ui_for("chart")
+
+    @render.ui
+    def comparison_us_subregion_ui():
+        return _us_subregion_ui_for("comparison")
+
+    @render.ui
+    def map_us_subregion_ui():
+        return _us_subregion_ui_for("map")
 
     # --- User data (Polars -> Pandas) + auto column matching ---
 
@@ -169,17 +259,24 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         ref_merged = data["ref_merged"]
         var = module_input.chart_var()
         chart_type = module_input.chart_type()
-        habitats = list(module_input.chart_habitat()) if module_input.chart_habitat() else []
+        continents, countries, us_subs, habitats = _read_geo_inputs("chart")
         mapping = resolved_col_map()
         df = user_pandas()
 
         if var == "__all__":
-            html = build_overview_grid(ref_merged, df, mapping, habitats, chart_type)
+            html = build_overview_grid(
+                ref_merged,
+                df,
+                mapping,
+                habitats,
+                chart_type,
+                continents=continents,
+                countries=countries,
+                us_subregions=us_subs,
+            )
             return ui.HTML(html)
 
-        ref = ref_merged.copy()
-        if habitats:
-            ref = ref[ref["habitat"].isin(habitats)]
+        ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subs, habitats)
 
         if var not in ref.columns:
             return ui.p(f"'{var}' not found in reference data.")
@@ -215,10 +312,8 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         if var == "__all__":
             return ui.HTML("")
 
-        habitats = list(module_input.chart_habitat()) if module_input.chart_habitat() else []
-        ref = ref_merged.copy()
-        if habitats:
-            ref = ref[ref["habitat"].isin(habitats)]
+        continents, countries, us_subs, habitats = _read_geo_inputs("chart")
+        ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subs, habitats)
 
         ref_values = pd.to_numeric(ref.get(var, pd.Series(dtype=float)), errors="coerce")
         mapping = resolved_col_map()
@@ -320,7 +415,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
                 class_="text-muted p-3",
             )
 
-        habitats = list(module_input.comparison_habitat()) if module_input.comparison_habitat() else []
+        continents, countries, us_subs, habitats = _read_geo_inputs("comparison")
         results = build_comparison_results(
             data["ref_merged"],
             df,
@@ -328,6 +423,9 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
             habitats=habitats,
             variable=module_input.comparison_var(),
             test_name=module_input.comparison_test(),
+            continents=continents,
+            countries=countries,
+            us_subregions=us_subs,
         )
         if not results:
             return ui.div(
@@ -391,8 +489,16 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         )
 
         habitat_label = ", ".join(habitats) if habitats else "All habitats"
+        geo_parts = []
+        if continents:
+            geo_parts.append(", ".join(continents))
+        if countries:
+            geo_parts.append(", ".join(countries))
+        if us_subs:
+            geo_parts.append(", ".join(us_subs))
+        geo_label = " — ".join(geo_parts) if geo_parts else "All regions"
         summary = ui.p(
-            f"{test_label.get(module_input.comparison_test(), module_input.comparison_test())} against {habitat_label} reference data.",
+            f"{test_label.get(module_input.comparison_test(), module_input.comparison_test())} against {habitat_label} / {geo_label} reference data.",
             class_="text-muted px-3 pt-3 pb-0 mb-2",
         )
         legend = ui.div(
@@ -413,7 +519,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         data = _ensure_ref()
         mapping = resolved_col_map()
         df = user_pandas()
-        habitats = list(module_input.map_habitat()) if module_input.map_habitat() else []
+        continents, countries, us_subs, habitats = _read_geo_inputs("map")
 
         lat_c = mapping.get("latitude")
         lon_c = mapping.get("longitude")
@@ -426,6 +532,9 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
             show_ref=module_input.show_ref(),
             show_user=module_input.show_user(),
             habitat_filter=habitats,
+            continents=continents,
+            countries=countries,
+            us_subregions=us_subs,
         )
         return ui.HTML(map_result[0])
 
