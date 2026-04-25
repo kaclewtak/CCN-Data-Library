@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 import {
     Columns3,
     Copy,
     FolderOpen,
+    ListChecks,
     PencilLine,
     Plus,
     Redo2,
@@ -16,6 +17,7 @@ import {
 
 import { Button } from '@/components/ui/button'
 
+import { CcnColumnVerificationDialog } from './CcnColumnVerificationDialog'
 import { SaveSheetDialog } from './SaveSheetDialog'
 import { SavedSheetsDialog } from './SavedSheetsDialog'
 import type { ICcnSpreadsheetState } from './useCcnSpreadsheetState'
@@ -42,6 +44,7 @@ function ToolbarButton(props: {
 }
 
 export function CcnSpreadsheetPanel(props: ICcnSpreadsheetPanelProps) {
+    const [verifyColumnsOpen, setVerifyColumnsOpen] = useState(false)
     const rowCountLabel = useMemo(
         () => `${props.state.rows.length} row${props.state.rows.length === 1 ? '' : 's'}`,
         [props.state.rows.length],
@@ -53,6 +56,12 @@ export function CcnSpreadsheetPanel(props: ICcnSpreadsheetPanelProps) {
 
     return (
         <div className="ccn-spreadsheet-panel">
+            <CcnColumnVerificationDialog
+                fields={props.state.fields}
+                onCoerceColumnNames={props.state.handleCoerceColumnNames}
+                onOpenChange={setVerifyColumnsOpen}
+                open={verifyColumnsOpen}
+            />
             <SaveSheetDialog
                 currentExternalFile={props.state.currentExternalFile}
                 onOpenChange={props.state.setSaveDialogOpen}
@@ -96,6 +105,7 @@ export function CcnSpreadsheetPanel(props: ICcnSpreadsheetPanelProps) {
                 <ToolbarButton icon={Sheet} label="New Sheet" onClick={props.state.handleNewSheet} />
                 <ToolbarButton icon={Save} label="Save" onClick={props.state.handleSaveSheet} />
                 <ToolbarButton icon={FolderOpen} label="Load" onClick={() => props.state.setLoadDialogOpen(true)} />
+                <ToolbarButton icon={ListChecks} label="Verify CCN Columns" onClick={() => setVerifyColumnsOpen(true)} />
                 <ToolbarButton disabled={!props.state.canUndo} icon={Undo2} label="Undo" onClick={props.state.handleUndo} />
                 <ToolbarButton disabled={!props.state.canRedo} icon={Redo2} label="Redo" onClick={props.state.handleRedo} />
                 <ToolbarButton icon={Plus} label="Add Row" onClick={props.state.handleAddRow} />

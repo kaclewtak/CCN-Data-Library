@@ -12,6 +12,7 @@ import {
     resolveVisualizationDatasetFingerprint,
     type ISharedDatasetIdentity,
 } from './bridge'
+import type { ICcnColumnMatch } from './ccnColumnGuidance'
 import { saveSpreadsheetToComputer } from './fileTransfer'
 import { getAutosaveSheetId, listSheetsForFingerprint, saveSheetRecord } from './persistence'
 import type {
@@ -128,6 +129,7 @@ export interface ICcnSpreadsheetState {
     handleAddColumn: () => void
     handleRemoveColumn: () => void
     handleRenameColumn: () => void
+    handleCoerceColumnNames: (matches: ICcnColumnMatch[]) => void
     handleCopySelection: () => Promise<void>
     handlePasteSelection: () => Promise<void>
 }
@@ -822,6 +824,47 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         notifyStructureChange('Renamed a column. Existing charts may need to be adjusted if that field name is referenced.')
     }, [commitSnapshot, fields, notifyStructureChange, rows, selection, selectColumn])
 
+    const handleCoerceColumnNames = useCallback((matches: ICcnColumnMatch[]) => {
+        const applicableMatches = matches.filter((match) => {
+            if (!match.fieldId || match.matchType !== 'variant') {
+                return false
+            }
+
+            const field = fields.find((item) => item.fid === match.fieldId)
+            return field != null && field.name !== match.guidanceColumn
+        })
+
+        if (applicableMatches.length === 0) {
+            commonStore.setNotification(
+                {
+                    type: 'info',
+                    title: 'CCN Addition',
+                    message: 'No similar CCN column names need coercion.',
+                },
+                3500,
+            )
+            return
+        }
+
+        let nextRows = cloneRows(rows)
+        let nextFields = cloneFields(fields)
+
+        applicableMatches.forEach((match) => {
+            const currentField = nextFields.find((field) => field.fid === match.fieldId)
+            if (!currentField) {
+                return
+            }
+
+            const renamedSnapshot = renameColumn(nextRows, nextFields, currentField.fid, match.guidanceColumn)
+            nextRows = renamedSnapshot.rows
+            nextFields = renamedSnapshot.fields
+        })
+
+        commitSnapshot({ rows: nextRows, fields: nextFields })
+        setSelection(EMPTY_SELECTION)
+        notifyStructureChange(`Coerced ${applicableMatches.length} column name${applicableMatches.length === 1 ? '' : 's'} to CCN guidance names.`)
+    }, [commitSnapshot, fields, notifyStructureChange, rows])
+
     const handleCopySelection = useCallback(async () => {
         if (!navigator.clipboard?.writeText) {
             commonStore.setNotification(
@@ -1010,6 +1053,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         handleAddColumn,
         handleRemoveColumn,
         handleRenameColumn,
+        handleCoerceColumnNames,
         handleCopySelection,
         handlePasteSelection,
     }

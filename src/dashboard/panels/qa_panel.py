@@ -57,26 +57,6 @@ def qa_ui():
                 ui.output_ui("stats_panel"),
             ),
         ),
-        # --- Validation tab ---
-        ui.nav_panel(
-            "Validation",
-            ui.card(
-                ui.card_header(
-                    ui.div(
-                        ui.tags.strong("Validation Warnings"),
-                        ui.output_text("validation_summary", inline=True),
-                        class_="d-flex justify-content-between w-100",
-                    )
-                ),
-                ui.output_data_frame("validation_table"),
-            ),
-            ui.div(
-                ui.download_button(
-                    "download_warnings", "Download Validation Report", class_="btn-outline-secondary btn-sm"
-                ),
-                class_="mt-2",
-            ),
-        ),
         # --- Statistical Tests tab ---
         ui.nav_panel(
             "Statistical Tests",
@@ -115,6 +95,26 @@ def qa_ui():
                     ui.card_header("Statistical Comparison Results"),
                     ui.output_ui("comparison_results_ui"),
                 ),
+            ),
+        ),
+        # --- Validation tab ---
+        ui.nav_panel(
+            "Validation",
+            ui.card(
+                ui.card_header(
+                    ui.div(
+                        ui.tags.strong("Validation Warnings"),
+                        ui.output_text("validation_summary", inline=True),
+                        class_="d-flex justify-content-between w-100",
+                    )
+                ),
+                ui.output_data_frame("validation_table"),
+            ),
+            ui.div(
+                ui.download_button(
+                    "download_warnings", "Download Validation Report", class_="btn-outline-secondary btn-sm"
+                ),
+                class_="mt-2",
             ),
         ),
         # --- QA Map tab ---
