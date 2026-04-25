@@ -14,6 +14,10 @@ qa = import_module("utils.qa")
 
 build_overview_grid = qa.build_overview_grid
 build_qa_chart = qa.build_qa_chart
+build_qaqc_summary_html = qa.build_qaqc_summary_html
+build_relationship_diagnostics_html = qa.build_relationship_diagnostics_html
+build_depth_profile_html = qa.build_depth_profile_html
+build_duplicate_diagnostics_html = qa.build_duplicate_diagnostics_html
 build_comparison_results = qa.build_comparison_results
 compare_user_to_reference = qa.compare_user_to_reference
 matched_numeric_variables = qa.matched_numeric_variables
@@ -41,8 +45,16 @@ def test_matched_numeric_variables_returns_only_available_numeric_matches() -> N
     matches = matched_numeric_variables(user_df, col_map)
 
     assert matches == [
-        {"variable": "dry_bulk_density", "user_column": "Bulk Density", "unit": "g/cm³"},
-        {"variable": "fraction_carbon", "user_column": "Carbon Fraction", "unit": "fraction"},
+        {
+            "variable": "dry_bulk_density",
+            "user_column": "Bulk Density",
+            "unit": "g/cm³",
+        },
+        {
+            "variable": "fraction_carbon",
+            "user_column": "Carbon Fraction",
+            "unit": "fraction",
+        },
     ]
 
 
@@ -187,6 +199,122 @@ def test_build_overview_grid_supports_point_cloud_rendering() -> None:
     assert "Point Cloud: select a single variable" not in html
 
 
+def test_build_qaqc_summary_html_reports_coverage_and_validation_counts() -> None:
+    user_df = pd.DataFrame(
+        {
+            "Bulk Density": [1.0, None, 1.2],
+            "Carbon Fraction": [0.1, 1.2, 0.2],
+            "Depth Min": [0, 5, 10],
+            "Depth Max": [5, 4, 15],
+        }
+    )
+    col_map = {
+        "dry_bulk_density": "Bulk Density",
+        "fraction_carbon": "Carbon Fraction",
+        "depth_min": "Depth Min",
+        "depth_max": "Depth Max",
+    }
+    validation_df = pd.DataFrame(
+        {
+            "Row": [2, 2],
+            "Column": ["Carbon Fraction", "Depth Max"],
+            "Value": [1.2, 4],
+            "Issue": ["Must be 0-1", "depth_max must be > depth_min (5)"],
+        }
+    )
+
+    html = build_qaqc_summary_html(user_df, col_map, validation_df)
+
+    assert "Data Coverage And Range Sanity" in html
+    assert "Matched field completeness" in html
+    assert "Validation Issues" in html
+    assert '"type":"bar"' in html
+
+
+def test_build_relationship_diagnostics_html_overlays_user_and_reference_points() -> None:
+    ref_merged = pd.DataFrame(
+        {
+            "habitat": ["mangrove", "marsh"],
+            "fraction_organic_matter": [0.2, 0.4],
+            "fraction_carbon": [0.1, 0.2],
+            "dry_bulk_density": [1.0, 0.8],
+        }
+    )
+    user_df = pd.DataFrame(
+        {
+            "Organic Matter": [0.25, 0.35],
+            "Carbon Fraction": [0.12, 0.18],
+            "Bulk Density": [0.95, 0.85],
+        }
+    )
+    col_map = {
+        "fraction_organic_matter": "Organic Matter",
+        "fraction_carbon": "Carbon Fraction",
+        "dry_bulk_density": "Bulk Density",
+    }
+
+    html = build_relationship_diagnostics_html(ref_merged, user_df, col_map)
+
+    assert "Relationship Diagnostics" in html
+    assert "OM vs DBD" in html
+    assert "CCN reference" in html
+    assert "Your data" in html
+    assert '"type":"scattergl"' in html
+
+
+def test_build_depth_profile_html_uses_matched_depth_and_core_columns() -> None:
+    user_df = pd.DataFrame(
+        {
+            "Core": ["core-1", "core-1", "core-2"],
+            "Depth Min": [0, 5, 0],
+            "Depth Max": [5, 10, 5],
+            "Bulk Density": [0.9, 1.0, 0.8],
+            "Carbon Fraction": [0.12, 0.10, 0.14],
+        }
+    )
+    col_map = {
+        "core_id": "Core",
+        "depth_min": "Depth Min",
+        "depth_max": "Depth Max",
+        "dry_bulk_density": "Bulk Density",
+        "fraction_carbon": "Carbon Fraction",
+    }
+
+    html = build_depth_profile_html(user_df, col_map)
+
+    assert "Depth Profiles" in html
+    assert "core-1" in html
+    assert '"mode":"lines+markers"' in html
+    assert '"autorange":"reversed"' in html
+
+
+def test_build_duplicate_diagnostics_html_summarizes_duplicate_groups() -> None:
+    user_df = pd.DataFrame(
+        {
+            "Core": ["core-1", "core-1", "core-2"],
+            "Latitude": [10.0, 10.0, 11.0],
+            "Longitude": [-70.0, -70.0, -71.0],
+            "Depth Min": [0, 0, 5],
+            "Depth Max": [5, 5, 10],
+        }
+    )
+    col_map = {
+        "core_id": "Core",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "depth_min": "Depth Min",
+        "depth_max": "Depth Max",
+    }
+
+    html = build_duplicate_diagnostics_html(user_df, col_map)
+
+    assert "Duplicate Checks" in html
+    assert "Repeated core IDs" in html
+    assert "Repeated coordinates" in html
+    assert "core-1" in html
+    assert '"type":"bar"' in html
+
+
 # ---------------------------------------------------------------------------
 # Geographic region classification & filtering tests
 # ---------------------------------------------------------------------------
@@ -267,7 +395,12 @@ def test_build_comparison_results_with_geo_filters() -> None:
         {
             "habitat": ["mangrove", "mangrove", "saltmarsh", "saltmarsh"],
             "continent": ["north america", "europe", "north america", "europe"],
-            "country": ["united states", "united kingdom", "united states", "united kingdom"],
+            "country": [
+                "united states",
+                "united kingdom",
+                "united states",
+                "united kingdom",
+            ],
             "us_subregion": ["Southeast", "", "Northeast", ""],
             "dry_bulk_density": [1.0, 1.1, 1.8, 1.9],
             "fraction_carbon": [0.10, 0.11, 0.30, 0.31],

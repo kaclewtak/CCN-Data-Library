@@ -14,9 +14,13 @@ from utils.qa import (
     apply_geo_filters,
     auto_match_columns,
     build_comparison_results,
+    build_depth_profile_html,
+    build_duplicate_diagnostics_html,
     build_map_html,
     build_overview_grid,
     build_qa_chart,
+    build_qaqc_summary_html,
+    build_relationship_diagnostics_html,
     build_stats_html,
     load_reference_data,
     matched_numeric_variables,
@@ -35,11 +39,21 @@ def qa_ui():
             "QA Charts",
             ui.layout_sidebar(
                 ui.sidebar(
-                    ui.input_select("chart_var", "Variable", choices=VARIABLE_CHOICES, selected="__all__"),
+                    ui.input_select(
+                        "chart_var",
+                        "Variable",
+                        choices=VARIABLE_CHOICES,
+                        selected="__all__",
+                    ),
                     ui.input_radio_buttons(
                         "chart_type",
                         "Chart Style",
-                        choices=["Histogram + Strip", "Point Cloud", "Violin + Strip", "Box + Strip"],
+                        choices=[
+                            "Histogram + Strip",
+                            "Point Cloud",
+                            "Violin + Strip",
+                            "Box + Strip",
+                        ],
                         selected="Histogram + Strip",
                     ),
                     ui.hr(),
@@ -47,14 +61,29 @@ def qa_ui():
                     ui.input_selectize("chart_continent", "Continent", choices=[], multiple=True),
                     ui.input_selectize("chart_country", "Country", choices=[], multiple=True),
                     ui.output_ui("chart_us_subregion_ui"),
-                    ui.input_selectize("chart_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
+                    ui.input_selectize(
+                        "chart_habitat",
+                        "Filter CCN by Habitat",
+                        choices=[],
+                        multiple=True,
+                    ),
                     ui.hr(),
-                    ui.p("Blue = CCN reference distributions", style="color:#4C72B0;font-size:0.85em;margin:0"),
-                    ui.p("Red = your current session dataset", style="color:#E74C3C;font-size:0.85em;margin:0"),
+                    ui.p(
+                        "Blue = CCN reference distributions",
+                        style="color:#4C72B0;font-size:0.85em;margin:0",
+                    ),
+                    ui.p(
+                        "Red = your current session dataset",
+                        style="color:#E74C3C;font-size:0.85em;margin:0",
+                    ),
                     width=280,
                 ),
                 ui.output_ui("qa_chart"),
                 ui.output_ui("stats_panel"),
+                ui.output_ui("qaqc_summary_panel"),
+                ui.output_ui("relationship_diagnostics_panel"),
+                ui.output_ui("depth_profile_panel"),
+                ui.output_ui("duplicate_diagnostics_panel"),
             ),
         ),
         # --- Statistical Tests tab ---
@@ -71,10 +100,18 @@ def qa_ui():
                     ui.input_select(
                         "comparison_test",
                         "Statistical Test",
-                        choices={"ks": "Kolmogorov-Smirnov", "anderson": "Anderson-Darling"},
+                        choices={
+                            "ks": "Kolmogorov-Smirnov",
+                            "anderson": "Anderson-Darling",
+                        },
                         selected="ks",
                     ),
-                    ui.input_selectize("comparison_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
+                    ui.input_selectize(
+                        "comparison_habitat",
+                        "Filter CCN by Habitat",
+                        choices=[],
+                        multiple=True,
+                    ),
                     ui.hr(),
                     ui.tags.small("Geographic Filters", class_="text-muted fw-bold"),
                     ui.input_selectize("comparison_continent", "Continent", choices=[], multiple=True),
@@ -112,7 +149,9 @@ def qa_ui():
             ),
             ui.div(
                 ui.download_button(
-                    "download_warnings", "Download Validation Report", class_="btn-outline-secondary btn-sm"
+                    "download_warnings",
+                    "Download Validation Report",
+                    class_="btn-outline-secondary btn-sm",
                 ),
                 class_="mt-2",
             ),
@@ -186,7 +225,9 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
             subset = subset[subset["continent"].isin(continents)]
         avail_countries = sorted(subset["country"].replace("", pd.NA).dropna().unique().tolist())
         ui.update_selectize(
-            f"{prefix}_country", choices=avail_countries, selected=[c for c in countries_input if c in avail_countries]
+            f"{prefix}_country",
+            choices=avail_countries,
+            selected=[c for c in countries_input if c in avail_countries],
         )
 
         # Narrow habitat choices by continent + country
@@ -195,7 +236,9 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         avail_habitats = sorted(subset["habitat"].dropna().unique().tolist())
         current_habitats = list(getattr(module_input, f"{prefix}_habitat")() or [])
         ui.update_selectize(
-            f"{prefix}_habitat", choices=avail_habitats, selected=[h for h in current_habitats if h in avail_habitats]
+            f"{prefix}_habitat",
+            choices=avail_habitats,
+            selected=[h for h in current_habitats if h in avail_habitats],
         )
 
     @reactive.effect
@@ -325,6 +368,34 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
                 user_values = df[ucol]
 
         return ui.HTML(build_stats_html(ref_values, user_values, var))
+
+    @render.ui
+    def qaqc_summary_panel():
+        return ui.HTML(build_qaqc_summary_html(user_pandas(), resolved_col_map(), validation_results()))
+
+    @render.ui
+    def relationship_diagnostics_panel():
+        data = _ensure_ref()
+        continents, countries, us_subs, habitats = _read_geo_inputs("chart")
+        return ui.HTML(
+            build_relationship_diagnostics_html(
+                data["ref_merged"],
+                user_pandas(),
+                resolved_col_map(),
+                habitats=habitats,
+                continents=continents,
+                countries=countries,
+                us_subregions=us_subs,
+            )
+        )
+
+    @render.ui
+    def depth_profile_panel():
+        return ui.HTML(build_depth_profile_html(user_pandas(), resolved_col_map()))
+
+    @render.ui
+    def duplicate_diagnostics_panel():
+        return ui.HTML(build_duplicate_diagnostics_html(user_pandas(), resolved_col_map()))
 
     # --- Validation ---
 
@@ -456,17 +527,26 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
                 ui.tags.tr(
                     ui.tags.td(result["variable"], style="padding:8px 12px;"),
                     ui.tags.td(result["user_column"], style="padding:8px 12px;"),
-                    ui.tags.td(str(result["n_user"]), style="padding:8px 12px; text-align:right;"),
-                    ui.tags.td(str(result["n_ref"]), style="padding:8px 12px; text-align:right;"),
                     ui.tags.td(
-                        str(result["statistic"]) if result["statistic"] is not None else "-",
+                        str(result["n_user"]),
+                        style="padding:8px 12px; text-align:right;",
+                    ),
+                    ui.tags.td(
+                        str(result["n_ref"]),
+                        style="padding:8px 12px; text-align:right;",
+                    ),
+                    ui.tags.td(
+                        (str(result["statistic"]) if result["statistic"] is not None else "-"),
                         style="padding:8px 12px; text-align:right;",
                     ),
                     ui.tags.td(
                         str(p_value) if p_value is not None else "-",
                         style=f"padding:8px 12px; text-align:right; font-weight:600; color:{color};",
                     ),
-                    ui.tags.td(result["interpretation"], style=f"padding:8px 12px; color:{color};"),
+                    ui.tags.td(
+                        result["interpretation"],
+                        style=f"padding:8px 12px; color:{color};",
+                    ),
                 )
             )
 
