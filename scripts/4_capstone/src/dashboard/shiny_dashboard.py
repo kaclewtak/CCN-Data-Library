@@ -2,6 +2,7 @@ from typing import Any
 
 from panels.data_inventory import data_inventory_server, data_inventory_ui
 from panels.eo_panel import eo_server, eo_ui
+from panels.metadata_panel import metadata_ui
 from panels.pygwalker_page import pygwalker_server, pygwalker_ui
 from panels.qa_panel import qa_server, qa_ui
 from shiny import App, ui
@@ -118,6 +119,10 @@ app_ui = ui.page_fluid(
         ui.nav_panel(
             "Data Inventory",
             _call_module_ui(data_inventory_ui, "inventory"),
+        ),
+        ui.nav_panel(
+            "Metadata",
+            _call_module_ui(metadata_ui, "metadata"),
         ),
     ),
     ui.tags.script(

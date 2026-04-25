@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from html import escape
 from pathlib import Path
 
 import folium
@@ -18,17 +19,38 @@ from scipy import stats
 # ---------------------------------------------------------------------------
 
 QA_NUMERIC_COLS = {
-    "dry_bulk_density": {"unit": "g/cm\u00b3", "synonyms": {"dbd", "bulk_density", "dry_density", "bulk_dens"}},
+    "dry_bulk_density": {
+        "unit": "g/cm\u00b3",
+        "synonyms": {"dbd", "bulk_density", "dry_density", "bulk_dens"},
+    },
     "fraction_carbon": {
         "unit": "fraction",
-        "synonyms": {"frac_c", "oc_fraction", "carbon_fraction", "foc", "organic_carbon"},
+        "synonyms": {
+            "frac_c",
+            "oc_fraction",
+            "carbon_fraction",
+            "foc",
+            "organic_carbon",
+        },
     },
     "fraction_organic_matter": {
         "unit": "fraction",
-        "synonyms": {"frac_om", "om_fraction", "loi", "organic_matter", "loss_on_ignition"},
+        "synonyms": {
+            "frac_om",
+            "om_fraction",
+            "loi",
+            "organic_matter",
+            "loss_on_ignition",
+        },
     },
-    "depth_min": {"unit": "cm", "synonyms": {"depth_top", "top_depth", "min_depth", "upper_depth"}},
-    "depth_max": {"unit": "cm", "synonyms": {"depth_bottom", "bottom_depth", "max_depth", "lower_depth"}},
+    "depth_min": {
+        "unit": "cm",
+        "synonyms": {"depth_top", "top_depth", "min_depth", "upper_depth"},
+    },
+    "depth_max": {
+        "unit": "cm",
+        "synonyms": {"depth_bottom", "bottom_depth", "max_depth", "lower_depth"},
+    },
 }
 
 QA_GEO_COLS = {
@@ -178,7 +200,13 @@ def load_reference_data() -> dict:
         low_memory=False,
     )
 
-    for c in ["depth_min", "depth_max", "dry_bulk_density", "fraction_organic_matter", "fraction_carbon"]:
+    for c in [
+        "depth_min",
+        "depth_max",
+        "dry_bulk_density",
+        "fraction_organic_matter",
+        "fraction_carbon",
+    ]:
         ref_ds[c] = pd.to_numeric(ref_ds[c], errors="coerce")
     for c in ["latitude", "longitude"]:
         ref_cores[c] = pd.to_numeric(ref_cores[c], errors="coerce")
@@ -200,7 +228,17 @@ def load_reference_data() -> dict:
         )
 
     ref_merged = ref_ds.merge(
-        ref_cores[["study_id", "site_id", "core_id", "habitat", "country", "continent", "us_subregion"]],
+        ref_cores[
+            [
+                "study_id",
+                "site_id",
+                "core_id",
+                "habitat",
+                "country",
+                "continent",
+                "us_subregion",
+            ]
+        ],
         on=["study_id", "site_id", "core_id"],
         how="left",
     )
@@ -316,7 +354,12 @@ def run_validation(df: pd.DataFrame, col_map: dict[str, str | None]) -> pd.DataF
 
     range_rules: list[tuple[str, float | None, float | None, str]] = [
         ("fraction_carbon", 0.0, 1.0, "Must be 0\u20131 (fraction, not percent)"),
-        ("fraction_organic_matter", 0.0, 1.0, "Must be 0\u20131 (fraction, not percent)"),
+        (
+            "fraction_organic_matter",
+            0.0,
+            1.0,
+            "Must be 0\u20131 (fraction, not percent)",
+        ),
         ("dry_bulk_density", 0.0, 2.65, "Must be > 0 and \u2264 2.65 g/cm\u00b3"),
         ("depth_min", 0.0, None, "Must be \u2265 0"),
         ("depth_max", 0.0, None, "Must be \u2265 0"),
@@ -363,7 +406,12 @@ def run_validation(df: pd.DataFrame, col_map: dict[str, str | None]) -> pd.DataF
         for idx in range(len(df)):
             if pd.notna(fc.iloc[idx]) and pd.notna(fom.iloc[idx]):
                 if fc.iloc[idx] > fom.iloc[idx]:
-                    _flag(idx, fc_col, df[fc_col].iloc[idx], "fraction_carbon should be \u2264 fraction_organic_matter")
+                    _flag(
+                        idx,
+                        fc_col,
+                        df[fc_col].iloc[idx],
+                        "fraction_carbon should be \u2264 fraction_organic_matter",
+                    )
 
     # Non-numeric values in columns that should be numbers
     for canonical in list(QA_NUMERIC_COLS) + list(QA_GEO_COLS):
@@ -529,7 +577,12 @@ def _user_distribution_trace(
             x=user_values.values,
             y=user_y,
             mode="markers",
-            marker=dict(symbol="diamond-dot", size=5, color="#E74C3C", line=dict(color="black", width=1.2)),
+            marker=dict(
+                symbol="diamond-dot",
+                size=5,
+                color="#E74C3C",
+                line=dict(color="black", width=1.2),
+            ),
             name=name,
             hovertemplate="%{text}<extra></extra>",
             text=hover_text or [],
@@ -638,7 +691,10 @@ def build_qa_chart(
             for hab in sorted(rh.dropna().unique()):
                 mask = (rh == hab).values
                 hover_parts = []
-                for xi, si in zip(rc[mask].values, (rs[mask] if rs is not None else [None] * mask.sum())):
+                for xi, si in zip(
+                    rc[mask].values,
+                    (rs[mask] if rs is not None else [None] * mask.sum()),
+                ):
                     parts = [f"<b>{variable_name}: {xi:.4f}</b>", f"Habitat: {hab}"]
                     if si is not None and pd.notna(si):
                         parts.append(f"Study: {si}")
@@ -934,6 +990,451 @@ def build_overview_grid(
         **layout_updates,
     )
     return fig.to_html(full_html=False, include_plotlyjs=False)
+
+
+# ---------------------------------------------------------------------------
+# Scroll-down QA/QC diagnostic sections
+# ---------------------------------------------------------------------------
+
+
+def _section_html(title: str, subtitle: str, body: str) -> str:
+    return (
+        '<section style="margin-top:24px;padding-top:18px;border-top:1px solid #e9ecef;">'
+        f'<div style="margin-bottom:10px;"><h4 style="margin:0 0 4px;font-size:1.05rem;">{escape(title)}</h4>'
+        f'<p style="margin:0;color:#6c757d;font-size:0.88rem;">{escape(subtitle)}</p></div>'
+        f"{body}</section>"
+    )
+
+
+def _notice_html(message: str) -> str:
+    return f'<div class="alert alert-light border" role="status" style="font-size:0.9rem;">{escape(message)}</div>'
+
+
+def _metric_cards_html(cards: list[tuple[str, str, str]]) -> str:
+    card_html = ""
+    for label, value, accent in cards:
+        card_html += (
+            '<div style="border:1px solid #e9ecef;border-radius:8px;padding:12px;background:#fff;min-width:150px;">'
+            f'<div style="font-size:0.78rem;color:#6c757d;margin-bottom:4px;">{escape(label)}</div>'
+            f'<div style="font-size:1.35rem;font-weight:650;color:{accent};line-height:1.1;">{escape(value)}</div>'
+            "</div>"
+        )
+    return f'<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">{card_html}</div>'
+
+
+def _mapped_column(df: pd.DataFrame | None, col_map: dict[str, str | None], canonical: str) -> str | None:
+    if df is None:
+        return None
+    col = col_map.get(canonical)
+    return col if col and col in df.columns else None
+
+
+def _plotly_html(fig: go.Figure) -> str:
+    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def build_qaqc_summary_html(
+    user_df: pd.DataFrame | None,
+    col_map: dict[str, str | None],
+    validation_df: pd.DataFrame,
+) -> str:
+    """Build a compact coverage and range-sanity section for the current user data.
+
+    Source R references:
+    - scripts/1_data_formatting/qa_functions.R::testNumericCols()
+    - scripts/1_data_formatting/qa_functions.R::fractionNotPercent()
+    - scripts/1_data_formatting/qa_functions.R::testTableCols()
+    - scripts/1_data_formatting/qa_functions.R::testRequired()
+    - scripts/1_data_formatting/qa_functions.R::testConditional()
+
+    Dashboard adaptation notes:
+    The R functions read CCN guidance files and return tabular QA report inputs for
+    named synthesis tables. This Shiny helper keeps the same intent -- column
+    coverage, numeric completeness, and fraction/range warnings -- but visualizes
+    the already auto-matched current-session dataframe. That difference is
+    intentional because uploads in the Data Explorer may be a single user table,
+    may use non-CCN column names, and should not require local guidance CSVs at
+    render time.
+    """
+    title = "Data Coverage And Range Sanity"
+    subtitle = "Matched CCN fields, non-missing coverage, and validation issue concentration."
+    if user_df is None:
+        return _section_html(
+            title,
+            subtitle,
+            _notice_html("Import or edit data in the Data Explorer tab to view QA/QC coverage."),
+        )
+
+    coverage_rows: list[dict[str, object]] = []
+    for canonical in ALL_CANONICAL:
+        mapped = _mapped_column(user_df, col_map, canonical)
+        completeness = float(user_df[mapped].notna().mean() * 100) if mapped else 0.0
+        coverage_rows.append(
+            {
+                "field": canonical,
+                "mapped_column": mapped or "Not matched",
+                "completeness": completeness,
+                "matched": mapped is not None,
+            }
+        )
+
+    coverage = pd.DataFrame(coverage_rows)
+    matched_count = int(coverage["matched"].sum())
+    issue_count = 0 if validation_df is None or validation_df.empty else len(validation_df)
+    avg_complete = coverage.loc[coverage["matched"], "completeness"].mean() if matched_count else 0.0
+
+    cards = _metric_cards_html(
+        [
+            ("Rows", f"{len(user_df):,}", "#212529"),
+            ("Matched Fields", f"{matched_count}/{len(ALL_CANONICAL)}", "#4C72B0"),
+            (
+                "Matched Completeness",
+                f"{avg_complete:.0f}%",
+                "#198754" if avg_complete >= 80 else "#b58105",
+            ),
+            (
+                "Validation Issues",
+                f"{issue_count:,}",
+                "#198754" if issue_count == 0 else "#dc3545",
+            ),
+        ]
+    )
+
+    fig = go.Figure(
+        go.Bar(
+            x=coverage["completeness"],
+            y=coverage["field"],
+            orientation="h",
+            marker_color=np.where(coverage["matched"], "#4C72B0", "#dee2e6"),
+            customdata=coverage["mapped_column"],
+            hovertemplate="%{y}<br>%{x:.0f}% complete<br>%{customdata}<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        title=dict(text="Matched field completeness", font_size=14),
+        xaxis=dict(title="Non-missing rows", range=[0, 100], ticksuffix="%"),
+        yaxis=dict(autorange="reversed", title=""),
+        template="plotly_white",
+        height=340,
+        margin=dict(t=48, b=36, l=150, r=20),
+    )
+
+    issue_html = ""
+    if validation_df is not None and not validation_df.empty and "Issue" in validation_df.columns:
+        issue_counts = validation_df["Issue"].value_counts().head(6).reset_index()
+        issue_counts.columns = ["Issue", "Rows"]
+        issue_html = issue_counts.to_html(classes="table table-sm table-hover mt-2", index=False, escape=True)
+
+    return _section_html(title, subtitle, cards + _plotly_html(fig) + issue_html)
+
+
+def build_relationship_diagnostics_html(
+    ref_merged: pd.DataFrame,
+    user_df: pd.DataFrame | None,
+    col_map: dict[str, str | None],
+    habitats: list[str] | None = None,
+    continents: list[str] | None = None,
+    countries: list[str] | None = None,
+    us_subregions: list[str] | None = None,
+) -> str:
+    """Build cross-variable scatter diagnostics from the legacy data-viz report.
+
+    Source R references:
+    - scripts/1_data_formatting/data_visualization_report.Rmd chunk "bd and om"
+    - scripts/1_data_formatting/data_visualization_report.Rmd chunk "bd and c"
+    - scripts/1_data_formatting/data_visualization_report.Rmd chunk "om and oc"
+
+    Dashboard adaptation notes:
+    The R report plots one study's depthseries with ggplot and colors by site_id.
+    This helper preserves the same variable pairs, but overlays filtered CCN
+    reference data and the current user dataset in Plotly so the QA Charts page
+    can compare a session upload against the library context. Large reference
+    clouds are sampled for browser performance only.
+    """
+    title = "Relationship Diagnostics"
+    subtitle = "Visual checks for bulk density, organic carbon, and organic matter relationships."
+    ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subregions, habitats)
+    pairs = [
+        ("fraction_organic_matter", "dry_bulk_density", "OM vs DBD"),
+        ("fraction_carbon", "dry_bulk_density", "C vs DBD"),
+        ("fraction_organic_matter", "fraction_carbon", "OM vs C"),
+    ]
+    fig = make_subplots(rows=1, cols=3, subplot_titles=[p[2] for p in pairs], horizontal_spacing=0.08)
+
+    for index, (xvar, yvar, _label) in enumerate(pairs, start=1):
+        ref_pair = ref[[xvar, yvar]].apply(pd.to_numeric, errors="coerce").dropna()
+        if len(ref_pair) > POINT_CLOUD_MAX:
+            ref_pair = ref_pair.sample(n=POINT_CLOUD_MAX, random_state=42)
+        if not ref_pair.empty:
+            fig.add_trace(
+                go.Scattergl(
+                    x=ref_pair[xvar],
+                    y=ref_pair[yvar],
+                    mode="markers",
+                    marker=dict(color="rgba(76, 114, 176, 0.33)", size=5),
+                    name="CCN reference",
+                    showlegend=index == 1,
+                    hovertemplate=f"{xvar}: %{{x:.4f}}<br>{yvar}: %{{y:.4f}}<extra></extra>",
+                ),
+                row=1,
+                col=index,
+            )
+
+        xcol = _mapped_column(user_df, col_map, xvar)
+        ycol = _mapped_column(user_df, col_map, yvar)
+        if user_df is not None and xcol and ycol:
+            user_pair = pd.DataFrame(
+                {
+                    xvar: pd.to_numeric(user_df[xcol], errors="coerce"),
+                    yvar: pd.to_numeric(user_df[ycol], errors="coerce"),
+                }
+            ).dropna()
+            if not user_pair.empty:
+                fig.add_trace(
+                    go.Scattergl(
+                        x=user_pair[xvar],
+                        y=user_pair[yvar],
+                        mode="markers",
+                        marker=dict(color="#E74C3C", size=7, line=dict(color="white", width=0.7)),
+                        name="Your data",
+                        showlegend=index == 1,
+                        hovertemplate=f"{xcol}: %{{x:.4f}}<br>{ycol}: %{{y:.4f}}<extra></extra>",
+                    ),
+                    row=1,
+                    col=index,
+                )
+
+        fig.update_xaxes(title_text=xvar, row=1, col=index)
+        fig.update_yaxes(title_text=yvar, row=1, col=index)
+
+    fig.update_layout(
+        template="plotly_white",
+        height=380,
+        legend=dict(orientation="h", yanchor="bottom", y=1.08, xanchor="right", x=1),
+        margin=dict(t=70, b=50, l=45, r=20),
+    )
+    return _section_html(title, subtitle, _plotly_html(fig))
+
+
+def build_depth_profile_html(user_df: pd.DataFrame | None, col_map: dict[str, str | None]) -> str:
+    """Build per-core user-data depth profiles for matched QA variables.
+
+    Source R references:
+    - scripts/1_data_formatting/data_visualization_report.Rmd chunk "om depth profile"
+    - scripts/1_data_formatting/data_visualization_report.Rmd chunk "c depth profile"
+    - scripts/1_data_formatting/data_visualization_report.Rmd chunk "bd depth profiles"
+
+    Dashboard adaptation notes:
+    The R report facets ggplot profiles by core_id and uses depth_min on a flipped,
+    reversed axis. This helper keeps the same core-by-core profile view and
+    reversed depth axis, but combines matched variables into one stacked Plotly
+    figure and uses the midpoint of depth_min/depth_max when both are present.
+    The midpoint makes interval-style uploads easier to compare visually in the
+    dashboard. The first 24 core groups are shown to avoid an unreadable Shiny
+    panel when a large dataset is loaded.
+    """
+    title = "Depth Profiles"
+    subtitle = "Core-level vertical structure for matched numeric soil variables."
+    if user_df is None:
+        return _section_html(
+            title,
+            subtitle,
+            _notice_html("Import or edit data in the Data Explorer tab to view depth profiles."),
+        )
+
+    dmin_col = _mapped_column(user_df, col_map, "depth_min")
+    dmax_col = _mapped_column(user_df, col_map, "depth_max")
+    if not dmin_col and not dmax_col:
+        return _section_html(
+            title,
+            subtitle,
+            _notice_html("No matched depth_min or depth_max column is available."),
+        )
+
+    depth_min = (
+        pd.to_numeric(user_df[dmin_col], errors="coerce") if dmin_col else pd.Series(np.nan, index=user_df.index)
+    )
+    depth_max = (
+        pd.to_numeric(user_df[dmax_col], errors="coerce") if dmax_col else pd.Series(np.nan, index=user_df.index)
+    )
+    depth = (depth_min + depth_max) / 2 if dmin_col and dmax_col else depth_min.fillna(depth_max)
+    variables = [
+        v
+        for v in ("dry_bulk_density", "fraction_carbon", "fraction_organic_matter")
+        if _mapped_column(user_df, col_map, v)
+    ]
+    if not variables:
+        return _section_html(
+            title,
+            subtitle,
+            _notice_html("No matched DBD, carbon, or organic matter column is available."),
+        )
+
+    core_col = _mapped_column(user_df, col_map, "core_id")
+    groups = (
+        user_df[core_col].fillna("Unlabeled core").astype(str)
+        if core_col
+        else pd.Series("Current dataset", index=user_df.index)
+    )
+    selected_groups = list(dict.fromkeys(groups.tolist()))[:24]
+
+    fig = make_subplots(rows=len(variables), cols=1, subplot_titles=variables, vertical_spacing=0.1)
+    for row, variable in enumerate(variables, start=1):
+        value_col = _mapped_column(user_df, col_map, variable)
+        profile = pd.DataFrame(
+            {
+                "core": groups,
+                "depth": depth,
+                "value": pd.to_numeric(user_df[value_col], errors="coerce"),
+            }
+        ).dropna(subset=["depth", "value"])
+        for group in selected_groups:
+            group_df = profile[profile["core"] == group].sort_values("depth")
+            if group_df.empty:
+                continue
+            fig.add_trace(
+                go.Scattergl(
+                    x=group_df["value"],
+                    y=group_df["depth"],
+                    mode="lines+markers",
+                    marker=dict(size=5),
+                    line=dict(width=1.4),
+                    opacity=0.78,
+                    name=group,
+                    legendgroup=group,
+                    showlegend=row == 1 and core_col is not None,
+                    hovertemplate=f"{escape(variable)}: %{{x:.4f}}<br>Depth: %{{y:.2f}} cm<br>{escape(group)}<extra></extra>",
+                ),
+                row=row,
+                col=1,
+            )
+        fig.update_xaxes(
+            title_text=f"{variable} ({QA_NUMERIC_COLS[variable]['unit']})",
+            row=row,
+            col=1,
+        )
+        fig.update_yaxes(title_text="Depth (cm)", autorange="reversed", row=row, col=1)
+
+    fig.update_layout(
+        template="plotly_white",
+        height=max(340, 270 * len(variables)),
+        legend=dict(font_size=9, yanchor="top", y=1, xanchor="left", x=1.01),
+        margin=dict(t=58, b=46, l=60, r=130 if core_col else 30),
+    )
+    note = (
+        ""
+        if len(selected_groups) == len(set(groups))
+        else _notice_html("Showing the first 24 core groups to keep the profile readable.")
+    )
+    return _section_html(title, subtitle, note + _plotly_html(fig))
+
+
+def build_duplicate_diagnostics_html(user_df: pd.DataFrame | None, col_map: dict[str, str | None]) -> str:
+    """Build duplicate ID, coordinate, and interval diagnostics for the user dataset.
+
+    Source R references:
+    - scripts/1_data_formatting/qa_functions.R::testUniqueCores()
+    - scripts/1_data_formatting/qa_functions.R::testUniqueCoords()
+    - scripts/housekeeping/test_duplicate_cores.R core_list and ds_list checks
+
+    Dashboard adaptation notes:
+    The R functions inspect synthesis cores/depthseries tables, including
+    cross-study duplicate-coordinate and repeated depthseries value checks. This
+    helper keeps the visual triage pieces that make sense for a current Shiny
+    session: repeated matched core IDs, repeated matched coordinates, and repeated
+    core/depth intervals. It does not attempt the full cross-study duplicate-core
+    resolver from housekeeping because user uploads may not include study_id,
+    site_id, DBD, carbon, and OM together. Coordinates are rounded to 6 decimals
+    before grouping to avoid false negatives from tiny floating-point differences.
+    """
+    title = "Duplicate Checks"
+    subtitle = "Repeated core identifiers, coordinates, and depth intervals that merit review."
+    if user_df is None:
+        return _section_html(
+            title,
+            subtitle,
+            _notice_html("Import or edit data in the Data Explorer tab to view duplicate checks."),
+        )
+
+    core_col = _mapped_column(user_df, col_map, "core_id")
+    lat_col = _mapped_column(user_df, col_map, "latitude")
+    lon_col = _mapped_column(user_df, col_map, "longitude")
+    dmin_col = _mapped_column(user_df, col_map, "depth_min")
+    dmax_col = _mapped_column(user_df, col_map, "depth_max")
+
+    duplicate_core_groups = pd.DataFrame()
+    if core_col:
+        duplicate_core_groups = (
+            user_df[core_col]
+            .dropna()
+            .astype(str)
+            .value_counts()
+            .loc[lambda counts: counts > 1]
+            .rename_axis("core_id")
+            .reset_index(name="rows")
+        )
+
+    duplicate_coords = pd.DataFrame()
+    if lat_col and lon_col:
+        coords = pd.DataFrame(
+            {
+                "latitude": pd.to_numeric(user_df[lat_col], errors="coerce").round(6),
+                "longitude": pd.to_numeric(user_df[lon_col], errors="coerce").round(6),
+            }
+        ).dropna()
+        duplicate_coords = coords.value_counts().loc[lambda counts: counts > 1].rename("rows").reset_index()
+
+    duplicate_intervals = pd.DataFrame()
+    if dmin_col and dmax_col:
+        interval_data = pd.DataFrame(
+            {
+                "depth_min": pd.to_numeric(user_df[dmin_col], errors="coerce"),
+                "depth_max": pd.to_numeric(user_df[dmax_col], errors="coerce"),
+            }
+        )
+        if core_col:
+            interval_data.insert(0, "core_id", user_df[core_col].astype(str))
+        duplicate_intervals = (
+            interval_data.dropna().value_counts().loc[lambda counts: counts > 1].rename("rows").reset_index()
+        )
+
+    counts = {
+        "Duplicate core IDs": len(duplicate_core_groups),
+        "Duplicate coordinates": len(duplicate_coords),
+        "Duplicate intervals": len(duplicate_intervals),
+    }
+    cards = _metric_cards_html(
+        [(label, f"{value:,}", "#198754" if value == 0 else "#dc3545") for label, value in counts.items()]
+    )
+    fig = go.Figure(
+        go.Bar(
+            x=list(counts.keys()),
+            y=list(counts.values()),
+            marker_color=["#4C72B0", "#6C8EBF", "#E74C3C"],
+        )
+    )
+    fig.update_layout(
+        title=dict(text="Duplicate groups by check", font_size=14),
+        yaxis_title="Groups",
+        template="plotly_white",
+        height=280,
+        margin=dict(t=48, b=60, l=45, r=20),
+    )
+
+    tables = ""
+    for label, table in (
+        ("Repeated core IDs", duplicate_core_groups),
+        ("Repeated coordinates", duplicate_coords),
+        ("Repeated depth intervals", duplicate_intervals),
+    ):
+        if not table.empty:
+            tables += f'<h5 style="font-size:0.92rem;margin:14px 0 6px;">{escape(label)}</h5>'
+            tables += table.head(8).to_html(classes="table table-sm table-hover", index=False, escape=True)
+
+    if not tables:
+        tables = _notice_html("No duplicate groups were detected in the currently matched QA/QC fields.")
+
+    return _section_html(title, subtitle, cards + _plotly_html(fig) + tables)
 
 
 # ---------------------------------------------------------------------------
