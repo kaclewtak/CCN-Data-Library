@@ -993,7 +993,7 @@ def build_overview_grid(
 
 
 # ---------------------------------------------------------------------------
-# Scroll-down QA/QC diagnostic sections
+# QA/QC diagnostic sections
 # ---------------------------------------------------------------------------
 
 
@@ -1454,7 +1454,7 @@ def build_map_html(
     countries: list[str] | None = None,
     us_subregions: list[str] | None = None,
 ) -> tuple[str, int, int]:
-    """Build a folium map with reference cores (blue, clustered)
+    """Folium map with reference cores (blue, clustered)
     and user data points (red, individual). Returns (html, ref_count, user_count)."""
     m = folium.Map(location=[20, -40], zoom_start=3, tiles="CartoDB positron")
 

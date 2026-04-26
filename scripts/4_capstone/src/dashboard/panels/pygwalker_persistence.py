@@ -1,5 +1,5 @@
 """
-CCN ADDITION — PyGWalker persistence helpers
+PyGWalker persistence helpers
 =============================================
 Utilities that allow the Shiny "Data Explorer" tab to keep its PyGWalker
 iframe alive across tab switches instead of re-rendering from scratch.
@@ -58,12 +58,6 @@ def build_pygwalker_html_with_config(
     bridge_config: dict[str, Any] | None = None,
 ) -> str:
     """Generate PyGWalker HTML with CCN spreadsheet and bridge config."""
-    # ------------------------------------------------------------------
-    # CCN ADDITION — spreadsheet configuration is injected through the
-    # local pygwalker ``extraConfig`` pass-through so the in-frame React
-    # app can render the spreadsheet editor beside GraphicWalker without
-    # any Shiny-side split layout.
-    # ------------------------------------------------------------------
     fingerprint = data_fingerprint(df)
     extra_config: dict[str, Any] = {
         "ccnSpreadsheet": {

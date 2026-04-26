@@ -26,7 +26,7 @@ def metadata_ui():
     return ui.div(
         ui.layout_columns(
             ui.value_box("Data Library", "CCN v1.7.0", theme="primary"),
-            ui.value_box("Dashboard", "Capstone Shiny", theme="info"),
+            ui.value_box("Dashboard", 'Capstone "NASA Team Yellow"', theme="info"),
             ui.value_box("Primary Data Source", "SERC / CCN", theme="success"),
             col_widths=[4, 4, 4],
         ),
@@ -60,7 +60,7 @@ def metadata_ui():
                         ],
                         [
                             "Dashboard implementation",
-                            "CCN Data Library capstone dashboard contributors",
+                            "Kacper Lewtak, Rachel Krasner, Joshua White, Reid Lewis, Delphine Veronese-Milin",
                         ],
                         [
                             "Original QA/QC scripts",
