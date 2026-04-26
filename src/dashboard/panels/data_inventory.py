@@ -25,7 +25,8 @@ def data_inventory_ui():
         ui.sidebar(
             ui.h5("Reference Inventory Controls"),
             ui.p(
-                "Library-wide summaries and coverage diagnostics for the CCN repository. Session-dataset QA now lives in the QA Dashboard.",
+                "Library-wide summaries and coverage diagnostics for the CCN repository. \
+                    Session-dataset QA now lives in the QA Dashboard.",
                 class_="text-muted small",
             ),
             ui.input_action_button("load_inventory", "Load Inventory", class_="btn-primary w-100 mb-3"),
@@ -433,5 +434,4 @@ def data_inventory_server(input, output, session):
                 eligible.append(study)
             if len(eligible) == limit:
                 break
-        return eligible
         return eligible

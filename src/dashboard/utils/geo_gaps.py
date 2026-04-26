@@ -1,3 +1,5 @@
+"""Utilities for analyzing geographic data gaps in the SOM-BD dataset."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -95,7 +97,7 @@ def compute_coverage_summary(som_bd_df: pd.DataFrame) -> dict:
 
     country_counts = som_bd_df["area"].dropna().str.strip().value_counts()
     countries_lower = som_bd_df["area"].dropna().str.strip().str.lower()
-    continents = countries_lower.map(lambda c: CONTINENT_MAP.get(c, "unknown"))
+    continents = countries_lower.map(lambda c: CONTINENT_MAP.get(c, "unknown") if isinstance(c, str) else "unknown")
     continent_counts = continents.value_counts()
 
     present_continents = set(continent_counts.index) - {"unknown"}
@@ -118,7 +120,7 @@ def compute_underrepresented_areas(som_bd_df: pd.DataFrame, threshold_percentile
     if counts.empty:
         return pd.Series(dtype=int)
 
-    threshold = np.percentile(counts.values, threshold_percentile)
+    threshold = np.percentile(counts.to_numpy(), threshold_percentile)
     return counts[counts <= threshold].sort_values()
 
 

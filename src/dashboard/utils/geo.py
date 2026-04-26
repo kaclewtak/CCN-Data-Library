@@ -4,44 +4,65 @@ import pandas as pd
 import polars as pl
 
 
+def _normalize(name: str) -> str:
+    """Normalize a string by lowercasing alphanumeric characters and replacing non-alphanumeric with underscores."""
+    normalized = "".join(ch.lower() if ch.isalnum() else "_" for ch in name).strip("_")
+    while "__" in normalized:
+        normalized = normalized.replace("__", "_")
+    return normalized
+
+
+def _tokens(name: str) -> list[str]:
+    """Split a normalized name into tokens."""
+    normalized = _normalize(name)
+    return [tok for tok in normalized.split("_") if tok]
+
+
+def _is_lat_candidate(name: str) -> bool:
+    """Check if a column name is a latitude candidate."""
+    token_set = set(_tokens(name))
+    if token_set.intersection({"lat", "latitude"}):
+        return True
+    normalized = _normalize(name)
+    return normalized.endswith("latitude") or normalized.endswith("_lat") or normalized == "lat"
+
+
+def _is_lon_candidate(name: str) -> bool:
+    """Check if a column name is a longitude candidate."""
+    token_set = set(_tokens(name))
+    if token_set.intersection({"lon", "lng", "long", "longitude"}):
+        return True
+    normalized = _normalize(name)
+    return (
+        normalized.endswith("longitude")
+        or normalized.endswith("_lon")
+        or normalized.endswith("_lng")
+        or normalized == "lon"
+        or normalized == "lng"
+    )
+
+
+def _stem(name: str, axis: str) -> str:
+    """Extract the stem of a coordinate column name by removing coordinate-specific tokens."""
+    lat_terms = {"lat", "latitude"}
+    lon_terms = {"lon", "lng", "long", "longitude"}
+    remove = lat_terms if axis == "lat" else lon_terms
+    stem_tokens = [tok for tok in _tokens(name) if tok not in remove]
+    return "_".join(stem_tokens)
+
+
 def find_lat_lon_columns(columns: list[str]) -> tuple[str, str] | None:
-    def _normalize(name: str) -> str:
-        normalized = "".join(ch.lower() if ch.isalnum() else "_" for ch in name).strip("_")
-        while "__" in normalized:
-            normalized = normalized.replace("__", "_")
-        return normalized
-
-    def _tokens(name: str) -> list[str]:
-        normalized = _normalize(name)
-        return [tok for tok in normalized.split("_") if tok]
-
-    def _is_lat_candidate(name: str) -> bool:
-        token_set = set(_tokens(name))
-        if token_set.intersection({"lat", "latitude"}):
-            return True
-        normalized = _normalize(name)
-        return normalized.endswith("latitude") or normalized.endswith("_lat") or normalized == "lat"
-
-    def _is_lon_candidate(name: str) -> bool:
-        token_set = set(_tokens(name))
-        if token_set.intersection({"lon", "lng", "long", "longitude"}):
-            return True
-        normalized = _normalize(name)
-        return (
-            normalized.endswith("longitude")
-            or normalized.endswith("_lon")
-            or normalized.endswith("_lng")
-            or normalized == "lon"
-            or normalized == "lng"
-        )
-
-    def _stem(name: str, axis: str) -> str:
-        lat_terms = {"lat", "latitude"}
-        lon_terms = {"lon", "lng", "long", "longitude"}
-        remove = lat_terms if axis == "lat" else lon_terms
-        stem_tokens = [tok for tok in _tokens(name) if tok not in remove]
-        return "_".join(stem_tokens)
-
+    """Find latitude and longitude column names from a list of column names.
+    
+    Attempts to match latitude and longitude columns by analyzing column names.
+    Returns the best matching pair based on naming conventions and stem similarity.
+    
+    Args:
+        columns: List of column names to search through.
+        
+    Returns:
+        A tuple of (latitude_column, longitude_column) if found, None otherwise.
+    """
     lat_matches = [(idx, col) for idx, col in enumerate(columns) if _is_lat_candidate(col)]
     lon_matches = [(idx, col) for idx, col in enumerate(columns) if _is_lon_candidate(col)]
 
