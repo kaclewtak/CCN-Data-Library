@@ -116,7 +116,3 @@ def launch_dashboard_sync(**kwargs: Any) -> DashboardLaunch:
     if loop.is_running():
         raise RuntimeError("Use `await launch_dashboard(...)` when running inside Jupyter or marimo.")
     return loop.run_until_complete(launch_dashboard(**kwargs))
-        return asyncio.run(launch_dashboard(**kwargs))
-    if loop.is_running():
-        raise RuntimeError("Use `await launch_dashboard(...)` when running inside Jupyter or marimo.")
-    return loop.run_until_complete(launch_dashboard(**kwargs))
