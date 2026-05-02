@@ -19,8 +19,9 @@ The dashboard is now explorer-first.
 2. Import a CSV, JSON, or Excel file from the embedded spreadsheet inside PyGWalker.
 3. The imported spreadsheet snapshot becomes the session dataset for the rest of the dashboard.
 4. **Satellite Search** consumes detected latitude/longitude columns from that same dataset.
-5. **QA Dashboard** consumes that same dataset for validation, statistical comparisons, charts, and map overlays.
-6. **Data Inventory** remains independent and focuses on repository inventory, synthesis summaries, and coverage diagnostics.
+5. **Carbon Modeling** shows the static high-level findings and copied figures from the saved modeling notebook outputs.
+6. **QA Dashboard** consumes that same dataset for validation, statistical comparisons, charts, and map overlays.
+7. **Data Inventory** remains independent and focuses on repository inventory, synthesis summaries, and coverage diagnostics.
 
 The Data Explorer remains the source of truth after import. Later spreadsheet edits and formula-driven changes are mirrored back to the Shiny session and reused by downstream panels without replacing the embedded iframe.
 
@@ -33,11 +34,13 @@ src/dashboard/
 ├── Python_Shiny.ipynb          # Notebook launcher for the dashboard
 ├── README.md
 ├── panels/
+│   ├── carbon_modeling.py       # Static SOC modeling findings and copied notebook figures
 │   ├── eo_panel.py             # NASA CMR satellite search
 │   ├── pygwalker_page.py       # Explorer page, persistent iframe, parent bridge listener
 │   ├── pygwalker_persistence.py# PyGWalker HTML builder and spreadsheet config injection
 │   ├── data_inventory.py       # File inventory and distribution analysis
 │   └── qa_panel.py             # QA charts, validation, and reference map
+├── images/                      # Static dashboard figures copied from modeling notebooks
 ├── tests/
 │   ├── test_dashboard_shared_dataset.py
 │   └── test_pygwalker_persistence.py

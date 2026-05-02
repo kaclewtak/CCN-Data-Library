@@ -1,11 +1,15 @@
+from pathlib import Path
 from typing import Any
 
+from panels.carbon_modeling import carbon_modeling_ui
 from panels.data_inventory import data_inventory_server, data_inventory_ui
 from panels.eo_panel import eo_server, eo_ui
 from panels.metadata_panel import metadata_ui
 from panels.pygwalker_page import pygwalker_server, pygwalker_ui
 from panels.qa_panel import qa_server, qa_ui
 from shiny import App, ui
+
+DASHBOARD_DIR = Path(__file__).resolve().parent
 
 
 def _call_module_ui(module_ui: Any, module_id: str) -> Any:
@@ -20,8 +24,7 @@ app_ui = ui.page_fluid(
     ui.head_content(
         ui.tags.title("CCN Data Library Dashboard"),
         ui.tags.script(src="https://cdn.plot.ly/plotly-2.35.2.min.js"),
-        ui.tags.style(
-            """
+        ui.tags.style("""
             :root {
                 --ccn-serc-navy: #002c5f;
                 --ccn-serc-teal: #006c6f;
@@ -222,8 +225,7 @@ app_ui = ui.page_fluid(
                     min-height: 640px;
                 }
             }
-        """
-        ),
+        """),
     ),
     ui.div(
         ui.span("Smithsonian Environmental Research Center"),
@@ -261,6 +263,10 @@ app_ui = ui.page_fluid(
                     _call_module_ui(eo_ui, "eo_search"),
                 ),
                 ui.nav_panel(
+                    "Carbon Modeling",
+                    _call_module_ui(carbon_modeling_ui, "carbon_modeling"),
+                ),
+                ui.nav_panel(
                     "Data Inventory",
                     _call_module_ui(data_inventory_ui, "inventory"),
                 ),
@@ -273,8 +279,7 @@ app_ui = ui.page_fluid(
         ),
         class_="ccn-dashboard-body",
     ),
-    ui.tags.script(
-        """
+    ui.tags.script("""
         document.addEventListener("shown.bs.tab", function(event) {
             if (event.target?.getAttribute("data-value") !== "Data Explorer") {
                 return;
@@ -291,8 +296,7 @@ app_ui = ui.page_fluid(
                 });
             }, 50);
         });
-    """
-    ),
+    """),
 )
 
 
@@ -307,4 +311,4 @@ def server(_input, _output, _session):
     _call_module_server(qa_server, "qa_dashboard", data_getter=explorer_state["data"])
 
 
-app = App(app_ui, server)
+app = App(app_ui, server, static_assets={"/images": DASHBOARD_DIR / "images"})
