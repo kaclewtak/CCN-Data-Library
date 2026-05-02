@@ -8,85 +8,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "4-capstone"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "catboost" },
-    { name = "earthengine-api" },
-    { name = "fastexcel" },
-    { name = "geemap" },
-    { name = "geopandas" },
-    { name = "great-expectations" },
-    { name = "ipyleaflet" },
-    { name = "klib" },
-    { name = "lightgbm" },
-    { name = "optuna" },
-    { name = "pandera" },
-    { name = "perpetual" },
-    { name = "polars" },
-    { name = "pyarrow" },
-    { name = "pygwalker" },
-    { name = "scikit-learn" },
-    { name = "scipy" },
-    { name = "shiny" },
-    { name = "shinywidgets" },
-    { name = "torch" },
-    { name = "xgboost" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "black" },
-    { name = "ipykernel" },
-    { name = "ipywidgets" },
-    { name = "isort" },
-    { name = "jupyterlab" },
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "sweetviz" },
-    { name = "ydata-profiling" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "catboost", specifier = ">=1.2.10" },
-    { name = "earthengine-api", specifier = ">=1.7.19" },
-    { name = "fastexcel", specifier = ">=0.19.0" },
-    { name = "geemap", specifier = ">=0.37.2" },
-    { name = "geopandas", specifier = ">=1.1.2" },
-    { name = "great-expectations", specifier = ">=1.11.1" },
-    { name = "ipyleaflet", specifier = ">=0.20.0" },
-    { name = "klib", specifier = ">=1.4.0" },
-    { name = "lightgbm", specifier = ">=4.6.0" },
-    { name = "optuna", specifier = ">=4.8.0" },
-    { name = "pandera", specifier = ">=0.29.0" },
-    { name = "perpetual", specifier = ">=2.1.0" },
-    { name = "polars", specifier = ">=1.38.1" },
-    { name = "pyarrow", specifier = ">=23.0.1" },
-    { name = "pygwalker", editable = "src/interactive_dash" },
-    { name = "scikit-learn", specifier = ">=1.8.0" },
-    { name = "scipy", specifier = ">=1.14.0" },
-    { name = "shiny", specifier = ">=1.5.1" },
-    { name = "shinywidgets", specifier = ">=0.7.1" },
-    { name = "torch", specifier = ">=2.11.0" },
-    { name = "xgboost", specifier = ">=3.2.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "black", specifier = ">=26.1.0" },
-    { name = "ipykernel", specifier = ">=7.2.0" },
-    { name = "ipywidgets", specifier = ">=8.1.8" },
-    { name = "isort", specifier = ">=7.0.0" },
-    { name = "jupyterlab", specifier = ">=4.5.3" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "ruff", specifier = ">=0.15.0" },
-    { name = "sweetviz", specifier = ">=2.3.1" },
-    { name = "ydata-profiling", specifier = ">=4.18.1" },
-]
-
-[[package]]
 name = "alembic"
 version = "1.18.4"
 source = { registry = "https://pypi.org/simple" }
@@ -387,6 +308,85 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/98/fd/63be2ff7aa9f6a7d63e342f42948259a028bfa50203d5ff687c84804ffb7/catboost-1.2.10-cp313-cp313-manylinux2014_aarch64.whl", hash = "sha256:59aa166f075f0a5ea57b0ba46e5060bd6a22e849e91e4142f16c2df11295b184", size = 96680675, upload-time = "2026-02-18T16:12:28.407Z" },
     { url = "https://files.pythonhosted.org/packages/fe/2c/fa0479bd79226f037b495a30696b70741beb198f65227c975005e213aa8e/catboost-1.2.10-cp313-cp313-manylinux2014_x86_64.whl", hash = "sha256:42c1b6c7ae5c18cdbe00c8b9493987cc13338fe328baaf1a0b98ddaf58db96a2", size = 97111368, upload-time = "2026-02-18T16:12:32.456Z" },
     { url = "https://files.pythonhosted.org/packages/69/71/a9e9a06418832fbea9d7cefda585d53395358d498537b6bdd3cf7364cd29/catboost-1.2.10-cp313-cp313-win_amd64.whl", hash = "sha256:5ede858e634d6d0f521bf6dd6fad9374f23d37049ee48e0779ccd2a372632cb1", size = 100201430, upload-time = "2026-02-18T16:12:36.731Z" },
+]
+
+[[package]]
+name = "ccn-dashboard"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "catboost" },
+    { name = "earthengine-api" },
+    { name = "fastexcel" },
+    { name = "geemap" },
+    { name = "geopandas" },
+    { name = "great-expectations" },
+    { name = "ipyleaflet" },
+    { name = "klib" },
+    { name = "lightgbm" },
+    { name = "optuna" },
+    { name = "pandera" },
+    { name = "perpetual" },
+    { name = "polars" },
+    { name = "pyarrow" },
+    { name = "pygwalker" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "shiny" },
+    { name = "shinywidgets" },
+    { name = "torch" },
+    { name = "xgboost" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "black" },
+    { name = "ipykernel" },
+    { name = "ipywidgets" },
+    { name = "isort" },
+    { name = "jupyterlab" },
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "sweetviz" },
+    { name = "ydata-profiling" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "catboost", specifier = ">=1.2.10" },
+    { name = "earthengine-api", specifier = ">=1.7.19" },
+    { name = "fastexcel", specifier = ">=0.19.0" },
+    { name = "geemap", specifier = ">=0.37.2" },
+    { name = "geopandas", specifier = ">=1.1.2" },
+    { name = "great-expectations", specifier = ">=1.11.1" },
+    { name = "ipyleaflet", specifier = ">=0.20.0" },
+    { name = "klib", specifier = ">=1.4.0" },
+    { name = "lightgbm", specifier = ">=4.6.0" },
+    { name = "optuna", specifier = ">=4.8.0" },
+    { name = "pandera", specifier = ">=0.29.0" },
+    { name = "perpetual", specifier = ">=2.1.0" },
+    { name = "polars", specifier = ">=1.38.1" },
+    { name = "pyarrow", specifier = ">=23.0.1" },
+    { name = "pygwalker", editable = "src/interactive_dash" },
+    { name = "scikit-learn", specifier = ">=1.8.0" },
+    { name = "scipy", specifier = ">=1.14.0" },
+    { name = "shiny", specifier = ">=1.5.1" },
+    { name = "shinywidgets", specifier = ">=0.7.1" },
+    { name = "torch", specifier = ">=2.11.0" },
+    { name = "xgboost", specifier = ">=3.2.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=26.1.0" },
+    { name = "ipykernel", specifier = ">=7.2.0" },
+    { name = "ipywidgets", specifier = ">=8.1.8" },
+    { name = "isort", specifier = ">=7.0.0" },
+    { name = "jupyterlab", specifier = ">=4.5.3" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "ruff", specifier = ">=0.15.0" },
+    { name = "sweetviz", specifier = ">=2.3.1" },
+    { name = "ydata-profiling", specifier = ">=4.18.1" },
 ]
 
 [[package]]

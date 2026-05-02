@@ -9,12 +9,10 @@ The dashboard is organized around one main workflow: import or build a working d
 From this repository:
 
 ```bash
-cd src/dashboard
-uvicorn shiny_dashboard:app --reload
+uv run ccn-dashboard
 ```
-Or open [Python_Shiny.ipynb](Python_Shiny.ipynb) and run the launch cells.
 
-Standalone extraction work has started under [../ccn_dashboard](../ccn_dashboard). That package currently wraps this existing app, validates the local Data Explorer bundle, resolves CCN synthesis data from `CCN_DATA_DIR` or cache locations, and exposes a notebook-friendly `launch_dashboard()` helper.
+The standalone wrapper under [../ccn_dashboard](../ccn_dashboard) validates the local Data Explorer bundle, resolves or installs CCN synthesis data, and exposes both the `ccn-dashboard` CLI and a notebook-friendly `launch_dashboard()` helper.
 
 ## Typical Workflow
 1. Open **Data Explorer** first.
@@ -72,7 +70,7 @@ Use it when you need to review model scope, performance, caveats, feature-import
 ### Data Inventory
 Use this tab for library-level context rather than session-dataset QA. Click **Load Inventory** to scan available CCN data files or synthesis files, then review file categories, top studies, SOM and bulk density distributions, correlations, density contours, and geographic coverage hints.
 
-In the current repository app, inventory utilities look for repository data folders such as `data/primary_studies` or `data/CCN_synthesis`. The standalone foundation is moving this toward `CCN_DATA_DIR` and app-managed cache resolution.
+Inventory utilities use the standalone synthesis data provider. By default, they read the app-managed `files/current/CCN_synthesis` cache or fetch it on first use.
 
 ### Metadata
 Use this tab for citation, stewardship, data-use, service-source, and software acknowledgement information. It includes the recommended CCN Data Library citation and reminders that users should also cite original dataset contributors where appropriate.
@@ -84,10 +82,10 @@ QA Dashboard and Data Inventory need CCN synthesis reference files, especially `
 Current supported paths:
 
 - Set `CCN_DATA_DIR` to a folder containing the CCN synthesis CSV files.
-- Run from a repository layout where `data/CCN_synthesis` is available.
-- For standalone work, place the synthesis files in the configured app cache once that packaging path is complete.
+- Let the standalone launcher download and install the GitHub release asset into `files/current/CCN_synthesis`.
+- Set `CCN_DATA_CACHE_DIR` to redirect the app-managed cache root.
 
-The authoritative CCN synthesis download URL is not yet encoded in this repository. Until a source manifest is confirmed, first launch should use `CCN_DATA_DIR` or a prepared local cache.
+The download manifest is tracked in [../ccn_dashboard/data_manifest.py](../ccn_dashboard/data_manifest.py). First launch downloads once; later launches reuse the local cache unless a force refresh is requested.
 
 ## Maintainer Notes
 

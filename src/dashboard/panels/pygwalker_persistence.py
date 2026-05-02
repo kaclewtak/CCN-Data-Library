@@ -23,7 +23,7 @@ from typing import Any
 import polars as pl
 
 # ── Make the local pygwalker package importable ──────────────────────────
-_local_pygwalker = Path(__file__).resolve().parents[3] / "interactive_dash"
+_local_pygwalker = Path(__file__).resolve().parents[2] / "interactive_dash"
 if _local_pygwalker.is_dir() and str(_local_pygwalker) not in sys.path:
     sys.path.insert(0, str(_local_pygwalker))
 

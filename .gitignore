@@ -14,6 +14,9 @@ temp/*
 # folder_to_ignore/
 # large shapefiles are now managed with Github LFS
 
+# --- Standalone app data cache ---
+/files/
+
 # --- Python & UV ---
 # The virtual environment
 .venv/

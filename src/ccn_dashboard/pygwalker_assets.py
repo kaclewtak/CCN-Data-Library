@@ -39,7 +39,9 @@ def pygwalker_dist_dir() -> Path:
     return pygwalker_root() / "templates" / "dist"
 
 
-def validate_pygwalker_assets(required_assets: tuple[str, ...] = REQUIRED_PYGWALKER_DIST_ASSETS) -> tuple[Path, ...]:
+def validate_pygwalker_assets(
+    required_assets: tuple[str, ...] = REQUIRED_PYGWALKER_DIST_ASSETS,
+) -> tuple[Path, ...]:
     dist_dir = pygwalker_dist_dir()
     missing = [asset for asset in required_assets if not (dist_dir / asset).is_file()]
     if missing:

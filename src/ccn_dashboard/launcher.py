@@ -9,6 +9,7 @@ from typing import Any
 from .data_provider import (
     SynthesisDataError,
     SynthesisDataLocation,
+    ensure_synthesis_data_dir,
     resolve_synthesis_data_dir,
 )
 from .pygwalker_assets import validate_pygwalker_assets
@@ -51,8 +52,17 @@ def find_available_port(host: str = "127.0.0.1", preferred_port: int = 8000) -> 
         return int(sock.getsockname()[1])
 
 
-def _resolve_optional_data(require_data: bool) -> tuple[SynthesisDataLocation | None, tuple[str, ...]]:
+def _resolve_optional_data(
+    require_data: bool,
+    *,
+    auto_fetch: bool,
+    force_data_refresh: bool,
+) -> tuple[SynthesisDataLocation | None, tuple[str, ...]]:
     try:
+        if auto_fetch and (require_data or force_data_refresh):
+            return ensure_synthesis_data_dir(
+                required=require_data, force=force_data_refresh
+            ), ()
         return resolve_synthesis_data_dir(required=require_data), ()
     except SynthesisDataError as exc:
         if require_data:
@@ -66,6 +76,8 @@ async def launch_dashboard(
     host: str = "127.0.0.1",
     port: int = 8000,
     require_data: bool = False,
+    auto_fetch: bool = True,
+    force_data_refresh: bool = False,
     open_browser: bool = False,
     log_level: str = "info",
     startup_timeout: float = 10.0,
@@ -73,7 +85,11 @@ async def launch_dashboard(
     import uvicorn
 
     validate_pygwalker_assets()
-    data_location, warnings = _resolve_optional_data(require_data)
+    data_location, warnings = _resolve_optional_data(
+        require_data,
+        auto_fetch=auto_fetch,
+        force_data_refresh=force_data_refresh,
+    )
     selected_port = find_available_port(host, port)
 
     if app is None:
@@ -114,5 +130,7 @@ def launch_dashboard_sync(**kwargs: Any) -> DashboardLaunch:
     except RuntimeError:
         return asyncio.run(launch_dashboard(**kwargs))
     if loop.is_running():
-        raise RuntimeError("Use `await launch_dashboard(...)` when running inside Jupyter or marimo.")
+        raise RuntimeError(
+            "Use `await launch_dashboard(...)` when running inside Jupyter or marimo."
+        )
     return loop.run_until_complete(launch_dashboard(**kwargs))

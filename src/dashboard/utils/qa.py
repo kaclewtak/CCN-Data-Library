@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from html import escape
 from pathlib import Path
 
@@ -55,7 +56,9 @@ QA_NUMERIC_COLS = {
 
 QA_GEO_COLS = {
     "latitude": {"synonyms": {"lat", "y", "core_latitude", "site_latitude"}},
-    "longitude": {"synonyms": {"lon", "lng", "long", "x", "core_longitude", "site_longitude"}},
+    "longitude": {
+        "synonyms": {"lon", "lng", "long", "x", "core_longitude", "site_longitude"}
+    },
 }
 
 QA_ID_COLS = {
@@ -129,28 +132,32 @@ _ref_cache: dict | None = None
 
 
 def _find_data_dir() -> Path:
-    """Hunt for the CCN_synthesis folder."""
+    """Resolve or install the CCN_synthesis folder."""
     env = os.environ.get("CCN_DATA_DIR")
     if env and Path(env).is_dir():
         return Path(env)
 
-    app_dir = Path(__file__).resolve().parent.parent  # dashboard/
-    candidates = [
-        # Walk up to the repo root (CCN-Data-Library)
-        app_dir.parents[3] / "data" / "CCN_synthesis",
-        app_dir.parents[2] / "data" / "CCN_synthesis",
-        app_dir.parent / "data" / "CCN_synthesis",
-        app_dir / "data" / "CCN_synthesis",
-        Path.cwd() / "data" / "CCN_synthesis",
-        Path.cwd().parent / "data" / "CCN_synthesis",
-    ]
-    for c in candidates:
-        if (c / "CCN_depthseries.csv").exists():
-            return c
-    raise FileNotFoundError(
-        "Cannot find data/CCN_synthesis/CCN_depthseries.csv. "
-        "Run from the CCN-Data-Library-main directory, or set CCN_DATA_DIR."
-    )
+    try:
+        from ccn_dashboard.data_provider import (
+            SynthesisDataError,
+            ensure_synthesis_data_dir,
+        )
+    except ModuleNotFoundError:
+        src_root = Path(__file__).resolve().parents[2]
+        if str(src_root) not in sys.path:
+            sys.path.insert(0, str(src_root))
+        from ccn_dashboard.data_provider import (
+            SynthesisDataError,
+            ensure_synthesis_data_dir,
+        )
+
+    try:
+        location = ensure_synthesis_data_dir(required=True)
+    except SynthesisDataError as exc:
+        raise FileNotFoundError(str(exc)) from exc
+    if location is None:
+        raise FileNotFoundError("Cannot resolve CCN synthesis data.")
+    return location.path
 
 
 def load_reference_data() -> dict:
@@ -213,7 +220,9 @@ def load_reference_data() -> dict:
 
     # --- Normalize country & derive continent / US sub-region columns ---
     ref_cores["country"] = ref_cores["country"].fillna("").str.strip().str.lower()
-    ref_cores["continent"] = ref_cores["country"].map(lambda c: CONTINENT_MAP.get(c, "other"))
+    ref_cores["continent"] = ref_cores["country"].map(
+        lambda c: CONTINENT_MAP.get(c, "other")
+    )
 
     us_mask = ref_cores["country"] == "united states"
     ref_cores["us_subregion"] = ""
@@ -245,9 +254,19 @@ def load_reference_data() -> dict:
     ref_cores_valid = ref_cores.dropna(subset=["latitude", "longitude"])
 
     habitat_choices = sorted(ref_cores["habitat"].dropna().unique().tolist())
-    continent_choices = sorted(ref_cores["continent"].replace("", pd.NA).dropna().unique().tolist())
-    country_choices = sorted(ref_cores["country"].replace("", pd.NA).dropna().unique().tolist())
-    us_subregion_choices = sorted(ref_cores.loc[us_mask, "us_subregion"].replace("", pd.NA).dropna().unique().tolist())
+    continent_choices = sorted(
+        ref_cores["continent"].replace("", pd.NA).dropna().unique().tolist()
+    )
+    country_choices = sorted(
+        ref_cores["country"].replace("", pd.NA).dropna().unique().tolist()
+    )
+    us_subregion_choices = sorted(
+        ref_cores.loc[us_mask, "us_subregion"]
+        .replace("", pd.NA)
+        .dropna()
+        .unique()
+        .tolist()
+    )
 
     print(
         f"[QA] Loaded: {len(ref_ds):,} depthseries rows, "
@@ -350,7 +369,9 @@ def run_validation(df: pd.DataFrame, col_map: dict[str, str | None]) -> pd.DataF
         return c if c and c in df.columns else None
 
     def _flag(row_idx: int, col: str, value, issue: str):
-        warnings.append({"Row": row_idx + 1, "Column": col, "Value": value, "Issue": issue})
+        warnings.append(
+            {"Row": row_idx + 1, "Column": col, "Value": value, "Issue": issue}
+        )
 
     range_rules: list[tuple[str, float | None, float | None, str]] = [
         ("fraction_carbon", 0.0, 1.0, "Must be 0\u20131 (fraction, not percent)"),
@@ -427,7 +448,11 @@ def run_validation(df: pd.DataFrame, col_map: dict[str, str | None]) -> pd.DataF
             except (ValueError, TypeError):
                 _flag(idx, ucol, raw, f"Non-numeric value in {ucol}")
 
-    return pd.DataFrame(warnings) if warnings else pd.DataFrame(columns=["Row", "Column", "Value", "Issue"])
+    return (
+        pd.DataFrame(warnings)
+        if warnings
+        else pd.DataFrame(columns=["Row", "Column", "Value", "Issue"])
+    )
 
 
 def matched_numeric_variables(
@@ -516,16 +541,28 @@ def build_comparison_results(
     if user_df is None or not matches:
         return []
 
-    ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subregions, habitats)
+    ref = apply_geo_filters(
+        ref_merged.copy(), continents, countries, us_subregions, habitats
+    )
 
-    selected_variables = [variable] if variable != "__all__" else [match["variable"] for match in matches]
+    selected_variables = (
+        [variable]
+        if variable != "__all__"
+        else [match["variable"] for match in matches]
+    )
     results: list[dict[str, float | int | str | None]] = []
     for selected in selected_variables:
         user_column = col_map.get(selected)
-        if user_column is None or user_column not in user_df.columns or selected not in ref.columns:
+        if (
+            user_column is None
+            or user_column not in user_df.columns
+            or selected not in ref.columns
+        ):
             continue
 
-        comparison = compare_user_to_reference(user_df[user_column], ref[selected], test_name=test_name)
+        comparison = compare_user_to_reference(
+            user_df[user_column], ref[selected], test_name=test_name
+        )
         comparison.update(
             {
                 "variable": selected,
@@ -572,7 +609,9 @@ def _user_distribution_trace(
     category_label: str | None = None,
 ):
     if chart_type == "Point Cloud":
-        user_y = np.linspace(0.52, 0.68, len(user_values)) if len(user_values) > 1 else [0.6]
+        user_y = (
+            np.linspace(0.52, 0.68, len(user_values)) if len(user_values) > 1 else [0.6]
+        )
         return go.Scattergl(
             x=user_values.values,
             y=user_y,
@@ -601,7 +640,9 @@ def _user_distribution_trace(
         )
 
     if chart_type == "Violin + Strip":
-        y_values = [category_label] * len(user_values) if category_label is not None else None
+        y_values = (
+            [category_label] * len(user_values) if category_label is not None else None
+        )
         return go.Violin(
             x=user_values,
             y=y_values,
@@ -656,7 +697,10 @@ def build_qa_chart(
         )
         return fig.to_html(full_html=False, include_plotlyjs=False)
 
-    p5, p95 = float(np.nanpercentile(ref_clean, 5)), float(np.nanpercentile(ref_clean, 95))
+    p5, p95 = (
+        float(np.nanpercentile(ref_clean, 5)),
+        float(np.nanpercentile(ref_clean, 95)),
+    )
     fig.add_vrect(
         x0=p5,
         x1=p95,
@@ -822,7 +866,9 @@ def build_qa_chart(
     return fig.to_html(full_html=False, include_plotlyjs=False)
 
 
-def build_stats_html(ref_values: pd.Series, user_values: pd.Series | None, variable_name: str) -> str:
+def build_stats_html(
+    ref_values: pd.Series, user_values: pd.Series | None, variable_name: str
+) -> str:
     """Build an HTML stats comparison table."""
     ref_clean = ref_values.dropna()
 
@@ -863,7 +909,9 @@ def build_overview_grid(
     us_subregions: list[str] | None = None,
 ) -> str:
     """Build a 2x3 subplot grid showing all QA variables at once."""
-    ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subregions, habitats)
+    ref = apply_geo_filters(
+        ref_merged.copy(), continents, countries, us_subregions, habitats
+    )
 
     grid_type = chart_type
 
@@ -883,14 +931,18 @@ def build_overview_grid(
     for i, var in enumerate(variables):
         r = i // n_cols + 1
         c = i % n_cols + 1
-        ref_vals = pd.to_numeric(ref.get(var, pd.Series(dtype=float)), errors="coerce").dropna()
+        ref_vals = pd.to_numeric(
+            ref.get(var, pd.Series(dtype=float)), errors="coerce"
+        ).dropna()
 
         if len(ref_vals) > 0:
             if grid_type == "Point Cloud":
                 rng = np.random.default_rng(42 + i)
                 ref_sample = ref_vals
                 if len(ref_sample) > POINT_CLOUD_MAX:
-                    sample_idx = rng.choice(ref_sample.index, POINT_CLOUD_MAX, replace=False)
+                    sample_idx = rng.choice(
+                        ref_sample.index, POINT_CLOUD_MAX, replace=False
+                    )
                     ref_sample = ref_sample.loc[sample_idx]
                 fig.add_trace(
                     go.Scattergl(
@@ -1022,7 +1074,9 @@ def _metric_cards_html(cards: list[tuple[str, str, str]]) -> str:
     return f'<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">{card_html}</div>'
 
 
-def _mapped_column(df: pd.DataFrame | None, col_map: dict[str, str | None], canonical: str) -> str | None:
+def _mapped_column(
+    df: pd.DataFrame | None, col_map: dict[str, str | None], canonical: str
+) -> str | None:
     if df is None:
         return None
     col = col_map.get(canonical)
@@ -1030,7 +1084,9 @@ def _mapped_column(df: pd.DataFrame | None, col_map: dict[str, str | None], cano
 
 
 def _plotly_html(fig: go.Figure) -> str:
-    return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+    return fig.to_html(
+        full_html=False, include_plotlyjs=False, config={"displayModeBar": False}
+    )
 
 
 def build_qaqc_summary_html(
@@ -1057,12 +1113,16 @@ def build_qaqc_summary_html(
     render time.
     """
     title = "Data Coverage And Range Sanity"
-    subtitle = "Matched CCN fields, non-missing coverage, and validation issue concentration."
+    subtitle = (
+        "Matched CCN fields, non-missing coverage, and validation issue concentration."
+    )
     if user_df is None:
         return _section_html(
             title,
             subtitle,
-            _notice_html("Import or edit data in the Data Explorer tab to view QA/QC coverage."),
+            _notice_html(
+                "Import or edit data in the Data Explorer tab to view QA/QC coverage."
+            ),
         )
 
     coverage_rows: list[dict[str, object]] = []
@@ -1080,8 +1140,14 @@ def build_qaqc_summary_html(
 
     coverage = pd.DataFrame(coverage_rows)
     matched_count = int(coverage["matched"].sum())
-    issue_count = 0 if validation_df is None or validation_df.empty else len(validation_df)
-    avg_complete = coverage.loc[coverage["matched"], "completeness"].mean() if matched_count else 0.0
+    issue_count = (
+        0 if validation_df is None or validation_df.empty else len(validation_df)
+    )
+    avg_complete = (
+        coverage.loc[coverage["matched"], "completeness"].mean()
+        if matched_count
+        else 0.0
+    )
 
     cards = _metric_cards_html(
         [
@@ -1120,10 +1186,16 @@ def build_qaqc_summary_html(
     )
 
     issue_html = ""
-    if validation_df is not None and not validation_df.empty and "Issue" in validation_df.columns:
+    if (
+        validation_df is not None
+        and not validation_df.empty
+        and "Issue" in validation_df.columns
+    ):
         issue_counts = validation_df["Issue"].value_counts().head(6).reset_index()
         issue_counts.columns = ["Issue", "Rows"]
-        issue_html = issue_counts.to_html(classes="table table-sm table-hover mt-2", index=False, escape=True)
+        issue_html = issue_counts.to_html(
+            classes="table table-sm table-hover mt-2", index=False, escape=True
+        )
 
     return _section_html(title, subtitle, cards + _plotly_html(fig) + issue_html)
 
@@ -1153,13 +1225,17 @@ def build_relationship_diagnostics_html(
     """
     title = "Relationship Diagnostics"
     subtitle = "Visual checks for bulk density, organic carbon, and organic matter relationships."
-    ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subregions, habitats)
+    ref = apply_geo_filters(
+        ref_merged.copy(), continents, countries, us_subregions, habitats
+    )
     pairs = [
         ("fraction_organic_matter", "dry_bulk_density", "OM vs DBD"),
         ("fraction_carbon", "dry_bulk_density", "C vs DBD"),
         ("fraction_organic_matter", "fraction_carbon", "OM vs C"),
     ]
-    fig = make_subplots(rows=1, cols=3, subplot_titles=[p[2] for p in pairs], horizontal_spacing=0.08)
+    fig = make_subplots(
+        rows=1, cols=3, subplot_titles=[p[2] for p in pairs], horizontal_spacing=0.08
+    )
 
     for index, (xvar, yvar, _label) in enumerate(pairs, start=1):
         ref_pair = ref[[xvar, yvar]].apply(pd.to_numeric, errors="coerce").dropna()
@@ -1195,7 +1271,9 @@ def build_relationship_diagnostics_html(
                         x=user_pair[xvar],
                         y=user_pair[yvar],
                         mode="markers",
-                        marker=dict(color="#E74C3C", size=7, line=dict(color="white", width=0.7)),
+                        marker=dict(
+                            color="#E74C3C", size=7, line=dict(color="white", width=0.7)
+                        ),
                         name="Your data",
                         showlegend=index == 1,
                         hovertemplate=f"{xcol}: %{{x:.4f}}<br>{ycol}: %{{y:.4f}}<extra></extra>",
@@ -1216,7 +1294,9 @@ def build_relationship_diagnostics_html(
     return _section_html(title, subtitle, _plotly_html(fig))
 
 
-def build_depth_profile_html(user_df: pd.DataFrame | None, col_map: dict[str, str | None]) -> str:
+def build_depth_profile_html(
+    user_df: pd.DataFrame | None, col_map: dict[str, str | None]
+) -> str:
     """Build per-core user-data depth profiles for matched QA variables.
 
     Source R references:
@@ -1239,7 +1319,9 @@ def build_depth_profile_html(user_df: pd.DataFrame | None, col_map: dict[str, st
         return _section_html(
             title,
             subtitle,
-            _notice_html("Import or edit data in the Data Explorer tab to view depth profiles."),
+            _notice_html(
+                "Import or edit data in the Data Explorer tab to view depth profiles."
+            ),
         )
 
     dmin_col = _mapped_column(user_df, col_map, "depth_min")
@@ -1252,12 +1334,20 @@ def build_depth_profile_html(user_df: pd.DataFrame | None, col_map: dict[str, st
         )
 
     depth_min = (
-        pd.to_numeric(user_df[dmin_col], errors="coerce") if dmin_col else pd.Series(np.nan, index=user_df.index)
+        pd.to_numeric(user_df[dmin_col], errors="coerce")
+        if dmin_col
+        else pd.Series(np.nan, index=user_df.index)
     )
     depth_max = (
-        pd.to_numeric(user_df[dmax_col], errors="coerce") if dmax_col else pd.Series(np.nan, index=user_df.index)
+        pd.to_numeric(user_df[dmax_col], errors="coerce")
+        if dmax_col
+        else pd.Series(np.nan, index=user_df.index)
     )
-    depth = (depth_min + depth_max) / 2 if dmin_col and dmax_col else depth_min.fillna(depth_max)
+    depth = (
+        (depth_min + depth_max) / 2
+        if dmin_col and dmax_col
+        else depth_min.fillna(depth_max)
+    )
     variables = [
         v
         for v in ("dry_bulk_density", "fraction_carbon", "fraction_organic_matter")
@@ -1267,7 +1357,9 @@ def build_depth_profile_html(user_df: pd.DataFrame | None, col_map: dict[str, st
         return _section_html(
             title,
             subtitle,
-            _notice_html("No matched DBD, carbon, or organic matter column is available."),
+            _notice_html(
+                "No matched DBD, carbon, or organic matter column is available."
+            ),
         )
 
     core_col = _mapped_column(user_df, col_map, "core_id")
@@ -1278,7 +1370,9 @@ def build_depth_profile_html(user_df: pd.DataFrame | None, col_map: dict[str, st
     )
     selected_groups = list(dict.fromkeys(groups.tolist()))[:24]
 
-    fig = make_subplots(rows=len(variables), cols=1, subplot_titles=variables, vertical_spacing=0.1)
+    fig = make_subplots(
+        rows=len(variables), cols=1, subplot_titles=variables, vertical_spacing=0.1
+    )
     for row, variable in enumerate(variables, start=1):
         value_col = _mapped_column(user_df, col_map, variable)
         profile = pd.DataFrame(
@@ -1324,12 +1418,16 @@ def build_depth_profile_html(user_df: pd.DataFrame | None, col_map: dict[str, st
     note = (
         ""
         if len(selected_groups) == len(set(groups))
-        else _notice_html("Showing the first 24 core groups to keep the profile readable.")
+        else _notice_html(
+            "Showing the first 24 core groups to keep the profile readable."
+        )
     )
     return _section_html(title, subtitle, note + _plotly_html(fig))
 
 
-def build_duplicate_diagnostics_html(user_df: pd.DataFrame | None, col_map: dict[str, str | None]) -> str:
+def build_duplicate_diagnostics_html(
+    user_df: pd.DataFrame | None, col_map: dict[str, str | None]
+) -> str:
     """Build duplicate ID, coordinate, and interval diagnostics for the user dataset.
 
     Source R references:
@@ -1348,12 +1446,16 @@ def build_duplicate_diagnostics_html(user_df: pd.DataFrame | None, col_map: dict
     before grouping to avoid false negatives from tiny floating-point differences.
     """
     title = "Duplicate Checks"
-    subtitle = "Repeated core identifiers, coordinates, and depth intervals that merit review."
+    subtitle = (
+        "Repeated core identifiers, coordinates, and depth intervals that merit review."
+    )
     if user_df is None:
         return _section_html(
             title,
             subtitle,
-            _notice_html("Import or edit data in the Data Explorer tab to view duplicate checks."),
+            _notice_html(
+                "Import or edit data in the Data Explorer tab to view duplicate checks."
+            ),
         )
 
     core_col = _mapped_column(user_df, col_map, "core_id")
@@ -1382,7 +1484,12 @@ def build_duplicate_diagnostics_html(user_df: pd.DataFrame | None, col_map: dict
                 "longitude": pd.to_numeric(user_df[lon_col], errors="coerce").round(6),
             }
         ).dropna()
-        duplicate_coords = coords.value_counts().loc[lambda counts: counts > 1].rename("rows").reset_index()
+        duplicate_coords = (
+            coords.value_counts()
+            .loc[lambda counts: counts > 1]
+            .rename("rows")
+            .reset_index()
+        )
 
     duplicate_intervals = pd.DataFrame()
     if dmin_col and dmax_col:
@@ -1395,7 +1502,11 @@ def build_duplicate_diagnostics_html(user_df: pd.DataFrame | None, col_map: dict
         if core_col:
             interval_data.insert(0, "core_id", user_df[core_col].astype(str))
         duplicate_intervals = (
-            interval_data.dropna().value_counts().loc[lambda counts: counts > 1].rename("rows").reset_index()
+            interval_data.dropna()
+            .value_counts()
+            .loc[lambda counts: counts > 1]
+            .rename("rows")
+            .reset_index()
         )
 
     counts = {
@@ -1404,7 +1515,10 @@ def build_duplicate_diagnostics_html(user_df: pd.DataFrame | None, col_map: dict
         "Duplicate intervals": len(duplicate_intervals),
     }
     cards = _metric_cards_html(
-        [(label, f"{value:,}", "#198754" if value == 0 else "#dc3545") for label, value in counts.items()]
+        [
+            (label, f"{value:,}", "#198754" if value == 0 else "#dc3545")
+            for label, value in counts.items()
+        ]
     )
     fig = go.Figure(
         go.Bar(
@@ -1428,11 +1542,17 @@ def build_duplicate_diagnostics_html(user_df: pd.DataFrame | None, col_map: dict
         ("Repeated depth intervals", duplicate_intervals),
     ):
         if not table.empty:
-            tables += f'<h5 style="font-size:0.92rem;margin:14px 0 6px;">{escape(label)}</h5>'
-            tables += table.head(8).to_html(classes="table table-sm table-hover", index=False, escape=True)
+            tables += (
+                f'<h5 style="font-size:0.92rem;margin:14px 0 6px;">{escape(label)}</h5>'
+            )
+            tables += table.head(8).to_html(
+                classes="table table-sm table-hover", index=False, escape=True
+            )
 
     if not tables:
-        tables = _notice_html("No duplicate groups were detected in the currently matched QA/QC fields.")
+        tables = _notice_html(
+            "No duplicate groups were detected in the currently matched QA/QC fields."
+        )
 
     return _section_html(title, subtitle, cards + _plotly_html(fig) + tables)
 
@@ -1469,7 +1589,9 @@ def build_map_html(
     user_count = 0
 
     if show_ref:
-        ref = apply_geo_filters(ref_cores.copy(), continents, countries, us_subregions, habitat_filter)
+        ref = apply_geo_filters(
+            ref_cores.copy(), continents, countries, us_subregions, habitat_filter
+        )
         ref = ref.dropna(subset=["latitude", "longitude"])
         if len(ref) > MAX_REF_MAP_POINTS:
             ref = ref.sample(n=MAX_REF_MAP_POINTS, random_state=42)
@@ -1484,7 +1606,8 @@ def build_map_html(
                 fill=True,
                 fill_opacity=0.5,
                 weight=1,
-                popup=f"{row.get('study_id','')} / {row.get('core_id','')}<br>" f"Habitat: {row.get('habitat','-')}",
+                popup=f"{row.get('study_id', '')} / {row.get('core_id', '')}<br>"
+                f"Habitat: {row.get('habitat', '-')}",
             ).add_to(cluster)
         cluster.add_to(m)
 

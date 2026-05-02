@@ -7,6 +7,7 @@ from .data_provider import (
     SynthesisDataError,
     SynthesisDataLocation,
     default_cache_root,
+    ensure_synthesis_data_dir,
     resolve_synthesis_data_dir,
 )
 from .launcher import DashboardLaunch, find_available_port, launch_dashboard
@@ -20,6 +21,7 @@ __all__ = [
     "SynthesisDataLocation",
     "app",
     "default_cache_root",
+    "ensure_synthesis_data_dir",
     "find_available_port",
     "get_app",
     "launch_dashboard",

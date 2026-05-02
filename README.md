@@ -1,112 +1,91 @@
-# Capstone Project Folder
+# CCN Standalone Dashboard
 
-This directory contains all of our files for EDA, QA/QC, EO Integration, etc.
+Standalone Shiny for Python dashboard for exploring, validating, and visualizing Coastal Carbon Network soil carbon datasets.
 
-## 1. Capstone Project Environment
+The dashboard starts as an empty working session in Data Explorer. Users can import CSV, JSON, or Excel files, inspect and edit the table, compare matched fields against CCN reference distributions, search for matching NASA satellite observations, and review the capstone carbon-modeling summary.
 
-To interact with our tools, we include a unified development environment for the Capstone project. It is managed using **[uv](https://github.com/astral-sh/uv)**.
+## Quick Start
 
-### Quick Start
-
-#### 1. Install `uv`
-If you do not have `uv` installed, run the installation command for your OS:
-- **Mac/Linux:** `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- **Windows:** `powershell -c "irm https://astral.sh/uv/install.ps1 | iex"`
-
-#### 2. Sync the Environment
-Navigate to this folder and sync the project. This will automatically download Python 3.13 and all required packages into a local `.venv` folder.
-
-If you are on windows you will have to first start VSCode in WSL mode. This can be done by going to the bottom-left of the window and clicking on the two arrows `><` and pressing "Connect to WSL". This will restart VSCode in WSL mode and ensure that the next steps all work.
-
-Otherwise there will be a conflict where the below command in WSL will result in the `.venv` python file path being different from what VSCode, running in powershell mode, will expect. 
+Install [uv](https://github.com/astral-sh/uv), then sync the project from the repository root:
 
 ```bash
-cd scripts/4_capstone
 uv sync
 ```
 
+Build the customized Data Explorer frontend assets when working from source:
 
----
-
-### VS Code Setup
-
-To ensure linting, formatting, and imports work correctly, you must open this specific folder as your workspace root.
-
-1. Open VS Code.
-2. Go to **File > Open Folder...**
-3. Select `CCN-Data-Library/scripts/4_capstone`.
-
-#### Recommended Extensions
-
-When you open this folder, VS Code should prompt you to install the recommended extensions. If not, manually install:
-
-* **Python** (`ms-python.python`)
-* **Ruff** (`charliermarsh.ruff`) - *Fast linting*
-* **Black Formatter** (`ms-python.black-formatter`) - *Auto-formatting*
-* **Isort** (`ms-python.isort`) - *Import sorting*
-
-**Note:** The `.vscode/settings.json` file in this directory is configured to automatically format your code and sort imports every time you save a file.
-
----
-
-### Data Science & QA Stack
-
-I have pre-installed a unified stack for EDA and QA/QC.
-
-#### Core Libraries
-
-* **pandas & numpy**: Base level data handling and manipulation
-* **matplotlib & seaborn**: Plotting
-* **scipy & networkx**: Scientific computing and graph analysis.
-* **geopandas**: Geospatial data manipulation and understanding.
-
-#### QA & Validation
-
-* **pandera**: A statistical validation library for pandas. This can be used to define schemas and validate data quality (e.g., ensuring columns have no nulls or fall within a specific range).
-
-* **Klib**: Python library for importing, cleaning, analyzing and preprocessing data. Can be used moreso for cleaning data.
-
-* **Great-Expectations**: Experimental package for data quality *enforcement*. It's a more complex profiler meant for production pipelines.
-
-#### Interactive EDA
-
-* **JupyterLab**: Interactive notebooks.
-* **ydata-profiling**: A library for generating high-density EDA reports.
-
-#### How to Generate a QA Report
-
-You can generate a visual data quality report by running the following inside a Jupyter notebook:
-
-```python
-import pandas as pd
-import sweetviz as sv
-
-# Load your data
-df = pd.read_csv("data.csv")
-
-# Generate and show report
-report = sv.analyze(df)
-report.show_html("data_quality_report.html")
-
+```bash
+cd src/interactive_dash/app
+npm install
+npm run build
+cd ../../..
 ```
 
-An example notebook is provided (`exploration.ipynb`) which uses existing data from within this repo.
+Launch the dashboard:
 
----
+```bash
+uv run ccn-dashboard
+```
 
-### Common Commands For UV (as a just-in-case)
+The command chooses an available local port, opens the dashboard in a browser by default, and downloads CCN synthesis reference data on first launch if it is not already installed.
 
-| Goal | Command |
-| --- | --- |
-| **Run a script** | `uv run my_script.py` |
-| **Run Tests** | `uv run pytest` |
-| **Start Jupyter** | `uv run jupyter lab` |
-| **Add a package** | `uv add package_name` |
-| **Add a dev tool** | `uv add --dev package_name` |
-| **Check installed packages** | `uv tree` |
+Useful launch options:
 
-### Using Jupyter in VS Code
+```bash
+uv run ccn-dashboard --no-browser
+uv run ccn-dashboard --port 8050
+uv run ccn-dashboard --no-fetch
+uv run ccn-dashboard --force-data-refresh
+```
 
-1. Create or open a `.ipynb` file.
-2. Click **Select Kernel** at the top right.
-3. Choose **Python 3.13 (4_capstone)** or look for the path ending in `.venv`.
+## Reference Data Cache
+
+The standalone dashboard does not track synthesis CSVs in git. On first launch, it downloads the versioned CCN synthesis release archive and installs it under:
+
+```text
+files/current/CCN_synthesis/
+```
+
+The `files/` directory is intentionally ignored by git. A second launch reuses the installed files and does not download again unless `--force-data-refresh` is used.
+
+Current release manifest:
+
+- Version: `1.7.0`
+- Release asset: `https://github.com/kaclewtak/CCN-Data-Library/releases/download/ccn-synthesis-v1.7.0/ccn-synthesis-v1.7.0.zip`
+- SHA256: `8d82fdb9412424ea376c4ab4081c1945dd90096539f2fb574cc405eb406058b8`
+
+For this implementation branch, the exact archive to publish was generated at `.tmp/release/ccn-synthesis-v1.7.0.zip`. Upload that file as the GitHub release asset named above before relying on first-run downloads from a fresh clone.
+
+Advanced data overrides:
+
+- `CCN_DATA_DIR`: use a custom folder containing `CCN_depthseries.csv` and `CCN_cores.csv`; this prevents downloads.
+- `CCN_DATA_CACHE_DIR`: redirect the app-managed cache root away from repo-local `files/`.
+
+## Development Commands
+
+```bash
+uv run pytest -q
+cd src/interactive_dash/app && npm run test:unit
+cd src/interactive_dash/app && npm run build
+```
+
+The frontend build writes runtime assets into `src/interactive_dash/pygwalker/templates/dist/`. Those generated files are ignored in source control, but releases must include or regenerate them before launch.
+
+## VS Code Setup
+
+Open this repository root as the workspace folder. Recommended extensions are:
+
+- Python (`ms-python.python`)
+- Ruff (`charliermarsh.ruff`)
+- Black Formatter (`ms-python.black-formatter`)
+- Isort (`ms-python.isort`)
+
+The workspace settings format Python files and sort imports on save.
+
+## Citation And Data Use
+
+The dashboard uses CCN synthesis reference data curated by the Coastal Carbon Network. Users should cite both the CCN database version and any original source datasets used in their analysis.
+
+Recommended database citation:
+
+Coastal Carbon Network (2023). Database: Coastal Carbon Library (Version 1.7.0). Smithsonian Environmental Research Center. Dataset. https://doi.org/10.25573/serc.21565671. Accessed YYYY-MM-DD.
