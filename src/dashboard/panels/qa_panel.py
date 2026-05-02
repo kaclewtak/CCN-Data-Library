@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 import pandas as pd
 import polars as pl
@@ -26,6 +27,12 @@ from utils.qa import (
     matched_numeric_variables,
     run_validation,
 )
+
+
+def validation_report_csv(warnings: pd.DataFrame) -> str:
+    if warnings.empty:
+        return "No validation issues.\n"
+    return warnings.to_csv(index=False)
 
 
 @module.ui
@@ -178,10 +185,10 @@ def qa_ui():
 def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.DataFrame | None]):
     # Lazy-load reference data on first access
     _ = (_output, _session)
-    ref_data = reactive.Value(None)
+    ref_data: reactive.Value[dict[str, Any] | None] = reactive.Value(None)
 
     @reactive.calc
-    def _ensure_ref():
+    def _ensure_ref() -> dict[str, Any]:
         """Load reference data once, then cache."""
         cached = ref_data.get()
         if cached is not None:
@@ -200,15 +207,18 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
 
     # --- Cascading geo filter helpers (one set per tab prefix) ---
 
+    def _input_values(input_id: str) -> list:
+        if not hasattr(module_input, input_id):
+            return []
+        value_getter = getattr(module_input, input_id)
+        return list(value_getter() or [])
+
     def _read_geo_inputs(prefix: str):
         """Return (continents, countries, us_subregions, habitats) lists for a tab."""
-        continents = list(getattr(module_input, f"{prefix}_continent")() or [])
-        countries = list(getattr(module_input, f"{prefix}_country")() or [])
-        try:
-            us_subs = list(getattr(module_input, f"{prefix}_us_subregion")() or [])
-        except Exception:
-            us_subs = []
-        habitats = list(getattr(module_input, f"{prefix}_habitat")() or [])
+        continents = _input_values(f"{prefix}_continent")
+        countries = _input_values(f"{prefix}_country")
+        us_subs = _input_values(f"{prefix}_us_subregion")
+        habitats = _input_values(f"{prefix}_habitat")
         return continents, countries, us_subs, habitats
 
     def _cascade_for(prefix: str):
@@ -358,7 +368,8 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         continents, countries, us_subs, habitats = _read_geo_inputs("chart")
         ref = apply_geo_filters(ref_merged.copy(), continents, countries, us_subs, habitats)
 
-        ref_values = pd.to_numeric(ref.get(var, pd.Series(dtype=float)), errors="coerce")
+        ref_series = ref[var] if var in ref.columns else pd.Series(dtype=float)
+        ref_values = pd.to_numeric(ref_series, errors="coerce")
         mapping = resolved_col_map()
         df = user_pandas()
         user_values = None
@@ -424,11 +435,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
 
     @render.download(filename="validation_report.csv")
     def download_warnings():
-        w = validation_results()
-        if w.empty:
-            yield "No validation issues.\n"
-            return
-        yield w.to_csv(index=False)
+        yield validation_report_csv(validation_results())
 
     # --- Statistical Tests ---
 
