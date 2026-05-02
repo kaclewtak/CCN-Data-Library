@@ -1,91 +1,107 @@
 # CCN Data Library Dashboard
 
-Interactive Shiny for Python dashboard for exploring, validating, and visualising CCN Data Library datasets.
+Interactive Shiny for Python dashboard for exploring, validating, and visualizing Coastal Carbon Network soil carbon datasets.
+
+The dashboard is organized around one main workflow: import or build a working dataset in **Data Explorer**, then use the rest of the dashboard to check quality, compare against CCN reference distributions, search for matching satellite observations, and review modeling and metadata context.
 
 ## Quick Start
+
+From this repository:
 
 ```bash
 cd src/dashboard
 uvicorn shiny_dashboard:app --reload
 ```
+Or open [Python_Shiny.ipynb](Python_Shiny.ipynb) and run the launch cells.
 
-Or open [Python_Shiny.ipynb](Python_Shiny.ipynb) and run all cells.
+Standalone extraction work has started under [../ccn_dashboard](../ccn_dashboard). That package currently wraps this existing app, validates the local Data Explorer bundle, resolves CCN synthesis data from `CCN_DATA_DIR` or cache locations, and exposes a notebook-friendly `launch_dashboard()` helper.
 
-## Dashboard Flow
+## Typical Workflow
+1. Open **Data Explorer** first.
+2. Import a CSV, JSON, or Excel file in the embedded spreadsheet.
+3. Confirm the imported table has the fields you expect, especially latitude and longitude if you want maps or satellite search.
+4. Use **QA Dashboard** to compare your data against CCN reference distributions and review validation warnings.
+5. Use **Satellite Search** if your dataset has geographic coordinates.
+6. Use **Data Inventory** for library-wide context and **Carbon Modeling** for the modeling-phase summary.
+7. Use **Metadata** for citation, source, and software attribution.
 
-The dashboard is now explorer-first.
+The Data Explorer table is the source of truth for the session. Edits made in the spreadsheet are mirrored to Shiny and reused by QA Dashboard and Satellite Search without replacing the embedded explorer iframe.
 
-1. Open the **Data Explorer** tab first.
-2. Import a CSV, JSON, or Excel file from the embedded spreadsheet inside PyGWalker.
-3. The imported spreadsheet snapshot becomes the session dataset for the rest of the dashboard.
-4. **Satellite Search** consumes detected latitude/longitude columns from that same dataset.
-5. **Carbon Modeling** shows the static high-level findings and copied figures from the saved modeling notebook outputs.
-6. **QA Dashboard** consumes that same dataset for validation, statistical comparisons, charts, and map overlays.
-7. **Data Inventory** remains independent and focuses on repository inventory, synthesis summaries, and coverage diagnostics.
-
-The Data Explorer remains the source of truth after import. Later spreadsheet edits and formula-driven changes are mirrored back to the Shiny session and reused by downstream panels without replacing the embedded iframe.
-
-## File Structure
-
-```text
-src/dashboard/
-├── shiny_dashboard.py          # App composition and tab wiring
-├── dashboard_shared_dataset.py # Session-owned dataset mirrored from Data Explorer
-├── Python_Shiny.ipynb          # Notebook launcher for the dashboard
-├── README.md
-├── panels/
-│   ├── carbon_modeling.py       # Static SOC modeling findings and copied notebook figures
-│   ├── eo_panel.py             # NASA CMR satellite search
-│   ├── pygwalker_page.py       # Explorer page, persistent iframe, parent bridge listener
-│   ├── pygwalker_persistence.py# PyGWalker HTML builder and spreadsheet config injection
-│   ├── data_inventory.py       # File inventory and distribution analysis
-│   └── qa_panel.py             # QA charts, validation, and reference map
-├── images/                      # Static dashboard figures copied from modeling notebooks
-├── tests/
-│   ├── test_dashboard_shared_dataset.py
-│   └── test_pygwalker_persistence.py
-└── utils/
-    ├── geo.py                  # Lat/lon detection and dataframe-to-geo conversion
-    ├── qa.py                   # Reference data, matching, validation, and map/chart builders
-    ├── distributions.py        # Statistical distribution comparison
-    ├── geo_gaps.py             # Geographic gap analysis
-    ├── inventory_io.py         # Inventory directory scanning
-    └── synthesis_io.py         # Synthesis dataset loading
-```
-
-## Architecture
+## Feature Guide
 
 ### Data Explorer
+Use this tab to load and inspect your working dataset. The embedded PyGWalker/Graphic Walker view includes a spreadsheet for import and editing plus visual exploration tools for charts and map-like views.
 
-- [panels/pygwalker_page.py](panels/pygwalker_page.py) renders a persistent PyGWalker iframe and listens for `postMessage` events from the embedded spreadsheet.
-- [panels/pygwalker_persistence.py](panels/pygwalker_persistence.py) still injects the existing `ccnSpreadsheet` config so the spreadsheet editor, formulas, and UI customisations stay intact.
-- The explorer boots with the smallest supported placeholder dataframe because the local PyGWalker fork cannot initialize from a truly empty dataframe.
+Common uses:
 
-### Shared Dataset State
+- Import CSV, JSON, or Excel data.
+- Edit spreadsheet values and formulas before downstream checks.
+- Explore fields visually before deciding which QA views matter.
+- Keep the current session dataset synchronized with QA Dashboard and Satellite Search.
 
-- [dashboard_shared_dataset.py](dashboard_shared_dataset.py) stores the current session dataset mirrored from the explorer.
-- It rebuilds a Polars dataframe in the spreadsheet field order, derives latitude/longitude columns, and exposes normalized geo points for downstream consumers.
-- Blank startup is treated as "no uploaded dataset yet" until the user imports a real file from the explorer.
+Tips:
 
-### Downstream Panels
+- Use recognizable coordinate names such as `latitude`, `longitude`, `lat`, `lon`, or similar names so downstream map tools can detect them.
+- A blank startup sheet is expected. Downstream panels treat it as no uploaded dataset until you import real data.
+- If Data Explorer does not load, the local customized PyGWalker bundle is the first thing to check.
 
-- [panels/eo_panel.py](panels/eo_panel.py) reads geo points from the shared dataset and searches NASA CMR for matching granules.
-- [panels/qa_panel.py](panels/qa_panel.py) reads the same shared dataframe and compares it against CCN reference distributions.
-- [panels/data_inventory.py](panels/data_inventory.py) stays independent of the explorer-owned session dataset.
+### QA Dashboard
+Use this tab to evaluate the current Data Explorer dataset against CCN reference data.
 
-## Frontend Bridge
+Main views:
 
-The embedded explorer is served by the local frontend app under [../interactive_dash/app/src](../interactive_dash/app/src).
+- **QA Charts** compares matched user columns against CCN reference distributions, with filters for geography and habitat.
+- **Statistical Tests** runs distribution comparisons for matched variables.
+- **Validation** lists row-level warnings and can export a validation report.
+- **QA Map** overlays user locations with reference CCN core locations.
 
-- [../interactive_dash/app/src/index.tsx](../interactive_dash/app/src/index.tsx) still renders the existing CCN spreadsheet plus GraphicWalker split layout.
-- [../interactive_dash/app/src/features/ccnSpreadsheet/useCcnSpreadsheetState.ts](../interactive_dash/app/src/features/ccnSpreadsheet/useCcnSpreadsheetState.ts) now tracks the imported dataset identity and mirrors debounced spreadsheet snapshots to the parent window.
-- [../interactive_dash/app/src/features/ccnSpreadsheet/bridge.ts](../interactive_dash/app/src/features/ccnSpreadsheet/bridge.ts) contains the pure helper logic for dataset fingerprints and sync payloads.
+The QA tools automatically match common field names for carbon fraction, organic matter fraction, dry bulk density, depth ranges, identifiers, latitude, and longitude. Check the matched-column output before interpreting statistical results.
 
-Tracked frontend source is the edit surface. The embedded build output is regenerated locally from the app package and is not a manual edit target.
+### Satellite Search
+Use this tab after importing a dataset with latitude and longitude columns. The dashboard computes a bounding box around your points, queries NASA CMR, and lists matching L2 granules for the selected collection.
 
-## Verification
+Current collections include EMIT L2A Reflectance, PACE OCI Ocean Color, and PACE OCI Inherent Optical Properties. Results include granule IDs, time ranges, download links when available, preview images when available, and a coverage map.
 
-Typical local verification steps:
+Satellite Search depends on NASA CMR availability and an internet connection.
+
+### Carbon Modeling
+Use this tab for a report-ready summary of the capstone modeling phase. It does not rerun models inside the dashboard. Instead, it presents copied notebook figures, metric cards, and high-level findings from the saved modeling workflow.
+
+Use it when you need to review model scope, performance, caveats, feature-importance signals, and the main conclusion that fraction carbon is a more defensible prediction target than SOC stock in the current workflow.
+
+### Data Inventory
+Use this tab for library-level context rather than session-dataset QA. Click **Load Inventory** to scan available CCN data files or synthesis files, then review file categories, top studies, SOM and bulk density distributions, correlations, density contours, and geographic coverage hints.
+
+In the current repository app, inventory utilities look for repository data folders such as `data/primary_studies` or `data/CCN_synthesis`. The standalone foundation is moving this toward `CCN_DATA_DIR` and app-managed cache resolution.
+
+### Metadata
+Use this tab for citation, stewardship, data-use, service-source, and software acknowledgement information. It includes the recommended CCN Data Library citation and reminders that users should also cite original dataset contributors where appropriate.
+
+## Data Requirements
+
+QA Dashboard and Data Inventory need CCN synthesis reference files, especially `CCN_depthseries.csv` and `CCN_cores.csv`.
+
+Current supported paths:
+
+- Set `CCN_DATA_DIR` to a folder containing the CCN synthesis CSV files.
+- Run from a repository layout where `data/CCN_synthesis` is available.
+- For standalone work, place the synthesis files in the configured app cache once that packaging path is complete.
+
+The authoritative CCN synthesis download URL is not yet encoded in this repository. Until a source manifest is confirmed, first launch should use `CCN_DATA_DIR` or a prepared local cache.
+
+## Maintainer Notes
+
+Important dashboard files:
+
+- [shiny_dashboard.py](shiny_dashboard.py) composes the Shiny app and tab order.
+- [dashboard_shared_dataset.py](dashboard_shared_dataset.py) stores the session dataset mirrored from Data Explorer.
+- [panels/pygwalker_page.py](panels/pygwalker_page.py) renders the persistent Data Explorer iframe and handles spreadsheet sync messages.
+- [panels/pygwalker_persistence.py](panels/pygwalker_persistence.py) injects the CCN spreadsheet and bridge config into PyGWalker HTML.
+- [panels/qa_panel.py](panels/qa_panel.py), [panels/eo_panel.py](panels/eo_panel.py), [panels/data_inventory.py](panels/data_inventory.py), [panels/carbon_modeling.py](panels/carbon_modeling.py), and [panels/metadata_panel.py](panels/metadata_panel.py) define the major dashboard tabs.
+- [utils/qa.py](utils/qa.py), [utils/inventory_io.py](utils/inventory_io.py), [utils/synthesis_io.py](utils/synthesis_io.py), and [utils/geo.py](utils/geo.py) contain the main reference-data and matching helpers.
+- [../interactive_dash/app/src](../interactive_dash/app/src) contains the customized frontend source for the embedded Data Explorer.
+
+Verification commands:
 
 ```bash
 uv run pytest -q
@@ -93,4 +109,37 @@ cd src/interactive_dash/app && npm run test:unit
 cd src/interactive_dash/app && npm run build
 ```
 
-The frontend build writes runtime assets into the ignored `src/interactive_dash/pygwalker/templates/dist` directory. Those files should be regenerated for verification, but not hand-edited.
+The frontend build writes runtime assets into the ignored [../interactive_dash/pygwalker/templates/dist](../interactive_dash/pygwalker/templates/dist) directory. Those files should be regenerated for verification and packaged for standalone use, but not hand-edited.
+
+## Appendix A: PyGWalker And Data Explorer References
+
+External documentation and source references:
+
+- PyGWalker homepage: https://kanaries.net/pygwalker
+- PyGWalker repository: https://github.com/Kanaries/pygwalker
+- PyGWalker documentation portal: https://docs.kanaries.net
+- PyGWalker package page: https://pypi.org/project/pygwalker
+- Graphic Walker package used by the local frontend: `@kanaries/graphic-walker` version `0.5.0-alpha.2`
+
+Local CCN customization references:
+
+- [../interactive_dash/README.md](../interactive_dash/README.md) identifies this as the local PyGWalker copy used by the dashboard.
+- [../interactive_dash/app/src/index.tsx](../interactive_dash/app/src/index.tsx) renders the split spreadsheet plus Graphic Walker interface.
+- [../interactive_dash/app/src/features/ccnSpreadsheet](../interactive_dash/app/src/features/ccnSpreadsheet) contains import, spreadsheet, persistence, and shared-dataset bridge logic.
+- [../interactive_dash/pygwalker/services/render.py](../interactive_dash/pygwalker/services/render.py) reads the packaged PyGWalker frontend bundle used by `pyg.to_html`.
+- [panels/pygwalker_persistence.py](panels/pygwalker_persistence.py) is the Shiny-side integration point for stable Data Explorer HTML generation.
+
+## Appendix B: Modeling Phase Key Findings
+
+The Carbon Modeling tab summarizes saved notebook outputs rather than rerunning models. Key findings shown in the dashboard are:
+
+- The pooled modeling cohort contains 676 cores from 33 studies after the rock-screening pass.
+- Fraction carbon is the most defensible prediction target. The calibrated pooled ExtraTrees workflow predicts 0-30 cm `fraction_carbon` with overall R^2 = +0.406, within-study R^2 = +0.256, MAE = 0.067, and 51.2% of predictions within +/-0.05 fraction carbon.
+- Study-level validation matters. On the N>=10 cohort, median per-study Pearson r was +0.530, and 69% of studies had r > 0.3.
+- Calibration improved usability but did not solve the high-carbon tail. Per-tier isotonic calibration had MAE = 0.0673, median absolute error = 0.0483, and 89.1% empirical coverage for nominal 90% intervals.
+- Habitat-specific signal was uneven. Marsh-only modeling improved within-study structure with within R^2 = +0.344 and within r = +0.587, while mangrove-only modeling remained underpowered with 103 cores across 11 studies.
+- Direct SOC stock prediction is not ready as a prediction product. Calibrated SOC stock modeling had overall R^2 = -0.215 and MAE = 39.2 Mg C/ha; the two-stage carbon by dry bulk density approach was worse after calibration.
+- ExtraTrees was the strongest model family in the tested model zoo, reaching within-study R^2 = +0.252 before filtering and calibration.
+- Recurring feature signals included water, climate, vegetation, and terrain variables. Marsh predictors included mean annual precipitation, inundation frequency, NDVI peak greenness, cyclone wind, and SWIR reflectance. Mangrove predictors included temperature, inundation observations, SAR VH, elevation, and precipitation.
+- Rock screening was useful QA but not a major skill cure. The C-vs-OM check flagged 44 suspicious high-carbon, low-organic-matter cores and 72 carbon-greater-than-organic-matter violations; removing suspicious cores barely changed within-study R^2.
+- Regression to the mean remained the main error pattern, with low-carbon deciles over-predicted and high-carbon deciles under-predicted.
