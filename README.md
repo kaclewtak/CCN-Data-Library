@@ -16,7 +16,7 @@ Build the customized Data Explorer frontend assets when working from source:
 
 ```bash
 cd src/interactive_dash/app
-npm install
+npm install --legacy-peer-deps
 npm run build
 cd ../../..
 ```

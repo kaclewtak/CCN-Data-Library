@@ -6,9 +6,6 @@ import threading
 import webbrowser
 from typing import Sequence
 
-import uvicorn
-
-from .app import get_app
 from .data_provider import SynthesisDataError, ensure_synthesis_data_dir
 from .launcher import find_available_port
 from .pygwalker_assets import PygwalkerAssetError, validate_pygwalker_assets
@@ -53,9 +50,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
             data_location = resolve_synthesis_data_dir(required=True)
         else:
-            data_location = ensure_synthesis_data_dir(
-                required=True, force=args.force_data_refresh
-            )
+            data_location = ensure_synthesis_data_dir(required=True, force=args.force_data_refresh)
     except (PygwalkerAssetError, SynthesisDataError) as exc:
         print(f"Unable to launch CCN dashboard: {exc}", file=sys.stderr)
         return 1
@@ -66,6 +61,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"Launching CCN dashboard at {url}")
     if not args.no_browser:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+
+    import uvicorn
+
+    from .app import get_app
 
     uvicorn.run(get_app(), host=args.host, port=selected_port, log_level=args.log_level)
     return 0

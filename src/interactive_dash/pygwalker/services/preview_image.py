@@ -1,16 +1,18 @@
-from typing import List, Dict, Any
-from concurrent.futures.thread import ThreadPoolExecutor
-import base64
-import zlib
 import json
+from concurrent.futures.thread import ThreadPoolExecutor
+from typing import Any, Dict, List
 
-from pydantic import BaseModel, Field
 from ipylab import JupyterFrontEnd
+from pydantic import BaseModel, Field
 
-from pygwalker.utils.encode import DataFrameEncoder
+from pygwalker.services.render import (
+    compress_data,
+    get_gwalker_script_base64,
+    jinja_env,
+)
 from pygwalker.utils.display import display_html
+from pygwalker.utils.encode import DataFrameEncoder
 from pygwalker.utils.randoms import generate_hash_code
-from pygwalker.services.render import jinja_env, GWALKER_SCRIPT_BASE64, compress_data
 
 
 class ImgData(BaseModel):
@@ -42,14 +44,8 @@ def render_gw_preview_html(
     Render html for previewing gwalker(use purerenderer mode of graphic-wlaker, not png preview)
     """
     charts = []
-    for vis_spec_item, data in zip(
-        vis_spec_obj,
-        datas
-    ):
-        charts.append({
-            "visSpec": vis_spec_item,
-            "data": data
-        })
+    for vis_spec_item, data in zip(vis_spec_obj, datas):
+        charts.append({"visSpec": vis_spec_item, "data": data})
 
     props = {"charts": charts, "themeKey": theme_key, "dark": appearance, "gid": gid}
 
@@ -57,12 +53,12 @@ def render_gw_preview_html(
     template = jinja_env.get_template("pygwalker_main_page.html")
     html = template.render(
         gwalker={
-            'id': container_id,
-            'gw_script': GWALKER_SCRIPT_BASE64,
+            "id": container_id,
+            "gw_script": get_gwalker_script_base64(),
             "component_script": "PyGWalkerApp.PreviewApp(props, gw_id);",
-            "props": compress_data(json.dumps(props, cls=DataFrameEncoder))
+            "props": compress_data(json.dumps(props, cls=DataFrameEncoder)),
         },
-        component_url=""
+        component_url="",
     )
     return html
 
@@ -93,18 +89,19 @@ def render_gw_chart_preview_html(
     template = jinja_env.get_template("pygwalker_main_page.html")
     html = template.render(
         gwalker={
-            'id': container_id,
-            'gw_script': GWALKER_SCRIPT_BASE64,
+            "id": container_id,
+            "gw_script": get_gwalker_script_base64(),
             "component_script": "PyGWalkerApp.ChartPreviewApp(props, gw_id);",
-            "props": compress_data(json.dumps(props, cls=DataFrameEncoder))
+            "props": compress_data(json.dumps(props, cls=DataFrameEncoder)),
         },
-        component_url=""
+        component_url="",
     )
     return html
 
 
 class PreviewImageTool:
     """Preview image tool for pygwalker"""
+
     def __init__(self, gid: str):
         self.gid = gid
         self.image_slot_id = f"pygwalker-preview-{gid}"
@@ -122,7 +119,7 @@ class PreviewImageTool:
 
         if self.command_app:
             try:
-                self.command_app.commands.execute('docmanager:save')
+                self.command_app.commands.execute("docmanager:save")
             except Exception:
                 pass
 
