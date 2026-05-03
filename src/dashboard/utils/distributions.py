@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
-from matplotlib.figure import Figure, SubFigure
+from matplotlib.figure import Figure
 from scipy import stats
 
 from dashboard.utils.synthesis_io import (
@@ -61,7 +61,7 @@ def compare_distributions(
             result = stats.anderson_ksamp([user_clean.values, inv_clean.values])
             stat = float(getattr(result, "statistic"))
             p = float(getattr(result, "pvalue"))
-        except Exception as exc:
+        except (AttributeError, TypeError, ValueError) as exc:
             return {"test": "anderson", "statistic": None, "p_value": None, "interpretation": f"Test failed: {exc}"}
     else:
         result = stats.ks_2samp(user_clean, inv_clean)

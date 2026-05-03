@@ -365,7 +365,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 commonStore.setNotification(
                     {
                         type: 'info',
-                        title: 'CCN Addition',
+                        title: 'Restored',
                         message: `Restored autosave for ${autosaveSheet.name}.`,
                     },
                     5000,
@@ -483,7 +483,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         commonStore.setNotification(
             {
                 type: 'warning',
-                title: 'CCN Addition',
+                title: 'Structure Error',
                 message,
             },
             6500,
@@ -541,7 +541,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         commonStore.setNotification(
             {
                 type: 'info',
-                title: 'CCN Addition',
+                title: 'New Spreadsheet',
                 message: `Created ${nextSheetName}.`,
             },
             3500,
@@ -559,7 +559,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'warning',
-                    title: 'CCN Addition',
+                    title: 'Name Error',
                     message: 'Sheet names cannot be blank.',
                 },
                 4000,
@@ -606,7 +606,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         commonStore.setNotification(
             {
                 type: 'success',
-                title: 'CCN Addition',
+                title: 'Sheet Saved',
                 message: `Saved ${persistedSheet.normalizedName}.`,
             },
             3500,
@@ -640,7 +640,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         commonStore.setNotification(
             {
                 type: 'success',
-                title: 'CCN Addition',
+                title: 'Sheet Saved',
                 message: savedFile.method === 'file-system-access'
                     ? `Saved ${savedFile.externalFile.fileName}.`
                     : `Downloaded ${savedFile.externalFile.fileName}.`,
@@ -667,7 +667,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'info',
-                    title: 'CCN Addition',
+                    title: 'Sheet Loaded',
                     message: `Loaded ${sheet.name}.`,
                 },
                 3500,
@@ -715,7 +715,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'success',
-                    title: 'CCN Addition',
+                    title: 'Sheet Imported',
                     message: `Imported ${sheet.name}.`,
                 },
                 3500,
@@ -738,7 +738,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'warning',
-                    title: 'CCN Addition',
+                    title: 'Error',
                     message: 'There are no rows to remove.',
                 },
                 3500,
@@ -774,7 +774,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'warning',
-                    title: 'CCN Addition',
+                    title: 'Removal Error',
                     message: 'The last remaining column cannot be removed.',
                 },
                 4000,
@@ -787,7 +787,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'warning',
-                    title: 'CCN Addition',
+                    title: 'Removal Error',
                     message: 'Select a column header or cell before removing a column.',
                 },
                 4000,
@@ -809,7 +809,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'warning',
-                    title: 'CCN Addition',
+                    title: 'Rename Error',
                     message: 'Select a column header or cell before renaming a column.',
                 },
                 4000,
@@ -842,7 +842,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'info',
-                    title: 'CCN Addition',
+                    title: 'CCN Coercion',
                     message: 'No similar CCN column names need coercion.',
                 },
                 3500,
@@ -874,7 +874,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'warning',
-                    title: 'CCN Addition',
+                    title: 'Clipboard Error',
                     message: 'Clipboard access is not available in this browser context.',
                 },
                 4000,
@@ -916,7 +916,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         commonStore.setNotification(
             {
                 type: 'success',
-                title: 'CCN Addition',
+                title: 'Clipboard Success',
                 message: 'Copied the current spreadsheet selection to the clipboard.',
             },
             3000,
@@ -928,7 +928,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'warning',
-                    title: 'CCN Addition',
+                    title: 'Clipboard Error',
                     message: 'Clipboard access is not available in this browser context.',
                 },
                 4000,
@@ -955,7 +955,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 commonStore.setNotification(
                     {
                         type: 'warning',
-                        title: 'CCN Addition',
+                        title: 'Clipboard Warning',
                         message: 'Pasted values that extended beyond the current columns were truncated.',
                     },
                     4500,
@@ -992,7 +992,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
             commonStore.setNotification(
                 {
                     type: 'warning',
-                    title: 'CCN Addition',
+                    title: 'Clipboard Warning',
                     message: 'Pasted values that extended beyond the current columns were truncated.',
                 },
                 4500,
