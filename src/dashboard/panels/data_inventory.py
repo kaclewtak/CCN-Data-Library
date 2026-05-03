@@ -8,9 +8,10 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.ticker import StrMethodFormatter
 from shiny import module, reactive, render, ui
-from utils.geo_gaps import generate_gap_hints
-from utils.inventory_io import build_inventory_df
-from utils.synthesis_io import build_synthesis_df
+
+from dashboard.utils.geo_gaps import generate_gap_hints
+from dashboard.utils.inventory_io import build_inventory_df
+from dashboard.utils.synthesis_io import build_synthesis_df
 
 matplotlib.use("Agg")
 
@@ -491,7 +492,7 @@ def data_inventory_server(_module_input, _output, _session):
             return _message_fig("No numeric data available")
         fig, ax = plt.subplots(figsize=(10, 4.6))
         sns.histplot(
-            clean,
+            x=clean,
             bins=40,
             kde=True,
             color=color,

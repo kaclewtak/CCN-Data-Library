@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from htmltools import TagChild
 from shiny import module, ui
 
 
@@ -7,7 +8,7 @@ def _external_link(label: str, href: str):
     return ui.tags.a(label, href=href, target="_blank", rel="noopener noreferrer")
 
 
-def _metadata_table(headers: list[str], rows: list[list[object]]):
+def _metadata_table(headers: list[str], rows: list[list[TagChild]]):
     return ui.tags.table(
         ui.tags.thead(ui.tags.tr(*[ui.tags.th(header, style="padding:8px 12px;") for header in headers])),
         ui.tags.tbody(

@@ -9,7 +9,8 @@ import pandas as pd
 import polars as pl
 from shiny import module, reactive, render, ui
 from shiny.types import SilentException
-from utils.qa import (
+
+from dashboard.utils.qa import (
     ALL_CANONICAL,
     QA_NUMERIC_COLS,
     VARIABLE_CHOICES,

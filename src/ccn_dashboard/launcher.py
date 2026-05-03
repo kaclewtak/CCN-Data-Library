@@ -60,9 +60,7 @@ def _resolve_optional_data(
 ) -> tuple[SynthesisDataLocation | None, tuple[str, ...]]:
     try:
         if auto_fetch and (require_data or force_data_refresh):
-            return ensure_synthesis_data_dir(
-                required=require_data, force=force_data_refresh
-            ), ()
+            return ensure_synthesis_data_dir(required=require_data, force=force_data_refresh), ()
         return resolve_synthesis_data_dir(required=require_data), ()
     except SynthesisDataError as exc:
         if require_data:
@@ -97,6 +95,8 @@ async def launch_dashboard(
 
         app = get_app()
 
+    assert app is not None
+
     config = uvicorn.Config(app, host=host, port=selected_port, log_level=log_level)
     server = uvicorn.Server(config)
     task = asyncio.create_task(server.serve())
@@ -125,12 +125,11 @@ async def launch_dashboard(
 
 
 def launch_dashboard_sync(**kwargs: Any) -> DashboardLaunch:
+    """Launch the dashboard from synchronous code."""
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(launch_dashboard(**kwargs))
     if loop.is_running():
-        raise RuntimeError(
-            "Use `await launch_dashboard(...)` when running inside Jupyter or marimo."
-        )
+        raise RuntimeError("Use `await launch_dashboard(...)` when running inside Jupyter or marimo.")
     return loop.run_until_complete(launch_dashboard(**kwargs))

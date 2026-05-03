@@ -149,6 +149,7 @@ def fetch_synthesis_data(
     timeout: float = 60.0,
     downloader: DownloadFunction | None = None,
 ) -> Path:
+    """Download and cache the requested CCN synthesis dataset when needed."""
     target_dir = cache_root / version / "CCN_synthesis"
     if not force and _metadata_matches(target_dir, manifest):
         return target_dir

@@ -11,6 +11,7 @@ def dashboard_source_dir() -> Path:
 
 
 def ensure_dashboard_on_path() -> Path:
+    """Check that the dashboard source directory is on sys.path and return its path."""
     dashboard_dir = dashboard_source_dir()
     if not dashboard_dir.is_dir():
         raise RuntimeError(f"Cannot find dashboard source directory at {dashboard_dir}")

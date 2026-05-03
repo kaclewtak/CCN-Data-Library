@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import json
 
-from dashboard_shared_dataset import (
+from shiny import module, reactive, ui
+
+from dashboard.dashboard_shared_dataset import (
     SharedDatasetState,
     build_explorer_bootstrap_frame,
     build_startup_dataset_fingerprint,
 )
-from panels.pygwalker_persistence import (
+from dashboard.panels.pygwalker_persistence import (
     build_pygwalker_html_with_config,
     data_fingerprint,
 )
-from shiny import module, reactive, ui
 
 
 # ---------------------------------------------------------------------------

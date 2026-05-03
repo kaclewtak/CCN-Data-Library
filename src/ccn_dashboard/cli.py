@@ -57,7 +57,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     selected_port = find_available_port(args.host, args.port)
     url = f"http://{args.host}:{selected_port}"
-    print(data_location.message)
+    if data_location:
+        print(data_location.message)
     print(f"Launching CCN dashboard at {url}")
     if not args.no_browser:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
