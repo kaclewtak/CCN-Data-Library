@@ -1,3 +1,5 @@
+import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +12,26 @@ from panels.qa_panel import qa_server, qa_ui
 from shiny import App, ui
 
 DASHBOARD_DIR = Path(__file__).resolve().parent
+
+
+def _dashboard_runtime_dependencies():
+    try:
+        from ccn_dashboard.data_provider import ensure_synthesis_data_dir
+        from ccn_dashboard.pygwalker_assets import validate_pygwalker_assets
+    except ModuleNotFoundError:
+        src_root = Path(__file__).resolve().parents[1]
+        if str(src_root) not in sys.path:
+            sys.path.insert(0, str(src_root))
+        from ccn_dashboard.data_provider import ensure_synthesis_data_dir
+        from ccn_dashboard.pygwalker_assets import validate_pygwalker_assets
+    return ensure_synthesis_data_dir, validate_pygwalker_assets
+
+
+@lru_cache(maxsize=1)
+def ensure_dashboard_runtime() -> None:
+    ensure_synthesis_data_dir, validate_pygwalker_assets = _dashboard_runtime_dependencies()
+    validate_pygwalker_assets()
+    ensure_synthesis_data_dir(required=True, timeout=120.0)
 
 
 def _call_module_ui(module_ui: Any, module_id: str) -> Any:
@@ -301,6 +323,7 @@ app_ui = ui.page_fluid(
 
 
 def server(_input, _output, _session):
+    ensure_dashboard_runtime()
     explorer_state = _call_module_server(pygwalker_server, "pygwalker_explorer")
     _call_module_server(
         eo_server,

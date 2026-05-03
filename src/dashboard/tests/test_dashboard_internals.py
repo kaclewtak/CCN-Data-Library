@@ -35,12 +35,48 @@ def test_dashboard_ui_contains_expected_workflow_tabs() -> None:
     assert "Dashboard ready" in html
 
 
+def test_dashboard_runtime_check_validates_assets_and_data(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, dict]] = []
+
+    def fake_ensure_synthesis_data_dir(**kwargs):
+        calls.append(("data", kwargs))
+        return object()
+
+    def fake_validate_pygwalker_assets():
+        calls.append(("assets", {}))
+        return ()
+
+    monkeypatch.setattr(
+        shiny_dashboard,
+        "_dashboard_runtime_dependencies",
+        lambda: (fake_ensure_synthesis_data_dir, fake_validate_pygwalker_assets),
+    )
+    shiny_dashboard.ensure_dashboard_runtime.cache_clear()
+    try:
+        shiny_dashboard.ensure_dashboard_runtime()
+        shiny_dashboard.ensure_dashboard_runtime()
+    finally:
+        shiny_dashboard.ensure_dashboard_runtime.cache_clear()
+
+    assert calls == [
+        ("assets", {}),
+        ("data", {"required": True, "timeout": 120.0}),
+    ]
+
+
 def test_dashboard_server_wires_explorer_state_to_downstream_modules(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     data_getter = object()
     geo_getter = object()
     calls: list[tuple[str, dict]] = []
+    runtime_calls = 0
+
+    def fake_ensure_dashboard_runtime() -> None:
+        nonlocal runtime_calls
+        runtime_calls += 1
 
     def fake_call_module_server(_module_server, module_id: str, /, **kwargs):
         calls.append((module_id, kwargs))
@@ -52,10 +88,12 @@ def test_dashboard_server_wires_explorer_state_to_downstream_modules(
             }
         return None
 
+    monkeypatch.setattr(shiny_dashboard, "ensure_dashboard_runtime", fake_ensure_dashboard_runtime)
     monkeypatch.setattr(shiny_dashboard, "_call_module_server", fake_call_module_server)
 
     shiny_dashboard.server(object(), object(), object())
 
+    assert runtime_calls == 1
     assert [module_id for module_id, _ in calls] == [
         "pygwalker_explorer",
         "eo_search",
@@ -80,9 +118,7 @@ def test_spreadsheet_snapshot_to_dataframe_uniquifies_upload_column_labels() -> 
     assert dataframe.row(0) == (0.12, 0.14, "fallback")
 
 
-def test_shared_dataset_state_accepts_mapping_shaped_upload_payload_and_metadata() -> (
-    None
-):
+def test_shared_dataset_state_accepts_mapping_shaped_upload_payload_and_metadata() -> None:
     state = dashboard_shared_dataset.SharedDatasetState()
     state.update_from_payload(
         {
@@ -123,14 +159,8 @@ def test_validation_report_csv_download_content() -> None:
         }
     )
 
-    assert (
-        qa_panel.validation_report_csv(pd.DataFrame(columns=warnings.columns))
-        == "No validation issues.\n"
-    )
-    assert (
-        qa_panel.validation_report_csv(warnings)
-        == "Row,Column,Value,Issue\n2,Carbon Fraction,1.2,Must be 0-1\n"
-    )
+    assert qa_panel.validation_report_csv(pd.DataFrame(columns=warnings.columns)) == "No validation issues.\n"
+    assert qa_panel.validation_report_csv(warnings) == "Row,Column,Value,Issue\n2,Carbon Fraction,1.2,Must be 0-1\n"
 
 
 def test_search_granules_extracts_download_and_preview_links(
@@ -152,12 +182,8 @@ def test_search_granules_extracts_download_and_preview_links(
                             "time_end": "2025-01-02T03:14:05Z",
                             "boxes": ["10 -80 11 -79"],
                             "links": [
-                                {
-                                    "href": "https://example.test/EMIT_L2A_RFL_scene.nc.dmrpp"
-                                },
-                                {
-                                    "href": "https://lp-prod-protected.example/EMIT_L2A_RFL_scene.nc"
-                                },
+                                {"href": "https://example.test/EMIT_L2A_RFL_scene.nc.dmrpp"},
+                                {"href": "https://lp-prod-protected.example/EMIT_L2A_RFL_scene.nc"},
                                 {"href": "https://example.test/OTHER_scene.nc"},
                             ],
                         }
@@ -198,17 +224,11 @@ def test_get_bounding_box_adds_expected_buffer() -> None:
     assert get_bounding_box(points) == (-80.5, 9.5, -78.5, 11.5)
 
 
-def test_build_inventory_df_reads_flat_synthesis_files(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_build_inventory_df_reads_flat_synthesis_files(tmp_path: Path) -> None:
     synthesis_root = tmp_path / "data" / "CCN_synthesis"
     synthesis_root.mkdir(parents=True)
-    (synthesis_root / "CCN_depthseries.csv").write_text(
-        "study_id,core_id\n", encoding="utf-8"
-    )
-    (synthesis_root / "CCN_cores.csv").write_text(
-        "study_id,core_id\n", encoding="utf-8"
-    )
+    (synthesis_root / "CCN_depthseries.csv").write_text("study_id,core_id\n", encoding="utf-8")
+    (synthesis_root / "CCN_cores.csv").write_text("study_id,core_id\n", encoding="utf-8")
     (synthesis_root / "README.txt").write_text("ignored\n", encoding="utf-8")
     inventory = inventory_io.build_inventory_df(synthesis_root=synthesis_root)
 
@@ -218,13 +238,12 @@ def test_build_inventory_df_reads_flat_synthesis_files(
 
 
 def test_build_synthesis_df_loads_flat_depthseries_and_merges_core_area(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     synthesis_root = tmp_path / "CCN_synthesis"
     synthesis_root.mkdir()
     (synthesis_root / "CCN_depthseries.csv").write_text(
-        "study_id,site_id,core_id,fraction_carbon,dry_bulk_density\n"
-        "study-a,site-1,core-1,0.12,0.8\n",
+        "study_id,site_id,core_id,fraction_carbon,dry_bulk_density\n" "study-a,site-1,core-1,0.12,0.8\n",
         encoding="utf-8",
     )
     (synthesis_root / "CCN_cores.csv").write_text(
@@ -232,9 +251,7 @@ def test_build_synthesis_df_loads_flat_depthseries_and_merges_core_area(
         "study-a,site-1,core-1,united states,marsh,30.0,-90.0\n",
         encoding="utf-8",
     )
-    synthesis = synthesis_io.build_synthesis_df(
-        pd.DataFrame(), synthesis_root=synthesis_root
-    )
+    synthesis = synthesis_io.build_synthesis_df(pd.DataFrame(), synthesis_root=synthesis_root)
 
     assert synthesis.to_dict(orient="records") == [
         {

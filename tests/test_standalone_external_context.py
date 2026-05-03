@@ -88,7 +88,9 @@ def test_pygwalker_assets_can_validate_installed_package_without_source_tree(
     monkeypatch.setattr(
         pygwalker_assets,
         "find_spec",
-        lambda name: SimpleNamespace(submodule_search_locations=[str(installed_root)]) if name == "pygwalker" else None,
+        lambda name: (
+            SimpleNamespace(submodule_search_locations=[str(installed_root)]) if name == "pygwalker" else None
+        ),
     )
 
     assets = pygwalker_assets.validate_pygwalker_assets()
@@ -102,10 +104,11 @@ def test_launch_dashboard_accepts_supplied_app_from_outside_repository(
 ) -> None:
     launcher = import_module("ccn_dashboard.launcher")
     external_cwd = tmp_path / "external-working-dir"
+    empty_cache = tmp_path / "empty-cache"
     external_cwd.mkdir()
     monkeypatch.chdir(external_cwd)
     monkeypatch.delenv("CCN_DATA_DIR", raising=False)
-    monkeypatch.delenv("CCN_DATA_CACHE_DIR", raising=False)
+    monkeypatch.setenv("CCN_DATA_CACHE_DIR", str(empty_cache))
     monkeypatch.setattr(launcher, "validate_pygwalker_assets", lambda: ())
 
     async def standalone_test_app(scope: dict[str, Any], _receive: Any, send: Any) -> None:
