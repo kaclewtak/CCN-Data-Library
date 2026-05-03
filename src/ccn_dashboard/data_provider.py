@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from .data_fetcher import SynthesisFetchError
 from .data_manifest import DEFAULT_SYNTHESIS_MANIFEST, SynthesisDatasetManifest
 
 CCN_DATA_DIR_ENV = "CCN_DATA_DIR"
@@ -123,7 +124,7 @@ def ensure_synthesis_data_dir(
 
     root = _resolve_path(cache_root) if cache_root is not None else default_cache_root()
     try:
-        from .data_fetcher import SynthesisFetchError, fetch_synthesis_data
+        from .data_fetcher import fetch_synthesis_data
 
         synthesis_dir = fetch_synthesis_data(
             cache_root=root,

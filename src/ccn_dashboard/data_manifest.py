@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class SynthesisFileManifest:
+    """Manifest for a single synthesis file with metadata."""
+
     name: str
     url: str
     md5: str
@@ -13,6 +15,8 @@ class SynthesisFileManifest:
 
 @dataclass(frozen=True)
 class SynthesisDatasetManifest:
+    """Manifest for a synthesis dataset with version and file information."""
+
     version: str
     cache_version: str
     source_name: str
