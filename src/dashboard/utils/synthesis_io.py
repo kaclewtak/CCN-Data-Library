@@ -18,6 +18,7 @@ AREA_CANDIDATES = [
     "country",
     "biome",
 ]
+CATEGORY_CANDIDATES = ["habitat", "habitat_type", "ecosystem", "wetland_type", "biome"]
 BAD_KEYWORDS = [
     "method",
     "flag",
@@ -85,9 +86,7 @@ def find_best_column(
         scored = [
             (
                 c,
-                score_column(
-                    c, keywords, bad_keywords=bad_keywords, preferred=preferred
-                ),
+                score_column(c, keywords, bad_keywords=bad_keywords, preferred=preferred),
             )
             for c in columns
         ]
@@ -106,7 +105,7 @@ def _read_file(path: str) -> pd.DataFrame | None:
             return pd.read_excel(path)
         if path.endswith(".parquet"):
             return pd.read_parquet(path)
-    except Exception:
+    except (ImportError, OSError, ValueError):
         pass
     return None
 
@@ -143,7 +142,7 @@ def _read_header(path: str) -> list[str] | None:
             return pd.read_excel(path, nrows=0).columns.tolist()
         if path.endswith(".parquet"):
             return pd.read_parquet(path).columns.tolist()
-    except Exception:
+    except (ImportError, OSError, ValueError):
         pass
     return None
 
@@ -165,16 +164,10 @@ def find_candidate_studies(df_inv: pd.DataFrame) -> pd.DataFrame:
                     "bd_col": bd_col,
                 }
             )
-    return (
-        pd.DataFrame(records)
-        if records
-        else pd.DataFrame(columns=["path", "study_id", "som_col", "bd_col"])
-    )
+    return pd.DataFrame(records) if records else pd.DataFrame(columns=["path", "study_id", "som_col", "bd_col"])
 
 
-def load_som_bd_from_file(
-    path: str, som_col: str, bd_col: str, study_id: str
-) -> pd.DataFrame | None:
+def load_som_bd_from_file(path: str, som_col: str, bd_col: str, study_id: str) -> pd.DataFrame | None:
     df = _read_file(path)
     if df is None:
         return None
@@ -190,9 +183,15 @@ def load_som_bd_from_file(
     if area_col and area_col not in {"som", "bulk_density"}:
         df["area"] = df[area_col]
 
+    category_col = find_best_column(list(df.columns), candidates=CATEGORY_CANDIDATES)
+    if category_col and category_col not in {"som", "bulk_density"}:
+        df["category"] = df[category_col]
+
     cols = ["som", "bulk_density", "source_study", "som_source"]
     if "area" in df.columns:
         cols.append("area")
+    if "category" in df.columns:
+        cols.append("category")
     return df[cols]
 
 
@@ -205,9 +204,7 @@ def _synthesis_root_from_inventory(df_inv: pd.DataFrame) -> Path | None:
     return Path(str(depthseries_rows.iloc[0]["path"])).expanduser().resolve().parent
 
 
-def _resolve_synthesis_root(
-    df_inv: pd.DataFrame, synthesis_root: Path | str | None
-) -> Path | None:
+def _resolve_synthesis_root(df_inv: pd.DataFrame, synthesis_root: Path | str | None) -> Path | None:
     if synthesis_root is not None:
         return Path(synthesis_root).expanduser().resolve()
     inventory_root = _synthesis_root_from_inventory(df_inv)
@@ -221,43 +218,27 @@ def _resolve_synthesis_root(
         return None
 
 
-def build_synthesis_df(
-    df_inv: pd.DataFrame, *, synthesis_root: Path | str | None = None
-) -> pd.DataFrame:
+def build_synthesis_df(df_inv: pd.DataFrame, *, synthesis_root: Path | str | None = None) -> pd.DataFrame:
     # Fast path: if inventory came from CCN_synthesis flat files, load depthseries directly.
     resolved_synthesis_root = _resolve_synthesis_root(df_inv, synthesis_root)
-    depthseries_path = (
-        resolved_synthesis_root / "CCN_depthseries.csv"
-        if resolved_synthesis_root is not None
-        else None
-    )
-    cores_path = (
-        resolved_synthesis_root / "CCN_cores.csv"
-        if resolved_synthesis_root is not None
-        else None
-    )
+    depthseries_path = resolved_synthesis_root / "CCN_depthseries.csv" if resolved_synthesis_root is not None else None
+    cores_path = resolved_synthesis_root / "CCN_cores.csv" if resolved_synthesis_root is not None else None
     if depthseries_path is not None and depthseries_path.exists():
         return _build_synthesis_from_flat(depthseries_path, cores_path)
 
     # Slow path: scan individual study files for SOM + BD columns.
     candidates = find_candidate_studies(df_inv)
     if candidates.empty:
-        return pd.DataFrame(
-            columns=["som", "bulk_density", "source_study", "som_source"]
-        )
+        return pd.DataFrame(columns=["som", "bulk_density", "source_study", "som_source"])
 
     frames = []
     for _, row in candidates.iterrows():
-        part = load_som_bd_from_file(
-            row["path"], row["som_col"], row["bd_col"], row["study_id"]
-        )
+        part = load_som_bd_from_file(row["path"], row["som_col"], row["bd_col"], row["study_id"])
         if part is not None and not part.empty:
             frames.append(part)
 
     if not frames:
-        return pd.DataFrame(
-            columns=["som", "bulk_density", "source_study", "som_source"]
-        )
+        return pd.DataFrame(columns=["som", "bulk_density", "source_study", "som_source"])
 
     return pd.concat(frames, ignore_index=True)
 
@@ -266,9 +247,7 @@ def _build_synthesis_from_flat(depthseries_path, cores_path) -> pd.DataFrame:
     ds = pd.read_csv(depthseries_path, on_bad_lines="skip", low_memory=False)
     som_col, bd_col = _detect_columns(ds)
     if not som_col or not bd_col:
-        return pd.DataFrame(
-            columns=["som", "bulk_density", "source_study", "som_source"]
-        )
+        return pd.DataFrame(columns=["som", "bulk_density", "source_study", "som_source"])
 
     som_label = str(som_col)
     ds = ds.rename(columns={som_col: "som", bd_col: "bulk_density"})
@@ -280,24 +259,16 @@ def _build_synthesis_from_flat(depthseries_path, cores_path) -> pd.DataFrame:
     # Merge area info from cores (country + habitat)
     if cores_path.exists():
         cores = pd.read_csv(cores_path, on_bad_lines="skip", low_memory=False)
-        merge_keys = [
-            k
-            for k in ["study_id", "site_id", "core_id"]
-            if k in ds.columns and k in cores.columns
-        ]
+        merge_keys = [k for k in ["study_id", "site_id", "core_id"] if k in ds.columns and k in cores.columns]
         if merge_keys:
-            area_cols = merge_keys + [
-                c
-                for c in ["country", "habitat", "latitude", "longitude"]
-                if c in cores.columns
-            ]
+            area_cols = merge_keys + [c for c in ["country", "habitat", "latitude", "longitude"] if c in cores.columns]
             cores_sub = cores[area_cols].drop_duplicates(subset=merge_keys)
             ds = ds.merge(cores_sub, on=merge_keys, how="left")
             if "country" in ds.columns:
                 ds["area"] = ds["country"]
 
     cols = ["som", "bulk_density", "source_study", "som_source"]
-    for extra in ("area", "latitude", "longitude"):
+    for extra in ("area", "habitat", "latitude", "longitude"):
         if extra in ds.columns:
             cols.append(extra)
     return ds[cols]

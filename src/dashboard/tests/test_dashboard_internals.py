@@ -201,18 +201,36 @@ def test_data_inventory_summary_tab_combines_inventory_and_synthesis_context() -
     summary_tab_content = getattr(data_inventory, "_summary_tab_content")
     inventory_metric = getattr(data_inventory, "_inventory_metric")
     html = str(summary_tab_content())
-    metric_html = str(inventory_metric("Files", "7", "teal"))
+    metric_html = str(inventory_metric("Synthesis Files", "7", "teal"))
 
     assert "inventory_overview_cards" in html
     assert "inventory-summary-grid" in html
     assert "inventory-summary-card" in metric_html
     assert "inventory-summary-card--teal" in metric_html
-    assert "File Categories" in html
-    assert "Top Studies by File Count" in html
+    assert "Synthesis Categories" in html
+    assert "Top Studies by Synthesis Rows" in html
     assert "SOM Distribution" in html
     assert "Bulk Density Distribution" in html
     assert "inventory_summary_cards" not in html
     assert "synthesis_summary_cards" not in html
+    assert "Load Inventory" not in html
+
+
+def test_data_inventory_counts_use_synthesis_categories_and_studies() -> None:
+    category_info = getattr(data_inventory, "_synthesis_category_info")
+    study_counts = getattr(data_inventory, "_synthesis_study_counts")
+    synthesis = pd.DataFrame(
+        {
+            "habitat": ["marsh", "mangrove", "marsh", None, ""],
+            "source_study": ["study-a", "study-b", "study-a", "study-c", "study-a"],
+        }
+    )
+
+    category_label, category_values = category_info(synthesis)
+
+    assert category_label == "Habitat Categories"
+    assert category_values.value_counts().to_dict() == {"marsh": 2, "mangrove": 1}
+    assert study_counts(synthesis, limit=2).to_dict() == {"study-a": 3, "study-b": 1}
 
 
 def test_search_granules_extracts_download_and_preview_links(
@@ -312,6 +330,7 @@ def test_build_synthesis_df_loads_flat_depthseries_and_merges_core_area(
             "source_study": "study-a",
             "som_source": "fraction_carbon",
             "area": "united states",
+            "habitat": "marsh",
             "latitude": 30.0,
             "longitude": -90.0,
         }

@@ -21,31 +21,18 @@ matplotlib.use("Agg")
 
 @module.ui
 def data_inventory_ui():
-    return ui.layout_sidebar(
-        ui.sidebar(
-            ui.h5("Reference Inventory Controls"),
-            ui.p(
-                "Library-wide summaries and coverage diagnostics for the CCN repository. \
-                    Session-dataset QA now lives in the QA Dashboard.",
-                class_="text-muted small",
-            ),
-            ui.input_action_button("load_inventory", "Load Inventory", class_="btn-primary w-100 mb-3"),
-            width=300,
+    return ui.navset_card_tab(
+        ui.nav_panel(
+            "Summary",
+            _summary_tab_content(),
         ),
-        # main area
-        ui.navset_card_tab(
-            ui.nav_panel(
-                "Summary",
-                _summary_tab_content(),
+        ui.nav_panel(
+            "Geographic Coverage",
+            ui.card(
+                ui.card_header("Area Contribution"),
+                ui.output_plot("plot_area_bar", height="620px"),
             ),
-            ui.nav_panel(
-                "Geographic Coverage",
-                ui.card(
-                    ui.card_header("Area Contribution"),
-                    ui.output_plot("plot_area_bar", height="620px"),
-                ),
-                ui.card(ui.card_header("Coverage Gap Hints"), ui.output_ui("gap_hints_ui")),
-            ),
+            ui.card(ui.card_header("Coverage Gap Hints"), ui.output_ui("gap_hints_ui")),
         ),
     )
 
@@ -112,23 +99,23 @@ def _summary_tab_content():
         ui.output_ui("inventory_overview_cards"),
         ui.layout_columns(
             ui.card(
-                ui.card_header("File Categories"),
-                ui.output_plot("plot_category_dist", height="320px"),
+                ui.card_header("Synthesis Categories"),
+                ui.output_plot("plot_category_dist", height="380px"),
             ),
             ui.card(
-                ui.card_header("Top Studies by File Count"),
-                ui.output_plot("plot_study_counts", height="320px"),
+                ui.card_header("Top Studies by Synthesis Rows"),
+                ui.output_plot("plot_study_counts", height="380px"),
             ),
             col_widths=[6, 6],
         ),
         ui.layout_columns(
             ui.card(
                 ui.card_header("SOM Distribution"),
-                ui.output_plot("plot_som_hist", height="360px"),
+                ui.output_plot("plot_som_hist", height="390px"),
             ),
             ui.card(
                 ui.card_header("Bulk Density Distribution"),
-                ui.output_plot("plot_bd_hist", height="360px"),
+                ui.output_plot("plot_bd_hist", height="390px"),
             ),
             col_widths=[6, 6],
         ),
@@ -158,25 +145,41 @@ def _inventory_metric(label: str, value: str, accent: str):
     )
 
 
+def _clean_label_series(series: pd.Series) -> pd.Series:
+    clean = series.dropna().astype(str).str.strip()
+    return clean[clean != ""]
+
+
+def _synthesis_category_info(synthesis: pd.DataFrame) -> tuple[str, pd.Series]:
+    for column, label in (
+        ("habitat", "Habitat Categories"),
+        ("category", "Synthesis Categories"),
+        ("som_source", "Measurement Categories"),
+    ):
+        if column not in synthesis.columns:
+            continue
+        values = _clean_label_series(synthesis[column])
+        if not values.empty:
+            return label, values
+    return "Synthesis Categories", pd.Series(dtype="object")
+
+
+def _synthesis_study_counts(synthesis: pd.DataFrame, limit: int) -> pd.Series:
+    if "source_study" not in synthesis.columns:
+        return pd.Series(dtype="int64")
+    return _clean_label_series(synthesis["source_study"]).value_counts().head(limit)
+
+
 # ---------------------------------------------------------------------------
 # Server
 # ---------------------------------------------------------------------------
 
 
 @module.server
-def data_inventory_server(module_input, _output, _session):
-    inventory_df: reactive.Value[pd.DataFrame | None] = reactive.Value(None)
-    synthesis_df: reactive.Value[pd.DataFrame | None] = reactive.Value(None)
-
-    # ---- Load inventory on button click (cached) -------------------------
-
-    @reactive.effect
-    @reactive.event(module_input.load_inventory)
-    def _load():
-        inv = build_inventory_df()
-        inventory_df.set(inv)
-        syn = build_synthesis_df(inv)
-        synthesis_df.set(syn)
+def data_inventory_server(_module_input, _output, _session):
+    initial_inventory = build_inventory_df()
+    inventory_df: reactive.Value[pd.DataFrame | None] = reactive.Value(initial_inventory)
+    synthesis_df: reactive.Value[pd.DataFrame | None] = reactive.Value(build_synthesis_df(initial_inventory))
 
     # ---- Inventory + synthesis summary cards -------------------------------
 
@@ -185,15 +188,18 @@ def data_inventory_server(module_input, _output, _session):
         inv = inventory_df.get()
         if inv is None:
             return ui.p(
-                "Click 'Load Inventory' to scan the data repository.",
+                "Loading synthesis inventory...",
                 class_="text-muted p-3",
             )
         sdf = synthesis_df.get()
+        category_count = "0"
         synthesis_rows = "0"
         study_sources = "0"
         som_mean = "N/A"
         bd_mean = "N/A"
         if sdf is not None and not sdf.empty:
+            _, category_values = _synthesis_category_info(sdf)
+            category_count = _format_count(category_values.nunique())
             synthesis_rows = _format_count(len(sdf))
             study_sources = _format_count(sdf["source_study"].nunique())
             if not sdf["som"].isna().all():
@@ -201,8 +207,8 @@ def data_inventory_server(module_input, _output, _session):
             if not sdf["bulk_density"].isna().all():
                 bd_mean = f"{sdf['bulk_density'].mean():.2f}"
         return ui.div(
-            _inventory_metric("Files", _format_count(len(inv)), "teal"),
-            _inventory_metric("Categories", _format_count(inv["category"].nunique()), "navy"),
+            _inventory_metric("Synthesis Files", _format_count(len(inv)), "teal"),
+            _inventory_metric("Categories", category_count, "navy"),
             _inventory_metric(
                 "Synthesis Rows",
                 synthesis_rows,
@@ -218,33 +224,38 @@ def data_inventory_server(module_input, _output, _session):
             class_="inventory-summary-grid",
         )
 
-    # ---- Inventory plots --------------------------------------------------
+    # ---- Synthesis count plots --------------------------------------------
 
     @render.plot
     def plot_category_dist():
-        inv = inventory_df.get()
-        if inv is None or inv.empty:
+        sdf = synthesis_df.get()
+        if sdf is None or sdf.empty:
             return _empty_fig()
-        counts = _top_counts(inv["category"], limit=12, other_label="Other categories")
+        category_label, category_values = _synthesis_category_info(sdf)
+        if category_values.empty:
+            return _message_fig("No synthesis categories found")
+        counts = _top_counts(category_values, limit=12, other_label="Other categories")
         return _horizontal_count_plot(
             counts,
-            title="File Categories by Count",
-            xlabel="Files",
-            label_width=34,
+            title=f"{category_label} by Synthesis Rows",
+            xlabel="Synthesis rows",
+            label_width=24,
             palette="viridis",
         )
 
     @render.plot
     def plot_study_counts():
-        inv = inventory_df.get()
-        if inv is None or inv.empty:
+        sdf = synthesis_df.get()
+        if sdf is None or sdf.empty:
             return _empty_fig()
-        counts = inv["study_id"].value_counts().head(12)
+        counts = _synthesis_study_counts(sdf, limit=12)
+        if counts.empty:
+            return _message_fig("No synthesis study identifiers found")
         return _horizontal_count_plot(
             counts,
-            title="Top Studies by File Count",
-            xlabel="Files",
-            label_width=44,
+            title="Top Studies by Synthesis Rows",
+            xlabel="Synthesis rows",
+            label_width=30,
             palette="mako",
         )
 
@@ -386,7 +397,7 @@ def data_inventory_server(module_input, _output, _session):
     def gap_hints_ui():
         sdf = synthesis_df.get()
         if sdf is None:
-            return ui.p("Load inventory first.", class_="text-muted")
+            return ui.p("Synthesis inventory is loading.", class_="text-muted")
         hints = generate_gap_hints(sdf)
         alert_map = {
             "danger": "alert-danger",
@@ -433,16 +444,25 @@ def data_inventory_server(module_input, _output, _session):
         log_x: bool = False,
     ):
         counts = counts.sort_values(ascending=True)
-        fig_height = max(4.6, 0.34 * len(counts) + 1.2)
+        fig_height = max(5.2, 0.42 * len(counts) + 1.6)
         fig, ax = plt.subplots(figsize=(10, fig_height))
         labels = _display_labels(counts.index, label_width)
+        values = counts.to_numpy(dtype=float)
         colors = sns.color_palette(palette, n_colors=len(counts))
-        bars = ax.barh(labels, counts.values, color=colors)
+        bars = ax.barh(labels, values, color=colors)
+        if values.size:
+            right_edge = values.max() * (1.22 if log_x else 1.14)
+            if log_x:
+                positive_values = values[values > 0]
+                left_edge = positive_values.min() * 0.75 if positive_values.size else 0.1
+                ax.set_xlim(left=left_edge, right=right_edge)
+            else:
+                ax.set_xlim(left=0, right=right_edge)
         if log_x:
             ax.set_xscale("log")
         ax.bar_label(
             bars,
-            labels=[_format_count(int(value)) for value in counts.values],
+            labels=[_format_count(int(value)) for value in values],
             padding=4,
             fontsize=9,
         )
@@ -451,8 +471,9 @@ def data_inventory_server(module_input, _output, _session):
         ax.set_ylabel("")
         ax.xaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}"))
         ax.grid(True, axis="x", alpha=0.25)
+        ax.margins(y=0.08)
         sns.despine(ax=ax, left=True, bottom=False)
-        fig.tight_layout()
+        fig.subplots_adjust(left=0.34, right=0.92, top=0.86, bottom=0.19)
         return fig
 
     def _central_series(series: pd.Series, lower: float = 0.005, upper: float = 0.995) -> pd.Series:
@@ -468,7 +489,7 @@ def data_inventory_server(module_input, _output, _session):
         clean = _central_series(series)
         if clean.empty:
             return _message_fig("No numeric data available")
-        fig, ax = plt.subplots(figsize=(10, 4))
+        fig, ax = plt.subplots(figsize=(10, 4.6))
         sns.histplot(
             clean,
             bins=40,
@@ -484,7 +505,7 @@ def data_inventory_server(module_input, _output, _session):
         ax.yaxis.set_major_formatter(StrMethodFormatter("{x:,.0f}"))
         ax.grid(True, axis="y", alpha=0.25)
         sns.despine(ax=ax)
-        fig.tight_layout()
+        fig.subplots_adjust(left=0.18, right=0.97, top=0.84, bottom=0.18)
         return fig
 
     def _central_xy(df: pd.DataFrame, x_col: str, y_col: str) -> pd.DataFrame:
