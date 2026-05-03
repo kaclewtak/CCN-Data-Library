@@ -5,13 +5,16 @@ from importlib import import_module
 from pathlib import Path
 
 import pandas as pd
+from shiny import reactive
 
 DASHBOARD_ROOT = Path(__file__).resolve().parents[1]
 if str(DASHBOARD_ROOT) not in sys.path:
     sys.path.insert(0, str(DASHBOARD_ROOT))
 
 qa = import_module("utils.qa")
+dashboard_shared_dataset = import_module("dashboard_shared_dataset")
 
+auto_match_columns = qa.auto_match_columns
 build_overview_grid = qa.build_overview_grid
 build_qa_chart = qa.build_qa_chart
 build_qaqc_summary_html = qa.build_qaqc_summary_html
@@ -23,6 +26,7 @@ compare_user_to_reference = qa.compare_user_to_reference
 matched_numeric_variables = qa.matched_numeric_variables
 classify_us_subregion = qa.classify_us_subregion
 apply_geo_filters = qa.apply_geo_filters
+SharedDatasetState = dashboard_shared_dataset.SharedDatasetState
 
 
 def test_matched_numeric_variables_returns_only_available_numeric_matches() -> None:
@@ -110,6 +114,56 @@ def test_build_comparison_results_filters_reference_rows_and_selected_variable()
     assert results[0]["test"] == "ks"
     assert results[0]["statistic"] is not None
     assert results[0]["p_value"] is not None
+
+
+def test_shared_dataset_sync_payload_feeds_statistical_comparisons() -> None:
+    state = SharedDatasetState()
+    state.update_from_payload(
+        {
+            "hasUploadedData": True,
+            "datasetFingerprint": "startup::test-session",
+            "datasetLabel": "Uploaded dataset",
+            "sheetName": "Uploaded dataset",
+            "fields": [
+                {"fid": "dbd", "name": "dry_bulk_density"},
+                {"fid": "carbon", "name": "fraction_carbon"},
+            ],
+            "rows": [
+                {"dbd": "1.0", "carbon": "0.10"},
+                {"dbd": "1.1", "carbon": "0.11"},
+                {"dbd": "1.2", "carbon": "0.12"},
+            ],
+        }
+    )
+    ref_merged = pd.DataFrame(
+        {
+            "habitat": ["mangrove", "mangrove", "saltmarsh"],
+            "dry_bulk_density": [1.0, 1.1, 1.8],
+            "fraction_carbon": [0.10, 0.11, 0.30],
+            "fraction_organic_matter": [0.20, 0.21, 0.40],
+            "depth_min": [0, 5, 0],
+            "depth_max": [5, 10, 5],
+        }
+    )
+
+    with reactive.isolate():
+        user_df = state.data().to_pandas()
+
+    col_map = auto_match_columns(user_df.columns.tolist())
+    results = build_comparison_results(
+        ref_merged,
+        user_df,
+        col_map,
+        variable="dry_bulk_density",
+        test_name="ks",
+    )
+
+    assert len(results) == 1
+    assert results[0]["variable"] == "dry_bulk_density"
+    assert results[0]["user_column"] == "dry_bulk_density"
+    assert results[0]["n_user"] == 3
+    assert results[0]["n_ref"] == 3
+    assert results[0]["statistic"] is not None
 
 
 def test_build_qa_chart_uses_red_distribution_trace_for_violin() -> None:

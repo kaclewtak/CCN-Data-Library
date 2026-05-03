@@ -44,6 +44,7 @@ function createState(): ICcnSpreadsheetState {
         handleAddColumn: vi.fn(),
         handleRemoveColumn: vi.fn(),
         handleRenameColumn: vi.fn(),
+        handleCoerceColumnNames: vi.fn(),
         handleCopySelection: vi.fn(async () => undefined),
         handlePasteSelection: vi.fn(async () => undefined),
     }

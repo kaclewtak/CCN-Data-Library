@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from shiny import reactive
+from shiny.types import SilentException
 
 DASHBOARD_ROOT = Path(__file__).resolve().parents[1]
 if str(DASHBOARD_ROOT) not in sys.path:
@@ -163,6 +164,26 @@ def test_validation_report_csv_download_content() -> None:
     assert qa_panel.validation_report_csv(warnings) == "Row,Column,Value,Issue\n2,Carbon Fraction,1.2,Must be 0-1\n"
 
 
+def test_qa_input_values_treats_absent_dynamic_inputs_as_empty() -> None:
+    class FakeInput:
+        def selected(self):
+            return ("north america", "europe")
+
+        def scalar(self):
+            return "united states"
+
+        def dynamic_missing(self):
+            raise SilentException()
+
+    fake_input = FakeInput()
+    input_values = getattr(qa_panel, "_input_values")
+
+    assert input_values(fake_input, "selected") == ["north america", "europe"]
+    assert input_values(fake_input, "scalar") == ["united states"]
+    assert input_values(fake_input, "dynamic_missing") == []
+    assert input_values(fake_input, "not_registered") == []
+
+
 def test_search_granules_extracts_download_and_preview_links(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -243,7 +264,7 @@ def test_build_synthesis_df_loads_flat_depthseries_and_merges_core_area(
     synthesis_root = tmp_path / "CCN_synthesis"
     synthesis_root.mkdir()
     (synthesis_root / "CCN_depthseries.csv").write_text(
-        "study_id,site_id,core_id,fraction_carbon,dry_bulk_density\n" "study-a,site-1,core-1,0.12,0.8\n",
+        "study_id,site_id,core_id,fraction_carbon,dry_bulk_density\nstudy-a,site-1,core-1,0.12,0.8\n",
         encoding="utf-8",
     )
     (synthesis_root / "CCN_cores.csv").write_text(

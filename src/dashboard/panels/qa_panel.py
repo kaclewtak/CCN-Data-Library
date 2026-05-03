@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 import polars as pl
 from shiny import module, reactive, render, ui
+from shiny.types import SilentException
 from utils.qa import (
     ALL_CANONICAL,
     QA_NUMERIC_COLS,
@@ -33,6 +34,21 @@ def validation_report_csv(warnings: pd.DataFrame) -> str:
     if warnings.empty:
         return "No validation issues.\n"
     return warnings.to_csv(index=False)
+
+
+def _input_values(module_input: Any, input_id: str) -> list:
+    value_getter = getattr(module_input, input_id, None)
+    if value_getter is None:
+        return []
+    try:
+        value = value_getter()
+    except SilentException:
+        return []
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value] if value else []
+    return list(value)
 
 
 @module.ui
@@ -207,18 +223,12 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
 
     # --- Cascading geo filter helpers (one set per tab prefix) ---
 
-    def _input_values(input_id: str) -> list:
-        if not hasattr(module_input, input_id):
-            return []
-        value_getter = getattr(module_input, input_id)
-        return list(value_getter() or [])
-
     def _read_geo_inputs(prefix: str):
         """Return (continents, countries, us_subregions, habitats) lists for a tab."""
-        continents = _input_values(f"{prefix}_continent")
-        countries = _input_values(f"{prefix}_country")
-        us_subs = _input_values(f"{prefix}_us_subregion")
-        habitats = _input_values(f"{prefix}_habitat")
+        continents = _input_values(module_input, f"{prefix}_continent")
+        countries = _input_values(module_input, f"{prefix}_country")
+        us_subs = _input_values(module_input, f"{prefix}_us_subregion")
+        habitats = _input_values(module_input, f"{prefix}_habitat")
         return continents, countries, us_subs, habitats
 
     def _cascade_for(prefix: str):

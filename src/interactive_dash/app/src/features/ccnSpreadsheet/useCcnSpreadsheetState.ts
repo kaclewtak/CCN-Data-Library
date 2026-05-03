@@ -238,6 +238,7 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
         (snapshot: ISpreadsheetSnapshot, commitOptions: ICommitOptions = {}) => {
             const nextSnapshot = cloneSnapshot(snapshot)
             const historyMode = commitOptions.historyMode ?? 'push'
+            const nextDirty = commitOptions.dirty ?? true
 
             if (historyMode === 'replace') {
                 historyRef.current = [cloneSnapshot(nextSnapshot)]
@@ -262,8 +263,11 @@ export function useCcnSpreadsheetState(options: IUseCcnSpreadsheetStateOptions):
                 setGraphRows(cloneRows(nextSnapshot.rows))
                 setGraphFields(cloneFields(nextSnapshot.fields))
             }
-            setIsDirty(commitOptions.dirty ?? true)
+            setIsDirty(nextDirty)
             setLastSavedAt(commitOptions.lastSavedAt ?? null)
+            if (nextDirty) {
+                setBridgeActive(true)
+            }
 
             if (commitOptions.nextSheetName) {
                 setSheetName(commitOptions.nextSheetName)
