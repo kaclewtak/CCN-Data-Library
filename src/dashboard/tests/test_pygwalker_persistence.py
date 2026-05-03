@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from importlib import import_module
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 
@@ -42,8 +43,9 @@ def test_data_fingerprint_changes_when_data_changes() -> None:
 
 
 def test_build_pygwalker_html_includes_ccn_spreadsheet_config(monkeypatch) -> None:
+    """Ensure PyGWalker HTML includes the CCN spreadsheet persistence config."""
     df = _sample_df()
-    captured: dict[str, object] = {}
+    captured: dict[str, Any] = {}
 
     def fake_to_html(*args, **kwargs):
         captured["args"] = args
@@ -68,7 +70,7 @@ def test_build_pygwalker_html_includes_ccn_spreadsheet_config(monkeypatch) -> No
 
 def test_build_pygwalker_html_with_config_includes_bridge_config(monkeypatch) -> None:
     df = _sample_df()
-    captured: dict[str, object] = {}
+    captured: dict[str, Any] = {}
 
     def fake_to_html(*args, **kwargs):
         captured["args"] = args

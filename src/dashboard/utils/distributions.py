@@ -3,9 +3,16 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure, SubFigure
 from scipy import stats
 
-from utils.synthesis_io import BAD_KEYWORDS, BD_KEYWORDS, SOM_KEYWORDS, find_best_column
+from dashboard.utils.synthesis_io import (
+    BAD_KEYWORDS,
+    BD_KEYWORDS,
+    SOM_KEYWORDS,
+    find_best_column,
+)
 
 
 def find_comparable_columns(user_df: pd.DataFrame, inventory_columns: list[str] | None = None) -> dict[str, str]:
@@ -46,14 +53,20 @@ def compare_distributions(
             "interpretation": "Insufficient data for comparison.",
         }
 
+    stat: float
+    p: float
+
     if test_name == "anderson":
         try:
             result = stats.anderson_ksamp([user_clean.values, inv_clean.values])
-            stat, _, p = result.statistic, result.critical_values, result.pvalue
+            stat = float(getattr(result, "statistic"))
+            p = float(getattr(result, "pvalue"))
         except Exception as exc:
             return {"test": "anderson", "statistic": None, "p_value": None, "interpretation": f"Test failed: {exc}"}
     else:
-        stat, p = stats.ks_2samp(user_clean, inv_clean)
+        result = stats.ks_2samp(user_clean, inv_clean)
+        stat = float(getattr(result, "statistic"))
+        p = float(getattr(result, "pvalue"))
 
     if p < 0.01:
         interp = "Distributions are significantly different (p < 0.01)."
@@ -64,8 +77,8 @@ def compare_distributions(
 
     return {
         "test": test_name,
-        "statistic": round(float(stat), 4),
-        "p_value": round(float(p), 4),
+        "statistic": round(stat, 4),
+        "p_value": round(p, 4),
         "interpretation": interp,
     }
 
@@ -74,8 +87,8 @@ def build_comparison_plot(
     user_series: pd.Series,
     inventory_series: pd.Series,
     col_name: str,
-    ax: plt.Axes | None = None,
-) -> plt.Figure:
+    ax: Axes | None = None,
+) -> Figure:
     user_clean = pd.to_numeric(user_series, errors="coerce").dropna()
     inv_clean = pd.to_numeric(inventory_series, errors="coerce").dropna()
 
@@ -83,10 +96,11 @@ def build_comparison_plot(
     if ax is None:
         fig, ax = plt.subplots(figsize=(8, 4))
     else:
-        fig = ax.figure
+        parent = ax.figure
+        fig = parent if isinstance(parent, Figure) else parent.figure
 
-    sns.histplot(inv_clean, bins=30, kde=True, stat="density", alpha=0.4, label="Inventory", color="steelblue", ax=ax)
-    sns.histplot(user_clean, bins=30, kde=True, stat="density", alpha=0.4, label="Uploaded", color="coral", ax=ax)
+    sns.histplot(x=inv_clean, bins=30, kde=True, stat="density", alpha=0.4, label="Inventory", color="steelblue", ax=ax)
+    sns.histplot(x=user_clean, bins=30, kde=True, stat="density", alpha=0.4, label="Uploaded", color="coral", ax=ax)
     ax.set_title(f"Distribution Comparison — {col_name}")
     ax.set_xlabel(col_name)
     ax.legend()

@@ -211,7 +211,7 @@ def _resolve_synthesis_root(df_inv: pd.DataFrame, synthesis_root: Path | str | N
     if inventory_root is not None:
         return inventory_root
     try:
-        from utils.inventory_io import resolve_inventory_synthesis_root
+        from dashboard.utils.inventory_io import resolve_inventory_synthesis_root
 
         return resolve_inventory_synthesis_root(required=False, auto_fetch=True)
     except (ImportError, RuntimeError):
