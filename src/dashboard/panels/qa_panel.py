@@ -51,6 +51,78 @@ def _input_values(module_input: Any, input_id: str) -> list:
     return list(value)
 
 
+def _qa_map_controls():
+    return ui.div(
+        ui.tags.style(
+            """
+            .qa-map-control-row {
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 0.75rem;
+                align-items: flex-end;
+                overflow-x: auto;
+                padding-bottom: 0.25rem;
+            }
+            .qa-map-control-row .form-group,
+            .qa-map-control-row .form-check,
+            .qa-map-control-row .selectize-control {
+                margin-bottom: 0;
+            }
+            .qa-map-toggle-control {
+                flex: 0 0 auto;
+                min-width: 8.5rem;
+                padding-bottom: 0.45rem;
+                white-space: nowrap;
+            }
+            .qa-map-toggle-control .shiny-input-container {
+                width: auto !important;
+            }
+            .qa-map-filter-control {
+                flex: 1 0 9.5rem;
+                min-width: 9.5rem;
+            }
+            .qa-map-filter-control--optional:empty {
+                display: none;
+            }
+            .qa-map-filter-control .shiny-input-container {
+                width: 100% !important;
+            }
+            .qa-map-filter-control--wide {
+                flex-basis: 11rem;
+            }
+            """
+        ),
+        ui.div(
+            ui.div(
+                ui.input_checkbox("show_ref", "Show CCN reference cores", value=True),
+                class_="qa-map-toggle-control",
+            ),
+            ui.div(
+                ui.input_checkbox("show_user", "Show my data", value=True),
+                class_="qa-map-toggle-control",
+            ),
+            ui.div(
+                ui.input_selectize("map_continent", "Continent", choices=[], multiple=True),
+                class_="qa-map-filter-control",
+            ),
+            ui.div(
+                ui.input_selectize("map_country", "Country", choices=[], multiple=True),
+                class_="qa-map-filter-control",
+            ),
+            ui.output_ui(
+                "map_us_subregion_ui",
+                class_="qa-map-filter-control qa-map-filter-control--optional",
+            ),
+            ui.div(
+                ui.input_selectize("map_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
+                class_="qa-map-filter-control qa-map-filter-control--wide",
+            ),
+            class_="qa-map-control-row",
+        ),
+        class_="qa-map-controls mb-2",
+    )
+
+
 @module.ui
 def qa_ui():
     comparison_choices = {"__all__": "All matched variables"}
@@ -182,15 +254,7 @@ def qa_ui():
         # --- QA Map tab ---
         ui.nav_panel(
             "QA Map",
-            ui.layout_columns(
-                ui.input_checkbox("show_ref", "Show CCN reference cores", value=True),
-                ui.input_checkbox("show_user", "Show my data", value=True),
-                ui.input_selectize("map_continent", "Continent", choices=[], multiple=True),
-                ui.input_selectize("map_country", "Country", choices=[], multiple=True),
-                ui.output_ui("map_us_subregion_ui"),
-                ui.input_selectize("map_habitat", "Filter CCN by Habitat", choices=[], multiple=True),
-                col_widths=[3, 3, 3, 3, 6, 6],
-            ),
+            _qa_map_controls(),
             ui.output_ui("map_status"),
             ui.output_ui("map_display"),
         ),

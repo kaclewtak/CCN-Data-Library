@@ -184,6 +184,18 @@ def test_qa_input_values_treats_absent_dynamic_inputs_as_empty() -> None:
     assert input_values(fake_input, "not_registered") == []
 
 
+def test_qa_map_controls_render_as_single_compact_row() -> None:
+    map_controls = getattr(qa_panel, "_qa_map_controls")
+    html = str(map_controls())
+
+    assert "qa-map-control-row" in html
+    assert "flex-wrap: nowrap" in html
+    assert "width: auto !important" in html
+    assert "qa-map-filter-control--optional:empty" in html
+    assert "qa-map-filter-control--wide" in html
+    assert "col_widths=[3, 3, 3, 3, 6, 6]" not in html
+
+
 def test_search_granules_extracts_download_and_preview_links(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
