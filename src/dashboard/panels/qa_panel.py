@@ -53,8 +53,7 @@ def _input_values(module_input: Any, input_id: str) -> list:
 
 def _qa_map_controls():
     return ui.div(
-        ui.tags.style(
-            """
+        ui.tags.style("""
             .qa-map-control-row {
                 display: flex;
                 flex-wrap: nowrap;
@@ -90,8 +89,7 @@ def _qa_map_controls():
             .qa-map-filter-control--wide {
                 flex-basis: 11rem;
             }
-            """
-        ),
+            """),
         ui.div(
             ui.div(
                 ui.input_checkbox("show_ref", "Show CCN reference cores", value=True),

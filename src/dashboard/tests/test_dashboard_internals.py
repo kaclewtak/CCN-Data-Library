@@ -14,6 +14,7 @@ if str(DASHBOARD_ROOT) not in sys.path:
     sys.path.insert(0, str(DASHBOARD_ROOT))
 
 dashboard_shared_dataset = import_module("dashboard_shared_dataset")
+data_inventory = import_module("panels.data_inventory")
 eo_panel = import_module("panels.eo_panel")
 qa_panel = import_module("panels.qa_panel")
 shiny_dashboard = import_module("shiny_dashboard")
@@ -194,6 +195,24 @@ def test_qa_map_controls_render_as_single_compact_row() -> None:
     assert "qa-map-filter-control--optional:empty" in html
     assert "qa-map-filter-control--wide" in html
     assert "col_widths=[3, 3, 3, 3, 6, 6]" not in html
+
+
+def test_data_inventory_summary_tab_combines_inventory_and_synthesis_context() -> None:
+    summary_tab_content = getattr(data_inventory, "_summary_tab_content")
+    inventory_metric = getattr(data_inventory, "_inventory_metric")
+    html = str(summary_tab_content())
+    metric_html = str(inventory_metric("Files", "7", "teal"))
+
+    assert "inventory_overview_cards" in html
+    assert "inventory-summary-grid" in html
+    assert "inventory-summary-card" in metric_html
+    assert "inventory-summary-card--teal" in metric_html
+    assert "File Categories" in html
+    assert "Top Studies by File Count" in html
+    assert "SOM Distribution" in html
+    assert "Bulk Density Distribution" in html
+    assert "inventory_summary_cards" not in html
+    assert "synthesis_summary_cards" not in html
 
 
 def test_search_granules_extracts_download_and_preview_links(

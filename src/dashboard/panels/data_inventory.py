@@ -35,43 +35,8 @@ def data_inventory_ui():
         # main area
         ui.navset_card_tab(
             ui.nav_panel(
-                "File Inventory",
-                ui.output_ui("inventory_summary_cards"),
-                ui.card(
-                    ui.card_header("Category Distribution"),
-                    ui.output_plot("plot_category_dist", height="680px"),
-                ),
-                ui.card(
-                    ui.card_header("Top Studies by File Count"),
-                    ui.output_plot("plot_study_counts", height="620px"),
-                ),
-            ),
-            ui.nav_panel(
-                "Synthesis Summary",
-                ui.output_ui("synthesis_summary_cards"),
-                ui.card(
-                    ui.card_header("SOM Distribution"),
-                    ui.output_plot("plot_som_hist", height="430px"),
-                ),
-                ui.card(
-                    ui.card_header("Bulk Density Distribution"),
-                    ui.output_plot("plot_bd_hist", height="430px"),
-                ),
-                ui.layout_columns(
-                    ui.card(
-                        ui.card_header("SOM vs Bulk Density"),
-                        ui.output_plot("plot_som_bd_scatter", height="470px"),
-                    ),
-                    ui.card(
-                        ui.card_header("Correlation Heatmap"),
-                        ui.output_plot("plot_corr_heatmap", height="470px"),
-                    ),
-                    col_widths=[6, 6],
-                ),
-                ui.card(
-                    ui.card_header("Density Contours (Eligible Studies)"),
-                    ui.output_plot("plot_kde", height="560px"),
-                ),
+                "Summary",
+                _summary_tab_content(),
             ),
             ui.nav_panel(
                 "Geographic Coverage",
@@ -85,44 +50,172 @@ def data_inventory_ui():
     )
 
 
+def _summary_tab_content():
+    return ui.TagList(
+        ui.tags.style("""
+            .inventory-summary-grid {
+                display: grid;
+                grid-template-columns: repeat(6, minmax(7.25rem, 1fr));
+                gap: 0.65rem;
+                margin-bottom: 0.8rem;
+            }
+            .inventory-summary-card {
+                min-width: 0;
+                min-height: 72px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 0.18rem;
+                padding: 0.72rem 0.82rem;
+                border: 1px solid var(--ccn-serc-line, #d7e0e7);
+                border-left: 4px solid var(--inventory-summary-accent, #006c6f);
+                border-radius: 8px;
+                background: #ffffff;
+            }
+            .inventory-summary-label {
+                color: var(--ccn-serc-muted, #657385);
+                font-size: 0.72rem;
+                font-weight: 700;
+                letter-spacing: 0;
+                line-height: 1.15;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .inventory-summary-value {
+                color: var(--ccn-serc-ink, #17212b);
+                font-size: 1.28rem;
+                font-weight: 750;
+                line-height: 1.1;
+                overflow-wrap: anywhere;
+            }
+            .inventory-summary-card--teal {
+                --inventory-summary-accent: var(--ccn-serc-teal, #006c6f);
+            }
+            .inventory-summary-card--navy {
+                --inventory-summary-accent: var(--ccn-serc-navy, #002c5f);
+            }
+            .inventory-summary-card--gold {
+                --inventory-summary-accent: var(--ccn-serc-gold, #c8912f);
+            }
+            @media (max-width: 1200px) {
+                .inventory-summary-grid {
+                    grid-template-columns: repeat(3, minmax(8rem, 1fr));
+                }
+            }
+            @media (max-width: 760px) {
+                .inventory-summary-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+            }
+        """),
+        ui.output_ui("inventory_overview_cards"),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("File Categories"),
+                ui.output_plot("plot_category_dist", height="320px"),
+            ),
+            ui.card(
+                ui.card_header("Top Studies by File Count"),
+                ui.output_plot("plot_study_counts", height="320px"),
+            ),
+            col_widths=[6, 6],
+        ),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("SOM Distribution"),
+                ui.output_plot("plot_som_hist", height="360px"),
+            ),
+            ui.card(
+                ui.card_header("Bulk Density Distribution"),
+                ui.output_plot("plot_bd_hist", height="360px"),
+            ),
+            col_widths=[6, 6],
+        ),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("SOM vs Bulk Density"),
+                ui.output_plot("plot_som_bd_scatter", height="470px"),
+            ),
+            ui.card(
+                ui.card_header("Correlation Heatmap"),
+                ui.output_plot("plot_corr_heatmap", height="470px"),
+            ),
+            col_widths=[6, 6],
+        ),
+        ui.card(
+            ui.card_header("Density Contours (Eligible Studies)"),
+            ui.output_plot("plot_kde", height="520px"),
+        ),
+    )
+
+
+def _inventory_metric(label: str, value: str, accent: str):
+    return ui.div(
+        ui.div(label, class_="inventory-summary-label"),
+        ui.div(value, class_="inventory-summary-value"),
+        class_=f"inventory-summary-card inventory-summary-card--{accent}",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Server
 # ---------------------------------------------------------------------------
 
 
 @module.server
-def data_inventory_server(input, output, session):
+def data_inventory_server(module_input, _output, _session):
     inventory_df: reactive.Value[pd.DataFrame | None] = reactive.Value(None)
     synthesis_df: reactive.Value[pd.DataFrame | None] = reactive.Value(None)
 
     # ---- Load inventory on button click (cached) -------------------------
 
     @reactive.effect
-    @reactive.event(input.load_inventory)
+    @reactive.event(module_input.load_inventory)
     def _load():
         inv = build_inventory_df()
         inventory_df.set(inv)
         syn = build_synthesis_df(inv)
         synthesis_df.set(syn)
 
-    # ---- Inventory summary cards ------------------------------------------
+    # ---- Inventory + synthesis summary cards -------------------------------
 
     @render.ui
-    def inventory_summary_cards():
+    def inventory_overview_cards():
         inv = inventory_df.get()
         if inv is None:
             return ui.p(
                 "Click 'Load Inventory' to scan the data repository.",
                 class_="text-muted p-3",
             )
-        n_files = len(inv)
-        n_studies = inv["study_id"].nunique()
-        n_cats = inv["category"].nunique()
-        return ui.layout_columns(
-            ui.value_box("Total Files", _format_count(n_files), theme="primary"),
-            ui.value_box("Studies", _format_count(n_studies), theme="info"),
-            ui.value_box("Categories", _format_count(n_cats), theme="success"),
-            col_widths=[4, 4, 4],
+        sdf = synthesis_df.get()
+        synthesis_rows = "0"
+        study_sources = "0"
+        som_mean = "N/A"
+        bd_mean = "N/A"
+        if sdf is not None and not sdf.empty:
+            synthesis_rows = _format_count(len(sdf))
+            study_sources = _format_count(sdf["source_study"].nunique())
+            if not sdf["som"].isna().all():
+                som_mean = f"{sdf['som'].mean():.2f}"
+            if not sdf["bulk_density"].isna().all():
+                bd_mean = f"{sdf['bulk_density'].mean():.2f}"
+        return ui.div(
+            _inventory_metric("Files", _format_count(len(inv)), "teal"),
+            _inventory_metric("Categories", _format_count(inv["category"].nunique()), "navy"),
+            _inventory_metric(
+                "Synthesis Rows",
+                synthesis_rows,
+                "teal",
+            ),
+            _inventory_metric(
+                "Study Sources",
+                study_sources,
+                "navy",
+            ),
+            _inventory_metric("Mean SOM", som_mean, "gold"),
+            _inventory_metric("Mean BD", bd_mean, "gold"),
+            class_="inventory-summary-grid",
         )
 
     # ---- Inventory plots --------------------------------------------------
@@ -132,7 +225,7 @@ def data_inventory_server(input, output, session):
         inv = inventory_df.get()
         if inv is None or inv.empty:
             return _empty_fig()
-        counts = _top_counts(inv["category"], limit=24, other_label="Other categories")
+        counts = _top_counts(inv["category"], limit=12, other_label="Other categories")
         return _horizontal_count_plot(
             counts,
             title="File Categories by Count",
@@ -146,37 +239,13 @@ def data_inventory_server(input, output, session):
         inv = inventory_df.get()
         if inv is None or inv.empty:
             return _empty_fig()
-        counts = inv["study_id"].value_counts().head(20)
+        counts = inv["study_id"].value_counts().head(12)
         return _horizontal_count_plot(
             counts,
             title="Top Studies by File Count",
             xlabel="Files",
             label_width=44,
             palette="mako",
-        )
-
-    # ---- Synthesis summary cards ------------------------------------------
-
-    @render.ui
-    def synthesis_summary_cards():
-        sdf = synthesis_df.get()
-        if sdf is None:
-            return ui.p("Click 'Load Inventory' first.", class_="text-muted p-3")
-        if sdf.empty:
-            return ui.p(
-                "No studies with both SOM and Bulk Density columns were found.",
-                class_="text-warning p-3",
-            )
-        n_records = len(sdf)
-        n_studies = sdf["source_study"].nunique()
-        som_mean = f"{sdf['som'].mean():.2f}" if not sdf["som"].isna().all() else "N/A"
-        bd_mean = f"{sdf['bulk_density'].mean():.2f}" if not sdf["bulk_density"].isna().all() else "N/A"
-        return ui.layout_columns(
-            ui.value_box("Records", _format_count(n_records), theme="primary"),
-            ui.value_box("Studies Merged", _format_count(n_studies), theme="info"),
-            ui.value_box("Mean SOM", som_mean, theme="success"),
-            ui.value_box("Mean Bulk Density", bd_mean, theme="warning"),
-            col_widths=[6, 6, 6, 6],
         )
 
     # ---- Synthesis plots --------------------------------------------------

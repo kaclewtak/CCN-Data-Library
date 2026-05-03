@@ -68,7 +68,7 @@ Use this tab for a report-ready summary of the capstone modeling phase. It does 
 Use it when you need to review model scope, performance, caveats, feature-importance signals, and the main conclusion that fraction carbon is a more defensible prediction target than SOC stock in the current workflow.
 
 ### Data Inventory
-Use this tab for library-level context rather than session-dataset QA. Click **Load Inventory** to scan available CCN data files or synthesis files, then review file categories, top studies, SOM and bulk density distributions, correlations, density contours, and geographic coverage hints.
+Use this tab for library-level context rather than session-dataset QA. Click **Load Inventory** to scan available CCN data files or synthesis files, then review the combined summary of file categories, source counts, SOM and bulk density distributions, correlations, density contours, and geographic coverage hints.
 
 Inventory utilities use the standalone synthesis data provider. By default, they read the app-managed `files/current/CCN_synthesis` cache or fetch it on first use.
 
