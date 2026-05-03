@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from .data_manifest import DEFAULT_SYNTHESIS_MANIFEST, SynthesisArchiveManifest
+from .data_manifest import DEFAULT_SYNTHESIS_MANIFEST, SynthesisDatasetManifest
 
 CCN_DATA_DIR_ENV = "CCN_DATA_DIR"
 CCN_DATA_CACHE_DIR_ENV = "CCN_DATA_CACHE_DIR"
@@ -32,12 +32,8 @@ def project_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _contains_required_files(
-    path: Path, required_files: tuple[str, ...] = REQUIRED_SYNTHESIS_FILES
-) -> bool:
-    return path.is_dir() and all(
-        (path / file_name).is_file() for file_name in required_files
-    )
+def _contains_required_files(path: Path, required_files: tuple[str, ...] = REQUIRED_SYNTHESIS_FILES) -> bool:
+    return path.is_dir() and all((path / file_name).is_file() for file_name in required_files)
 
 
 def as_synthesis_dir(
@@ -68,9 +64,7 @@ def _candidate_roots(
         yield _resolve_path(env_data), CCN_DATA_DIR_ENV
 
     root = _resolve_path(cache_root) if cache_root is not None else default_cache_root()
-    cache_source = (
-        CCN_DATA_CACHE_DIR_ENV if os.environ.get(CCN_DATA_CACHE_DIR_ENV) else "files"
-    )
+    cache_source = CCN_DATA_CACHE_DIR_ENV if os.environ.get(CCN_DATA_CACHE_DIR_ENV) else "files"
     yield root / version / "CCN_synthesis", f"{cache_source}:{version}"
     yield root / "CCN_synthesis", f"{cache_source}:legacy"
 
@@ -111,7 +105,7 @@ def ensure_synthesis_data_dir(
     cache_root: Path | None = None,
     version: str = DEFAULT_CACHE_VERSION,
     required_files: tuple[str, ...] = REQUIRED_SYNTHESIS_FILES,
-    manifest: SynthesisArchiveManifest = DEFAULT_SYNTHESIS_MANIFEST,
+    manifest: SynthesisDatasetManifest = DEFAULT_SYNTHESIS_MANIFEST,
     force: bool = False,
     timeout: float = 60.0,
 ) -> SynthesisDataLocation | None:
@@ -145,9 +139,7 @@ def ensure_synthesis_data_dir(
 
     if not _contains_required_files(synthesis_dir, required_files):
         required_list = ", ".join(required_files)
-        raise SynthesisDataError(
-            f"Downloaded synthesis data is missing required files: {required_list}"
-        )
+        raise SynthesisDataError(f"Downloaded synthesis data is missing required files: {required_list}")
 
     return SynthesisDataLocation(
         path=synthesis_dir,

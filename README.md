@@ -40,7 +40,7 @@ uv run ccn-dashboard --force-data-refresh
 
 ## Reference Data Cache
 
-The standalone dashboard does not track synthesis CSVs in git. On first launch, it downloads the versioned CCN synthesis release archive and installs it under:
+The standalone dashboard does not track synthesis CSVs in git. On first launch, it downloads the versioned Coastal Carbon Library files from Smithsonian Figshare and installs them under:
 
 ```text
 files/current/CCN_synthesis/
@@ -48,13 +48,14 @@ files/current/CCN_synthesis/
 
 The `files/` directory is intentionally ignored by git. A second launch reuses the installed files and does not download again unless `--force-data-refresh` is used.
 
-Current release manifest:
+Current data source:
 
 - Version: `1.7.0`
-- Release asset: `https://github.com/kaclewtak/CCN-Data-Library/releases/download/ccn-synthesis-v1.7.0/ccn-synthesis-v1.7.0.zip`
-- SHA256: `8d82fdb9412424ea376c4ab4081c1945dd90096539f2fb574cc405eb406058b8`
+- Figshare article: `https://smithsonian.figshare.com/articles/dataset/Database_Coastal_Carbon_Library_Version_1_0_0_/21565671`
+- DOI: `10.25573/serc.21565671.v9`
+- API metadata: `https://api.figshare.com/v2/articles/21565671`
 
-For this implementation branch, the exact archive to publish was generated at `.tmp/release/ccn-synthesis-v1.7.0.zip`. Upload that file as the GitHub release asset named above before relying on first-run downloads from a fresh clone.
+Each downloaded file is validated against the MD5 checksum published by Figshare before the cache is activated.
 
 Advanced data overrides:
 

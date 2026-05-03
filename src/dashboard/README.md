@@ -82,7 +82,7 @@ QA Dashboard and Data Inventory need CCN synthesis reference files, especially `
 Current supported paths:
 
 - Set `CCN_DATA_DIR` to a folder containing the CCN synthesis CSV files.
-- Let the standalone launcher download and install the GitHub release asset into `files/current/CCN_synthesis`.
+- Let the standalone launcher download and install the Smithsonian Figshare files into `files/current/CCN_synthesis`.
 - Set `CCN_DATA_CACHE_DIR` to redirect the app-managed cache root.
 
 The download manifest is tracked in [../ccn_dashboard/data_manifest.py](../ccn_dashboard/data_manifest.py). First launch downloads once; later launches reuse the local cache unless a force refresh is requested.
