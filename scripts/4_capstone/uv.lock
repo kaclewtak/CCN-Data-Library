@@ -64,7 +64,7 @@ requires-dist = [
     { name = "perpetual", specifier = ">=2.1.0" },
     { name = "polars", specifier = ">=1.38.1" },
     { name = "pyarrow", specifier = ">=23.0.1" },
-    { name = "pygwalker", editable = "src/interactive_dash" },
+    { name = "pygwalker" },
     { name = "scikit-learn", specifier = ">=1.8.0" },
     { name = "scipy", specifier = ">=1.14.0" },
     { name = "shiny", specifier = ">=1.5.1" },
@@ -2715,7 +2715,8 @@ wheels = [
 
 [[package]]
 name = "pygwalker"
-source = { editable = "src/interactive_dash" }
+version = "0.5.0.1"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anywidget" },
     { name = "appdirs" },
@@ -2743,60 +2744,10 @@ dependencies = [
     { name = "traitlets" },
     { name = "typing-extensions" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "anywidget" },
-    { name = "appdirs" },
-    { name = "arrow" },
-    { name = "astor" },
-    { name = "build", marker = "extra == 'dev'" },
-    { name = "cachetools" },
-    { name = "duckdb", specifier = ">=0.10.4,<2.0.0" },
-    { name = "gw-dsl-parser", specifier = "==0.1.49.1" },
-    { name = "ipylab", specifier = "<=1.0.0" },
-    { name = "ipython" },
-    { name = "ipywidgets" },
-    { name = "ipywidgets", marker = "extra == 'labv4'", specifier = ">=8.0.0" },
-    { name = "ipywidgets", marker = "extra == 'notebook'", specifier = ">7.0.0,<8.0.0" },
-    { name = "jinja2" },
-    { name = "jupyter-client", marker = "extra == 'labv4'", specifier = ">7.4.9" },
-    { name = "jupyter-client", marker = "extra == 'notebook'", specifier = ">6.0.0,<=7.4.9" },
-    { name = "jupyter-server", marker = "extra == 'labv4'", specifier = ">2.5.0" },
-    { name = "jupyter-server", marker = "extra == 'notebook'", specifier = "<=2.5.0" },
-    { name = "jupyter-server-proxy", marker = "extra == 'dev'" },
-    { name = "jupyterlab", marker = "extra == 'dev'" },
-    { name = "kanaries-track", specifier = "==0.0.5" },
-    { name = "mini-racer", marker = "extra == 'all'", specifier = ">=0.12" },
-    { name = "mini-racer", marker = "extra == 'export'", specifier = ">=0.12" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "pandas" },
-    { name = "pandas", marker = "extra == 'all'" },
-    { name = "pandas", marker = "extra == 'pandas'" },
-    { name = "pandas", marker = "extra == 'snowflake'" },
-    { name = "polars", marker = "extra == 'all'" },
-    { name = "polars", marker = "extra == 'polars'" },
-    { name = "psutil" },
-    { name = "pyarrow" },
-    { name = "pyarrow", marker = "extra == 'snowflake'", specifier = "==10.0.1" },
-    { name = "pydantic" },
-    { name = "pytz" },
-    { name = "reflex", marker = "extra == 'all'" },
-    { name = "reflex", marker = "extra == 'reflex'" },
-    { name = "requests" },
-    { name = "segment-analytics-python", specifier = "==2.2.3" },
-    { name = "snowflake-sqlalchemy", marker = "extra == 'snowflake'", specifier = "==1.5.0" },
-    { name = "sqlalchemy" },
-    { name = "sqlalchemy", marker = "extra == 'snowflake'", specifier = "==1.4.49" },
-    { name = "sqlglot", specifier = ">=23.15.8" },
-    { name = "streamlit", marker = "extra == 'all'" },
-    { name = "streamlit", marker = "extra == 'streamlit'" },
-    { name = "traitlets" },
-    { name = "twine", marker = "extra == 'dev'" },
-    { name = "typing-extensions" },
+sdist = { url = "https://files.pythonhosted.org/packages/9d/d3/443c5c9004ae82d49618173a78791e03fe3b950e3b344ce16899fce79377/pygwalker-0.5.0.1.tar.gz", hash = "sha256:f37f83104e26b0824531675396fe9108b0e2d2a1936b2d85d24ae2d9314c9977", size = 4912650, upload-time = "2026-04-04T02:04:53.278Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/4f/48bd76d84367fded6fcd7f2d2a81bcbae0cd10cae480d5a513b3b41f19de/pygwalker-0.5.0.1-py3-none-any.whl", hash = "sha256:888b7959cb9132ccd6deba4a060d730f919300420f172ab3cfaa2e2e290f1315", size = 4842139, upload-time = "2026-04-04T02:04:51.195Z" },
 ]
-provides-extras = ["all", "dev", "export", "labv4", "notebook", "pandas", "polars", "reflex", "snowflake", "streamlit"]
 
 [[package]]
 name = "pyobjc-core"

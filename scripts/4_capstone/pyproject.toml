@@ -29,7 +29,6 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-pygwalker = { path = "src/interactive_dash", editable = true }
 
 [dependency-groups]
 dev = [
