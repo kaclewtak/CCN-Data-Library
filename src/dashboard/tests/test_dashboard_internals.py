@@ -21,6 +21,7 @@ qa_panel = import_module("panels.qa_panel")
 shiny_dashboard = import_module("shiny_dashboard")
 inventory_io = import_module("utils.inventory_io")
 synthesis_io = import_module("utils.synthesis_io")
+synthesis_inventory = import_module("utils.synthesis_inventory")
 
 
 def test_dashboard_ui_contains_expected_workflow_tabs() -> None:
@@ -235,6 +236,15 @@ def test_data_inventory_summary_tab_combines_inventory_and_synthesis_context() -
     summary_tab_content = getattr(data_inventory, "_summary_tab_content")
     inventory_metric = getattr(data_inventory, "_inventory_metric")
     html = str(summary_tab_content())
+    extended_html = "\n".join(
+        str(getattr(data_inventory, content_func)())
+        for content_func in (
+            "_synthesis_tables_tab_content",
+            "_measurement_tab_content",
+            "_methods_context_tab_content",
+            "_geographic_tab_content",
+        )
+    )
     metric_html = str(inventory_metric("Synthesis Files", "7", "teal"))
 
     assert "inventory_overview_cards" in html
@@ -245,6 +255,13 @@ def test_data_inventory_summary_tab_combines_inventory_and_synthesis_context() -
     assert "Top Studies by Synthesis Rows" in html
     assert "SOM Distribution" in html
     assert "Bulk Density Distribution" in html
+    assert "Rows by Synthesis Table" in extended_html
+    assert "Measurement Availability" in extended_html
+    assert "Method Inventory" in extended_html
+    assert "Country Contribution" in extended_html
+    assert "synthesis_table_grid" in extended_html
+    assert "measurement_coverage_grid" in extended_html
+    assert "categorical_summary_grid" in extended_html
     assert "inventory_summary_cards" not in html
     assert "synthesis_summary_cards" not in html
     assert "Load Inventory" not in html
@@ -369,3 +386,112 @@ def test_build_synthesis_df_loads_flat_depthseries_and_merges_core_area(
             "longitude": -90.0,
         }
     ]
+
+
+def test_synthesis_inventory_helpers_summarize_tables() -> None:
+    depthseries = pd.DataFrame(
+        {
+            "study_id": ["study-a", "study-a", "study-b", "study-b"],
+            "site_id": ["site-1", "site-1", "site-2", "site-2"],
+            "core_id": ["core-1", "core-1", "core-2", "core-3"],
+            "method_id": ["method-1", "method-1", "method-2", "method-2"],
+            "depth_min": [0, 10, 30, 100],
+            "depth_max": [10, 30, 100, 150],
+            "dry_bulk_density": [0.8, 0.7, -0.1, 0.5],
+            "fraction_carbon": [0.12, None, 1.2, 0.6],
+            "fraction_organic_matter": [0.4, 0.3, 0.8, 0.4],
+            "age": [5, None, None, None],
+            "c14_age": [None, 100, None, None],
+        }
+    )
+    cores = pd.DataFrame(
+        {
+            "study_id": ["study-a", "study-b", "study-b"],
+            "site_id": ["site-1", "site-2", "site-2"],
+            "core_id": ["core-1", "core-2", "core-3"],
+            "country": ["United States", "", "Belize"],
+            "habitat": ["marsh", "mangrove", ""],
+            "latitude": [30.0, None, 17.0],
+            "longitude": [-90.0, -88.0, -88.2],
+            "year": [2020, None, 2021],
+            "max_depth": [30, 150, 150],
+        }
+    )
+    methods = pd.DataFrame(
+        {
+            "study_id": ["study-a", "study-b"],
+            "method_id": ["method-1", "method-2"],
+            "coring_method": ["push core", None],
+            "roots_flag": ["included", ""],
+            "fraction_carbon_method": ["elemental analyzer", None],
+        }
+    )
+    tables = {
+        "depthseries": depthseries,
+        "cores": cores,
+        "methods": methods,
+        "impacts": pd.DataFrame(
+            {
+                "study_id": ["study-a", "study-b"],
+                "impact_class": ["natural", "restored"],
+            }
+        ),
+        "species": pd.DataFrame(
+            {
+                "study_id": ["study-a"],
+                "species_code": ["Spartina patens"],
+                "code_type": ["Species"],
+            }
+        ),
+        "study_citations": pd.DataFrame(
+            {
+                "study_id": ["study-a", "study-b"],
+                "publication_type": ["primary dataset", "journal article"],
+                "year": [2023, 2024],
+                "doi": [None, "10.example/example"],
+                "url": [None, "https://example.test"],
+            }
+        ),
+    }
+
+    table_summary = synthesis_inventory.build_synthesis_table_summary(tables)
+    measurement = synthesis_inventory.build_measurement_coverage(depthseries)
+    depth_bins = synthesis_inventory.build_depth_bin_summary(depthseries)
+    quality = synthesis_inventory.build_quality_summary(tables)
+    categorical = synthesis_inventory.build_categorical_summary(tables)
+    study_summary = synthesis_inventory.build_study_measurement_summary(depthseries, cores)
+
+    depth_row = table_summary.set_index("Table").loc["Depth Series"]
+    assert depth_row["Rows"] == 4
+    assert depth_row["Cores"] == 3
+    assert depth_row["Core/Site Join (%)"] == 100.0
+
+    measurement_records = measurement.set_index("Measurement")["Records"].to_dict()
+    assert measurement_records["Fraction Carbon + Bulk Density"] == 3
+    assert measurement_records["Fraction Organic Matter + Bulk Density"] == 4
+    assert measurement.set_index("Measurement").loc["Fraction Carbon + Bulk Density", "Percent"] == 75.0
+
+    assert depth_bins.set_index("Depth Bin")["Records"].to_dict() == {
+        "0-10 cm": 1,
+        "10-30 cm": 1,
+        "30-100 cm": 1,
+        ">=100 cm": 1,
+    }
+
+    quality_counts = quality.set_index("Inventory Item")["Records"].to_dict()
+    assert quality_counts["Fraction carbon outside 0-1"] == 1
+    assert quality_counts["Carbon greater than organic matter"] == 2
+    assert quality_counts["Missing coordinates"] == 1
+    assert quality_counts["Missing DOI and URL"] == 1
+
+    categorical_counts = categorical.set_index(["Variable", "Value"])["Records"].to_dict()
+    assert categorical_counts[("Coring Method", "push core")] == 1
+    assert categorical_counts[("Habitat", "marsh")] == 1
+    assert categorical_counts[("Impact Class", "natural")] == 1
+    assert categorical_counts[("Species", "Spartina patens")] == 1
+
+    study_rows = study_summary.set_index("Study")
+    assert study_rows.loc["study-a", "Depth Rows"] == 2
+    assert study_rows.loc["study-a", "Carbon + BD Records"] == 1
+    assert study_rows.loc["study-b", "Cores"] == 2
+    assert study_rows.loc["study-b", "Carbon + BD Records"] == 2

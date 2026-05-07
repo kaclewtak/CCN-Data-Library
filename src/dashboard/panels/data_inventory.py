@@ -11,6 +11,15 @@ from shiny import module, reactive, render, ui
 
 from dashboard.utils.geo_gaps import generate_gap_hints
 from dashboard.utils.inventory_io import build_inventory_df
+from dashboard.utils.synthesis_inventory import (
+    build_categorical_summary,
+    build_depth_bin_summary,
+    build_measurement_coverage,
+    build_quality_summary,
+    build_study_measurement_summary,
+    build_synthesis_table_summary,
+    load_synthesis_tables,
+)
 from dashboard.utils.synthesis_io import build_synthesis_df
 
 matplotlib.use("Agg")
@@ -24,7 +33,7 @@ def _summary_tab_content():
         ui.tags.style("""
             .inventory-summary-grid {
                 display: grid;
-                grid-template-columns: repeat(6, minmax(7.25rem, 1fr));
+                grid-template-columns: repeat(4, minmax(8.25rem, 1fr));
                 gap: 0.65rem;
                 margin-bottom: 0.8rem;
             }
@@ -119,6 +128,106 @@ def _summary_tab_content():
     )
 
 
+def _synthesis_tables_tab_content():
+    return ui.TagList(
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("Rows by Synthesis Table"),
+                ui.output_plot("plot_table_rows", height="420px"),
+            ),
+            ui.card(
+                ui.card_header("Synthesis Table Inventory"),
+                ui.output_data_frame("synthesis_table_grid"),
+            ),
+            col_widths=[5, 7],
+        ),
+        ui.card(
+            ui.card_header("Completeness and Quality Flags"),
+            ui.output_data_frame("quality_summary_grid"),
+        ),
+    )
+
+
+def _measurement_tab_content():
+    return ui.TagList(
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("Measurement Availability"),
+                ui.output_plot("plot_measurement_coverage", height="480px"),
+            ),
+            ui.card(
+                ui.card_header("Measurement Coverage Detail"),
+                ui.output_data_frame("measurement_coverage_grid"),
+            ),
+            col_widths=[5, 7],
+        ),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("Depth Bin Coverage"),
+                ui.output_plot("plot_depth_bins", height="400px"),
+            ),
+            ui.card(
+                ui.card_header("Per-Study Measurement Summary"),
+                ui.output_data_frame("study_measurement_grid"),
+            ),
+            col_widths=[5, 7],
+        ),
+    )
+
+
+def _methods_context_tab_content():
+    return ui.TagList(
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("Method Inventory"),
+                ui.output_plot("plot_method_inventory", height="430px"),
+            ),
+            ui.card(
+                ui.card_header("Habitat and Context Classes"),
+                ui.output_plot("plot_context_inventory", height="430px"),
+            ),
+            col_widths=[6, 6],
+        ),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("Species Inventory"),
+                ui.output_plot("plot_species_inventory", height="430px"),
+            ),
+            ui.card(
+                ui.card_header("Impact Inventory"),
+                ui.output_plot("plot_impact_inventory", height="430px"),
+            ),
+            col_widths=[6, 6],
+        ),
+        ui.card(
+            ui.card_header("Categorical Inventory Detail"),
+            ui.output_data_frame("categorical_summary_grid"),
+        ),
+    )
+
+
+def _geographic_tab_content():
+    return ui.TagList(
+        ui.output_ui("geographic_overview_cards"),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("Country Contribution"),
+                ui.output_plot("plot_country_bar", height="430px"),
+            ),
+            ui.card(
+                ui.card_header("Habitat Coverage"),
+                ui.output_plot("plot_habitat_bar", height="430px"),
+            ),
+            col_widths=[6, 6],
+        ),
+        ui.card(
+            ui.card_header("Area Contribution"),
+            ui.output_plot("plot_area_bar", height="620px"),
+        ),
+        ui.card(ui.card_header("Coverage Gap Hints"), ui.output_ui("gap_hints_ui")),
+    )
+
+
 def _inventory_metric(label: str, value: str, accent: str):
     return ui.div(
         ui.div(label, class_="inventory-summary-label"),
@@ -160,12 +269,20 @@ def data_inventory_ui():
             _summary_tab_content(),
         ),
         ui.nav_panel(
+            "Synthesis Tables",
+            _synthesis_tables_tab_content(),
+        ),
+        ui.nav_panel(
+            "Measurements",
+            _measurement_tab_content(),
+        ),
+        ui.nav_panel(
+            "Methods & Context",
+            _methods_context_tab_content(),
+        ),
+        ui.nav_panel(
             "Geographic Coverage",
-            ui.card(
-                ui.card_header("Area Contribution"),
-                ui.output_plot("plot_area_bar", height="620px"),
-            ),
-            ui.card(ui.card_header("Coverage Gap Hints"), ui.output_ui("gap_hints_ui")),
+            _geographic_tab_content(),
         ),
     )
 
@@ -178,6 +295,36 @@ def data_inventory_server(_module_input, _output, _session):
     initial_inventory = build_inventory_df()
     inventory_df: reactive.Value[pd.DataFrame | None] = reactive.Value(initial_inventory)
     synthesis_df: reactive.Value[pd.DataFrame | None] = reactive.Value(build_synthesis_df(initial_inventory))
+    synthesis_tables: reactive.Value[dict[str, pd.DataFrame]] = reactive.Value(load_synthesis_tables(initial_inventory))
+
+    @reactive.calc
+    def synthesis_tables_data():
+        return synthesis_tables.get() or {}
+
+    @reactive.calc
+    def table_summary_data():
+        return build_synthesis_table_summary(synthesis_tables_data())
+
+    @reactive.calc
+    def measurement_coverage_data():
+        return build_measurement_coverage(_table(synthesis_tables_data(), "depthseries"))
+
+    @reactive.calc
+    def depth_bin_data():
+        return build_depth_bin_summary(_table(synthesis_tables_data(), "depthseries"))
+
+    @reactive.calc
+    def study_measurement_data():
+        tables = synthesis_tables_data()
+        return build_study_measurement_summary(_table(tables, "depthseries"), _table(tables, "cores"))
+
+    @reactive.calc
+    def quality_summary_data():
+        return build_quality_summary(synthesis_tables_data())
+
+    @reactive.calc
+    def categorical_summary_data():
+        return build_categorical_summary(synthesis_tables_data())
 
     #  Inventory + synthesis summary cards
 
@@ -189,27 +336,25 @@ def data_inventory_server(_module_input, _output, _session):
                 "Loading synthesis inventory...",
                 class_="text-muted p-3",
             )
+        tables = synthesis_tables_data()
+        depthseries = _table(tables, "depthseries")
+        cores = _table(tables, "cores")
+        measurement_coverage = measurement_coverage_data()
         sdf = synthesis_df.get()
-        category_count = "0"
-        synthesis_rows = "0"
         study_sources = "0"
-        som_mean = "N/A"
+        mean_fraction_carbon = "N/A"
         bd_mean = "N/A"
         if sdf is not None and not sdf.empty:
-            _, category_values = _synthesis_category_info(sdf)
-            category_count = _format_count(category_values.nunique())
-            synthesis_rows = _format_count(len(sdf))
             study_sources = _format_count(sdf["source_study"].nunique())
-            if not sdf["som"].isna().all():
-                som_mean = f"{sdf['som'].mean():.2f}"
-            if not sdf["bulk_density"].isna().all():
-                bd_mean = f"{sdf['bulk_density'].mean():.2f}"
+        if not depthseries.empty:
+            mean_fraction_carbon = _mean_numeric_label(depthseries, "fraction_carbon")
+            bd_mean = _mean_numeric_label(depthseries, "dry_bulk_density")
         return ui.div(
             _inventory_metric("Synthesis Files", _format_count(len(inv)), "teal"),
-            _inventory_metric("Categories", category_count, "navy"),
+            _inventory_metric("Depth Rows", _format_count(len(depthseries)), "teal"),
             _inventory_metric(
-                "Synthesis Rows",
-                synthesis_rows,
+                "Core Records",
+                _format_count(len(cores)),
                 "teal",
             ),
             _inventory_metric(
@@ -217,7 +362,17 @@ def data_inventory_server(_module_input, _output, _session):
                 study_sources,
                 "navy",
             ),
-            _inventory_metric("Mean SOM", som_mean, "gold"),
+            _inventory_metric(
+                "Paired C+BD",
+                _measurement_record_count(measurement_coverage, "Fraction Carbon + Bulk Density"),
+                "navy",
+            ),
+            _inventory_metric(
+                "Coordinate Coverage",
+                _coverage_label(cores, ["latitude", "longitude"]),
+                "gold",
+            ),
+            _inventory_metric("Mean Fraction C", mean_fraction_carbon, "gold"),
             _inventory_metric("Mean BD", bd_mean, "gold"),
             class_="inventory-summary-grid",
         )
@@ -256,6 +411,112 @@ def data_inventory_server(_module_input, _output, _session):
             label_width=30,
             palette="mako",
         )
+
+    # Synthesis table inventory
+
+    @render.plot
+    def plot_table_rows():
+        summary = table_summary_data()
+        if summary.empty:
+            return _empty_fig()
+        counts = pd.Series(summary["Rows"].to_numpy(), index=summary["Table"])
+        return _horizontal_count_plot(
+            counts,
+            title="Rows by Synthesis Table",
+            xlabel="Rows",
+            label_width=28,
+            palette="crest",
+        )
+
+    @render.data_frame
+    def synthesis_table_grid():
+        return _data_grid(table_summary_data(), "No synthesis tables found.")
+
+    @render.data_frame
+    def quality_summary_grid():
+        return _data_grid(quality_summary_data(), "No quality summary available.")
+
+    # Measurement and depth inventory
+
+    @render.plot
+    def plot_measurement_coverage():
+        coverage = measurement_coverage_data()
+        if coverage.empty:
+            return _empty_fig()
+        counts = pd.Series(coverage["Percent"].fillna(0).to_numpy(), index=coverage["Measurement"])
+        return _horizontal_count_plot(
+            counts,
+            title="Measurement Availability by Depth-Series Row",
+            xlabel="Rows with measurement (%)",
+            label_width=34,
+            palette="viridis",
+            value_suffix="%",
+            value_decimals=1,
+        )
+
+    @render.plot
+    def plot_depth_bins():
+        depth_bins = depth_bin_data()
+        if depth_bins.empty:
+            return _empty_fig()
+        counts = pd.Series(depth_bins["Records"].to_numpy(), index=depth_bins["Depth Bin"])
+        return _horizontal_count_plot(
+            counts,
+            title="Depth-Series Rows by Representative Depth",
+            xlabel="Rows",
+            label_width=18,
+            palette="mako",
+        )
+
+    @render.data_frame
+    def measurement_coverage_grid():
+        return _data_grid(measurement_coverage_data(), "No measurement coverage available.")
+
+    @render.data_frame
+    def study_measurement_grid():
+        return _data_grid(study_measurement_data(), "No per-study measurement summary available.")
+
+    # Methods, habitat, species, impact, and citation inventory
+
+    @render.plot
+    def plot_method_inventory():
+        return _plot_categorical_variable(
+            categorical_summary_data(),
+            ("Coring Method", "Fraction Carbon Method", "Roots Flag"),
+            "Method Inventory",
+            "mako",
+        )
+
+    @render.plot
+    def plot_context_inventory():
+        return _plot_categorical_variable(
+            categorical_summary_data(),
+            ("Habitat", "Salinity Class", "Vegetation Class"),
+            "Habitat and Context Classes",
+            "viridis",
+        )
+
+    @render.plot
+    def plot_species_inventory():
+        return _plot_categorical_variable(
+            categorical_summary_data(),
+            ("Species",),
+            "Top Species Records",
+            "crest",
+        )
+
+    @render.plot
+    def plot_impact_inventory():
+        return _plot_categorical_variable(
+            categorical_summary_data(),
+            ("Impact Class",),
+            "Impact Classes",
+            "flare",
+        )
+
+    @render.data_frame
+    def categorical_summary_grid():
+        return _data_grid(categorical_summary_data(), "No categorical synthesis summary available.")
 
     # Synthesis plots
 
@@ -374,6 +635,56 @@ def data_inventory_server(_module_input, _output, _session):
 
     # ---- Geographic plots + hints -----------------------------------------
 
+    @render.ui
+    def geographic_overview_cards():
+        cores = _table(synthesis_tables_data(), "cores")
+        sites = _table(synthesis_tables_data(), "sites")
+        return ui.div(
+            _inventory_metric(
+                "Core Coordinates",
+                _coverage_label(cores, ["latitude", "longitude"]),
+                "teal",
+            ),
+            _inventory_metric("Countries", _format_count(_nunique_clean(cores, "country")), "navy"),
+            _inventory_metric(
+                "Admin Divisions",
+                _format_count(_nunique_clean(cores, "admin_division")),
+                "navy",
+            ),
+            _inventory_metric(
+                "Site Bounds",
+                _coverage_label(
+                    sites,
+                    [
+                        "site_latitude_min",
+                        "site_latitude_max",
+                        "site_longitude_min",
+                        "site_longitude_max",
+                    ],
+                ),
+                "gold",
+            ),
+            class_="inventory-summary-grid",
+        )
+
+    @render.plot
+    def plot_country_bar():
+        return _plot_categorical_variable(
+            categorical_summary_data(),
+            ("Country",),
+            "Country Contribution by Core Records",
+            "crest",
+        )
+
+    @render.plot
+    def plot_habitat_bar():
+        return _plot_categorical_variable(
+            categorical_summary_data(),
+            ("Habitat",),
+            "Habitat Coverage by Core Records",
+            "viridis",
+        )
+
     @render.plot
     def plot_area_bar():
         sdf = synthesis_df.get()
@@ -412,6 +723,47 @@ def data_inventory_server(_module_input, _output, _session):
     def _format_count(value: int) -> str:
         return f"{value:,}"
 
+    def _table(tables: dict[str, pd.DataFrame], table_key: str) -> pd.DataFrame:
+        return tables.get(table_key, pd.DataFrame())
+
+    def _data_grid(dataframe: pd.DataFrame, empty_message: str):
+        if dataframe.empty:
+            return render.DataGrid(pd.DataFrame({"Status": [empty_message]}))
+        return render.DataGrid(dataframe)
+
+    def _mean_numeric_label(dataframe: pd.DataFrame, column: str) -> str:
+        if dataframe.empty or column not in dataframe.columns:
+            return "N/A"
+        values = pd.to_numeric(dataframe[column], errors="coerce").dropna()
+        if values.empty:
+            return "N/A"
+        return f"{values.mean():.2f}"
+
+    def _coverage_label(dataframe: pd.DataFrame, columns: list[str]) -> str:
+        if dataframe.empty or any(column not in dataframe.columns for column in columns):
+            return "N/A"
+        mask = pd.Series(True, index=dataframe.index)
+        for column in columns:
+            mask &= dataframe[column].notna()
+        if len(dataframe) == 0:
+            return "N/A"
+        return f"{mask.sum() / len(dataframe) * 100:.1f}%"
+
+    def _measurement_record_count(coverage: pd.DataFrame, measurement: str) -> str:
+        if coverage.empty or "Measurement" not in coverage.columns:
+            return "0"
+        matching = coverage[coverage["Measurement"] == measurement]
+        if matching.empty:
+            return "0"
+        return _format_count(int(matching.iloc[0]["Records"]))
+
+    def _nunique_clean(dataframe: pd.DataFrame, column: str) -> int:
+        if dataframe.empty or column not in dataframe.columns:
+            return 0
+        clean = dataframe[column].dropna().astype(str).str.strip()
+        clean = clean[(clean != "") & (~clean.str.lower().isin({"na", "nan", "none"}))]
+        return int(clean.nunique())
+
     def _message_fig(message: str):
         fig, ax = plt.subplots(figsize=(7, 3))
         ax.text(0.5, 0.5, message, ha="center", va="center", transform=ax.transAxes)
@@ -440,6 +792,8 @@ def data_inventory_server(_module_input, _output, _session):
         label_width: int,
         palette: str,
         log_x: bool = False,
+        value_suffix: str = "",
+        value_decimals: int = 0,
     ):
         counts = counts.sort_values(ascending=True)
         fig_height = max(5.2, 0.42 * len(counts) + 1.6)
@@ -460,7 +814,7 @@ def data_inventory_server(_module_input, _output, _session):
             ax.set_xscale("log")
         ax.bar_label(
             bars,
-            labels=[_format_count(int(value)) for value in values],
+            labels=[_format_plot_value(value, value_suffix, value_decimals) for value in values],
             padding=4,
             fontsize=9,
         )
@@ -473,6 +827,32 @@ def data_inventory_server(_module_input, _output, _session):
         sns.despine(ax=ax, left=True, bottom=False)
         fig.subplots_adjust(left=0.34, right=0.92, top=0.86, bottom=0.19)
         return fig
+
+    def _format_plot_value(value: float, suffix: str, decimals: int) -> str:
+        if decimals <= 0:
+            return f"{value:,.0f}{suffix}"
+        return f"{value:,.{decimals}f}{suffix}"
+
+    def _categorical_counts(summary: pd.DataFrame, variable: str) -> pd.Series:
+        if summary.empty:
+            return pd.Series(dtype="float64")
+        subset = summary[(summary["Variable"] == variable) & (summary["Value"] != "Other values")]
+        if subset.empty:
+            return pd.Series(dtype="float64")
+        return pd.Series(subset["Records"].to_numpy(dtype=float), index=subset["Value"].astype(str))
+
+    def _plot_categorical_variable(summary: pd.DataFrame, variables: tuple[str, ...], title: str, palette: str):
+        for variable in variables:
+            counts = _categorical_counts(summary, variable)
+            if not counts.empty:
+                return _horizontal_count_plot(
+                    counts.head(14),
+                    title=title,
+                    xlabel="Records",
+                    label_width=34,
+                    palette=palette,
+                )
+        return _message_fig(f"No data available for {title.lower()}")
 
     def _central_series(series: pd.Series, lower: float = 0.005, upper: float = 0.995) -> pd.Series:
         clean = series.dropna()
