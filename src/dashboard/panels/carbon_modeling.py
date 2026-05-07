@@ -547,7 +547,7 @@ def carbon_modeling_ui():
             }
             """),
         ui.p(
-            "Side-by-side comparison of the clean reduced modeling notebook and the expanded North American run."
+            "Side-by-side comparison of the clean reduced modeling notebook and the expanded North American run.",
             class_="carbon-modeling-lede",
         ),
         ui.div(

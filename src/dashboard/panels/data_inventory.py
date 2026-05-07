@@ -562,7 +562,7 @@ def data_inventory_server(_module_input, _output, _session):
             edgecolor=None,
             ax=ax,
         )
-        ax.set_title("SOM vs Bulk Density (Central 99%)")
+        ax.set_title("SOM vs. Bulk Density (Central 99%)")
         ax.set_xlabel("Bulk Density")
         ax.set_ylabel("SOM / Fraction Carbon")
         ax.grid(True, alpha=0.3)
@@ -608,13 +608,13 @@ def data_inventory_server(_module_input, _output, _session):
                 x="bulk_density",
                 y="som",
                 hue="source_study",
-                fill=False,
-                levels=5,
-                linewidths=1.3,
-                common_norm=False,
+                fill=True,
+                alpha=0.3,
+                levels=10,
+                # common_norm=False,
                 ax=ax,
             )
-            ax.set_title(f"SOM vs Bulk Density Density Contours (Top {len(eligible_studies)} Eligible Studies)")
+            ax.set_title(f"SOM vs. Bulk Density Density Contours (Top {len(eligible_studies)} Eligible Studies)")
             sns.move_legend(ax, "upper left", bbox_to_anchor=(1.01, 1), title="Study", frameon=False)
         except (FloatingPointError, ValueError):
             ax.text(
