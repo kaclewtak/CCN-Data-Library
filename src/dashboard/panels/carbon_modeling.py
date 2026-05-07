@@ -7,11 +7,11 @@ ComparisonGroup = tuple[str, str, str, list[ComparisonFigure]]
 
 COMPARISON_GROUPS: list[ComparisonGroup] = [
     (
-        "Within-study prediction attack",
+        "Within-study prediction runs",
         "side-by-side",
-        "The reduced clean run has 720 feature rows across 37 studies and reaches best within-study "
-        "R^2 = +0.150. The expanded run doubles the feature rows to 1,440 across 72 studies, but "
-        "best within-study R^2 drops to +0.115, showing broader coverage with weaker held-out-study signal.",
+        "The within-study runs uses the pre-filter feature matrices: 720 rows across 37 studies "
+        "for the reduced clean run and 1,440 rows across 72 studies for the expanded run. Best "
+        "within-study R^2 drops from +0.150 to +0.115, showing broader coverage with weaker held-out-study signal.",
         [
             (
                 "Reduced clean",
@@ -32,7 +32,7 @@ COMPARISON_GROUPS: list[ComparisonGroup] = [
     (
         "Model zoo",
         "side-by-side",
-        "The clean run includes NOAA tidal features, giving a 30-feature matrix and stronger model-zoo "
+        "The clean run includes NOAA tidal features in its later model-zoo matrix, giving 30 features and stronger model-zoo "
         "scores. The expanded run has no NOAA cache in the saved output, so it falls back to 20 features "
         "and loses both overall and within-study skill.",
         [
@@ -298,15 +298,17 @@ COMPARISON_GROUPS: list[ComparisonGroup] = [
     (
         "Original versus expanded summary",
         "side-by-side",
-        "This expanded-notebook panel summarizes the reduced-versus-expanded tradeoff directly: more cores and studies, "
-        "weaker aggregate skill, nearly unchanged MAE, and a mangrove model that improves from negative to positive skill.",
+        "This expanded-notebook panel summarizes the global OOF-isotonic F.2 headline comparison directly: "
+        "more filtered cores and studies, weaker aggregate skill, nearly unchanged MAE, and a mangrove model "
+        "that improves from negative to positive skill.",
         [
             (
                 "Expanded comparison panel",
                 "carbon_modeling_15_original-vs-expanded-modeling-comparison.png",
                 "Side-by-side summary from the expanded notebook",
-                "The cohort grows from 676 to 1,432 cores and from 33 to 70 studies. Pooled within-study R^2 drops "
-                "from +0.255 to +0.110, while MAE improves slightly from 0.0685 to 0.0672.",
+                "The filtered cohort grows from 676 to 1,432 cores and from 33 to 70 studies. Using the global "
+                "OOF-isotonic headline, pooled within-study R^2 drops from +0.255 to +0.110, while MAE improves "
+                "slightly from 0.0685 to 0.0672.",
             ),
         ],
     ),
@@ -550,18 +552,26 @@ def carbon_modeling_ui():
             class_="carbon-modeling-lede",
         ),
         ui.div(
-            _metric_card("Reduced clean cohort", "676 cores", "33 filtered studies; 720 feature rows before filtering"),
-            _metric_card("Expanded cohort", "1,432 cores", "70 filtered studies; 1,440 feature rows before filtering"),
             _metric_card(
-                "Pooled skill tradeoff",
+                "Reduced clean cohort",
+                "676 cores",
+                "Filtered headline cohort: 33 studies; pre-filter matrix: 720 rows/37 studies",
+            ),
+            _metric_card(
+                "Expanded cohort",
+                "1,432 cores",
+                "Filtered headline cohort: 70 studies; pre-filter matrix: 1,440 rows/72 studies",
+            ),
+            _metric_card(
+                "Within-study skill tradeoff",
                 "-0.146 R^2",
-                "within-study R^2 changes from +0.255 to +0.110; MAE 0.0685 to 0.0672",
+                "delta in within-study R^2; overall R^2 changes from +0.398 to +0.249; MAE 0.0685 to 0.0672",
                 "gold",
             ),
             _metric_card(
                 "Operational caution",
                 "Stock weak",
-                "single-stage stock R^2 -0.215 to +0.031; two-stage remains weak",
+                "Direct SOC stock R^2 -0.215 to +0.031; two-stage stock models remain weak",
                 "red",
             ),
             class_="carbon-modeling-metric-grid",
@@ -581,19 +591,14 @@ def carbon_modeling_ui():
                         "(0.0685 to 0.0672), but aggregate validation skill weakens.",
                     ),
                     _finding(
-                        "Tidal features are a major difference.",
-                        "The clean notebook has 10 NOAA tidal features and shows tide helping. The expanded notebook's saved output "
-                        "skips tidal testing because the NOAA cache is absent.",
-                    ),
-                    _finding(
                         "Habitat effects move in opposite directions.",
-                        "Marsh grows from 437 to 1,042 cores but within-study R^2 falls from +0.344 to +0.169. "
+                        "Marsh grows from 437 to 1,042 calibrated cores, but within-study R^2 falls from +0.344 to +0.169. "
                         "Mangrove stays small and improves from -0.104 to +0.052.",
                     ),
                     _finding(
                         "SOC stock remains a weak prediction product.",
-                        "The stock target stays much weaker than fraction carbon. Single-stage calibrated stock R^2 moves from "
-                        "-0.215 to +0.031, and the best two-stage variant remains weak.",
+                        "The SOC stock target stays much weaker than fraction carbon. Direct calibrated stock R^2 moves from "
+                        "-0.215 to +0.031, and the best two-stage stock variants remain weak.",
                     ),
                     class_="carbon-modeling-finding-list",
                 ),
