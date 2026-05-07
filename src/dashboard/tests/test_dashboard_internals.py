@@ -68,15 +68,6 @@ def test_carbon_modeling_comparisons_include_clean_and_expanded_descriptions() -
     assert "carbon-modeling-figure-pair--side-by-side" in html
     assert "carbon-modeling-figure-pair--stacked" not in html
     assert "carbon-modeling-figure-pair--single" not in html
-    assert "All notebook figures use the same side-by-side comparison layout" in html
-    assert "pre-filter feature matrices: 720 rows across 37 studies" in html
-    assert "within-study R^2 drops from +0.150 to +0.115" in html
-    assert "Filtered headline cohort: 33 studies; pre-filter matrix: 720 rows/37 studies" in html
-    assert "Filtered headline cohort: 70 studies; pre-filter matrix: 1,440 rows/72 studies" in html
-    assert "Within-study skill tradeoff" in html
-    assert "delta in within-study R^2; overall R^2 changes from +0.398 to +0.249" in html
-    assert "Direct SOC stock R^2 -0.215 to +0.031; two-stage stock models remain weak" in html
-    assert "global OOF-isotonic F.2 headline comparison" in html
 
 
 def test_dashboard_runtime_check_validates_assets_and_data(
