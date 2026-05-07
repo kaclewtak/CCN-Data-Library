@@ -14,6 +14,7 @@ if str(DASHBOARD_ROOT) not in sys.path:
     sys.path.insert(0, str(DASHBOARD_ROOT))
 
 dashboard_shared_dataset = import_module("dashboard_shared_dataset")
+carbon_modeling = import_module("panels.carbon_modeling")
 data_inventory = import_module("panels.data_inventory")
 eo_panel = import_module("panels.eo_panel")
 qa_panel = import_module("panels.qa_panel")
@@ -35,6 +36,39 @@ def test_dashboard_ui_contains_expected_workflow_tabs() -> None:
     ):
         assert label in html
     assert "Dashboard ready" in html
+
+
+def test_carbon_modeling_comparisons_include_clean_and_expanded_descriptions() -> None:
+    groups = carbon_modeling.COMPARISON_GROUPS
+    figures = [figure for _, _, _, group_figures in groups for figure in group_figures]
+    file_names = [file_name for _, file_name, _, _ in figures]
+
+    assert len(groups) == 14
+    assert len(figures) == 27
+    assert all(len(group) == 4 for group in groups)
+    assert all(len(figure) == 4 for figure in figures)
+    assert all(description for _, _, _, description in groups)
+    assert all(summary for _, _, _, summary in figures)
+    assert all((DASHBOARD_ROOT / "images" / file_name).is_file() for file_name in file_names)
+
+    layouts = {layout for _, layout, _, _ in groups}
+    assert layouts == {"side-by-side"}
+    assert any(file_name.startswith("carbon_modeling_clean_") for file_name in file_names)
+    assert "carbon_modeling_15_original-vs-expanded-modeling-comparison.png" in file_names
+    assert not any(file_name.startswith("carbon_modeling_05_") for file_name in file_names)
+
+    extra_trees_group = next(group for group in groups if group[0] == "ExtraTrees tuning and per-study skill")
+    assert len(extra_trees_group[3]) == 3
+    assert any(figure[0] == "Reduced clean only" for figure in extra_trees_group[3])
+
+    html = str(carbon_modeling.carbon_modeling_ui("carbon_modeling"))
+    assert "Reduced clean" in html
+    assert "Expanded" in html
+    assert "carbon-modeling-figure-pair--side-by-side" in html
+    assert "carbon-modeling-figure-pair--stacked" not in html
+    assert "carbon-modeling-figure-pair--single" not in html
+    assert "All notebook figures use the same side-by-side comparison layout" in html
+    assert "best within-study R^2 drops to +0.115" in html
 
 
 def test_dashboard_runtime_check_validates_assets_and_data(

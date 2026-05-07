@@ -38,12 +38,10 @@ __pycache__/
 # MyPy cache
 .mypy_cache/
 
-# --- Jupyter Notebooks ---
-# Checkpoints created by Jupyter
+# Jupyter Notebooks checkpoints
 .ipynb_checkpoints/
 
-# --- Data Science Outputs ---
-# Ignore large report files from Sweetviz/Pandas Profiling
+# Data Science Outputs
 # *.html
 *.pdf
 
@@ -61,12 +59,12 @@ __pycache__/
 *.pickle
 *zip
 
-# --- OS Junk ---
+# OS Junk
 .DS_Store
 Thumbs.db
 *:Zone.Identifier
 
-# --- VS Code ---
+# VS Code
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
@@ -74,5 +72,5 @@ Thumbs.db
 .github/
 *.log
 
-
+# Ignore temporary files
 .tmp/
