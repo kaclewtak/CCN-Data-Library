@@ -4,6 +4,7 @@ import pandas as pd
 import polars as pl
 
 
+# Helper Functions
 def _normalize(name: str) -> str:
     """Normalize a string by lowercasing alphanumeric characters and replacing non-alphanumeric with underscores."""
     normalized = "".join(ch.lower() if ch.isalnum() else "_" for ch in name).strip("_")
@@ -51,15 +52,16 @@ def _stem(name: str, axis: str) -> str:
     return "_".join(stem_tokens)
 
 
+# Primary geo utility functions
 def find_lat_lon_columns(columns: list[str]) -> tuple[str, str] | None:
     """Find latitude and longitude column names from a list of column names.
-    
+
     Attempts to match latitude and longitude columns by analyzing column names.
     Returns the best matching pair based on naming conventions and stem similarity.
-    
+
     Args:
         columns: List of column names to search through.
-        
+
     Returns:
         A tuple of (latitude_column, longitude_column) if found, None otherwise.
     """

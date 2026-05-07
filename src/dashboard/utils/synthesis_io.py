@@ -34,7 +34,7 @@ BAD_KEYWORDS = [
 ]
 
 
-def normalize_col(col: str) -> str:
+def _normalize_col(col: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", str(col).lower()).strip("_")
 
 
@@ -44,14 +44,15 @@ def score_column(
     bad_keywords: list[str] | None = None,
     preferred: list[str] | None = None,
 ) -> float:
-    n = normalize_col(name)
+    """Scores a column name based on the presence of keywords, absence of bad keywords, and preference for certain names."""
+    n = _normalize_col(name)
     score: float = 0
     for kw in keywords:
         if kw in n:
             score += 1
     if preferred:
         for p in preferred:
-            if normalize_col(p) == n:
+            if _normalize_col(p) == n:
                 score += 5
     if bad_keywords:
         for bk in bad_keywords:
@@ -69,17 +70,17 @@ def find_best_column(
     preferred: list[str] | None = None,
 ) -> str | None:
     if candidates:
-        normalized = {c: normalize_col(c) for c in columns}
+        normalized = {c: _normalize_col(c) for c in columns}
         for cand in candidates:
-            cand_n = normalize_col(cand)
+            cand_n = _normalize_col(cand)
             for raw, norm in normalized.items():
                 if cand_n == norm or cand_n in norm:
                     return raw
 
     if preferred:
-        pref_norm = [normalize_col(p) for p in preferred]
+        pref_norm = [_normalize_col(p) for p in preferred]
         for c in columns:
-            if normalize_col(c) in pref_norm:
+            if _normalize_col(c) in pref_norm:
                 return c
 
     if keywords:
@@ -218,31 +219,6 @@ def _resolve_synthesis_root(df_inv: pd.DataFrame, synthesis_root: Path | str | N
         return None
 
 
-def build_synthesis_df(df_inv: pd.DataFrame, *, synthesis_root: Path | str | None = None) -> pd.DataFrame:
-    # Fast path: if inventory came from CCN_synthesis flat files, load depthseries directly.
-    resolved_synthesis_root = _resolve_synthesis_root(df_inv, synthesis_root)
-    depthseries_path = resolved_synthesis_root / "CCN_depthseries.csv" if resolved_synthesis_root is not None else None
-    cores_path = resolved_synthesis_root / "CCN_cores.csv" if resolved_synthesis_root is not None else None
-    if depthseries_path is not None and depthseries_path.exists():
-        return _build_synthesis_from_flat(depthseries_path, cores_path)
-
-    # Slow path: scan individual study files for SOM + BD columns.
-    candidates = find_candidate_studies(df_inv)
-    if candidates.empty:
-        return pd.DataFrame(columns=["som", "bulk_density", "source_study", "som_source"])
-
-    frames = []
-    for _, row in candidates.iterrows():
-        part = load_som_bd_from_file(row["path"], row["som_col"], row["bd_col"], row["study_id"])
-        if part is not None and not part.empty:
-            frames.append(part)
-
-    if not frames:
-        return pd.DataFrame(columns=["som", "bulk_density", "source_study", "som_source"])
-
-    return pd.concat(frames, ignore_index=True)
-
-
 def _build_synthesis_from_flat(depthseries_path, cores_path) -> pd.DataFrame:
     ds = pd.read_csv(depthseries_path, on_bad_lines="skip", low_memory=False)
     som_col, bd_col = _detect_columns(ds)
@@ -272,3 +248,28 @@ def _build_synthesis_from_flat(depthseries_path, cores_path) -> pd.DataFrame:
         if extra in ds.columns:
             cols.append(extra)
     return ds[cols]
+
+
+def build_synthesis_df(df_inv: pd.DataFrame, *, synthesis_root: Path | str | None = None) -> pd.DataFrame:
+    # Fast path: if inventory came from CCN_synthesis flat files, load depthseries directly.
+    resolved_synthesis_root = _resolve_synthesis_root(df_inv, synthesis_root)
+    depthseries_path = resolved_synthesis_root / "CCN_depthseries.csv" if resolved_synthesis_root is not None else None
+    cores_path = resolved_synthesis_root / "CCN_cores.csv" if resolved_synthesis_root is not None else None
+    if depthseries_path is not None and depthseries_path.exists():
+        return _build_synthesis_from_flat(depthseries_path, cores_path)
+
+    # Slow path: scan individual study files for SOM + BD columns.
+    candidates = find_candidate_studies(df_inv)
+    if candidates.empty:
+        return pd.DataFrame(columns=["som", "bulk_density", "source_study", "som_source"])
+
+    frames = []
+    for _, row in candidates.iterrows():
+        part = load_som_bd_from_file(row["path"], row["som_col"], row["bd_col"], row["study_id"])
+        if part is not None and not part.empty:
+            frames.append(part)
+
+    if not frames:
+        return pd.DataFrame(columns=["som", "bulk_density", "source_study", "som_source"])
+
+    return pd.concat(frames, ignore_index=True)

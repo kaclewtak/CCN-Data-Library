@@ -15,10 +15,11 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy import stats
 
-# ---------------------------------------------------------------------------
-# Schema constants
-# ---------------------------------------------------------------------------
+from dashboard.utils.geo_gaps import (
+    CONTINENT_MAP,
+)
 
+# Schema constants
 QA_NUMERIC_COLS = {
     "dry_bulk_density": {
         "unit": "g/cm\u00b3",
@@ -77,10 +78,6 @@ MAX_REF_MAP_POINTS = 8000
 # Geographic region helpers
 # ---------------------------------------------------------------------------
 
-from dashboard.utils.geo_gaps import (  # noqa: E402 — kept near related constants
-    CONTINENT_MAP,
-)
-
 # Approximate lat/lon bounding boxes for US sub-regions.
 # Checked in order; first match wins.
 US_SUBREGION_BOXES: list[tuple[str, tuple[float, float], tuple[float, float]]] = [
@@ -124,10 +121,7 @@ def apply_geo_filters(
     return df
 
 
-# ---------------------------------------------------------------------------
 # Reference data — lazy singleton
-# ---------------------------------------------------------------------------
-
 _ref_cache: dict | None = None
 
 
@@ -218,7 +212,7 @@ def load_reference_data() -> dict:
     for c in ["latitude", "longitude"]:
         ref_cores[c] = pd.to_numeric(ref_cores[c], errors="coerce")
 
-    # --- Normalize country & derive continent / US sub-region columns ---
+    # Normalize country & derive continent / US sub-region columns
     ref_cores["country"] = ref_cores["country"].fillna("").str.strip().str.lower()
     ref_cores["continent"] = ref_cores["country"].astype(str).map(CONTINENT_MAP).fillna("other")
 
@@ -273,9 +267,7 @@ def load_reference_data() -> dict:
     return _ref_cache
 
 
-# ---------------------------------------------------------------------------
 # Column auto-matching
-# ---------------------------------------------------------------------------
 
 
 def _normalize(name: str) -> str:
@@ -1065,8 +1057,8 @@ def build_qaqc_summary_html(
 
     Dashboard adaptation notes:
     The R functions read CCN guidance files and return tabular QA report inputs for
-    named synthesis tables. This Shiny helper keeps the same intent -- column
-    coverage, numeric completeness, and fraction/range warnings -- but visualizes
+    named synthesis tables. This Shiny helper keeps the same intent -> column
+    coverage, numeric completeness, and fraction/range warnings <- but visualizes
     the already auto-matched current-session dataframe. That difference is
     intentional because uploads in the Data Explorer may be a single user table,
     may use non-CCN column names, and should not require local guidance CSVs at

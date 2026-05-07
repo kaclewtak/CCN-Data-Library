@@ -1,5 +1,3 @@
-"""Utilities for analyzing geographic data gaps in the SOM-BD dataset."""
-
 from __future__ import annotations
 
 import numpy as np
@@ -82,6 +80,7 @@ CONTINENT_MAP = {
 REFERENCE_CONTINENTS = ["africa", "asia", "europe", "north america", "south america", "oceania"]
 
 
+# Helper function
 def _map_country_to_continent(country: str) -> str | None:
     return CONTINENT_MAP.get(country.strip().lower())
 
