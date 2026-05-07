@@ -21,7 +21,7 @@ npm run build
 cd ../../..
 ```
 
-Launch the dashboard:
+### CLI dashboard launch:
 
 ```bash
 uv run ccn-dashboard
@@ -38,7 +38,15 @@ uv run ccn-dashboard --no-fetch
 uv run ccn-dashboard --force-data-refresh
 ```
 
-Notebook or async Python sessions can launch the same app with:
+### Notebook dashboard launch
+
+There is a premade notebook which can be used to run the Dashboard. It is located in:
+
+```
+src/dashboard/Python_Shiny.ipynb
+```
+
+Likewise, notebook or async Python sessions can launch the same app with:
 
 ```python
 from ccn_dashboard import launch_dashboard

@@ -6,7 +6,8 @@ from typing import Any
 import pandas as pd
 import polars as pl
 from shiny import reactive
-from utils.geo import dataframe_to_geo_points, find_lat_lon_columns
+
+from dashboard.utils.geo import dataframe_to_geo_points, find_lat_lon_columns
 
 _BOOTSTRAP_COLUMN_NAME = "Column 1"
 
