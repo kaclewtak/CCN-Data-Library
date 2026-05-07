@@ -4,6 +4,7 @@ from htmltools import TagChild
 from shiny import module, ui
 
 
+# Helper Functions
 def _external_link(label: str, href: str):
     return ui.tags.a(label, href=href, target="_blank", rel="noopener noreferrer")
 
@@ -22,6 +23,9 @@ def _metadata_table(headers: list[str], rows: list[list[TagChild]]):
     )
 
 
+# ---------------------------------------------------------------------------
+# UI
+# ---------------------------------------------------------------------------
 @module.ui
 def metadata_ui():
     return ui.div(

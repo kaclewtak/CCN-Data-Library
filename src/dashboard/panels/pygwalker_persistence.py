@@ -22,20 +22,20 @@ from typing import Any
 
 import polars as pl
 
-# ── Make the local pygwalker package importable ──────────────────────────
+# Make the local pygwalker package importable
 _local_pygwalker = Path(__file__).resolve().parents[2] / "interactive_dash"
 if _local_pygwalker.is_dir() and str(_local_pygwalker) not in sys.path:
     sys.path.insert(0, str(_local_pygwalker))
 
-import pygwalker as pyg  # noqa: E402
+import pygwalker as pyg
 
 
 def data_fingerprint(df: pl.DataFrame) -> str:
     """Return an MD5 hex-digest of *df*'s CSV representation.
 
-    The hash changes if and only if the tabular content (values, columns,
-    row order) changes.  It is intentionally fast/cheap — not
-    cryptographic — and is used only for *same-session* identity checks.
+    The hash changes only if the tabular content (values, columns,
+    etc.) changes.  It is intentionally fast/cheap and is used only
+    for same-session identity checks.
     """
     return hashlib.md5(df.write_csv().encode("utf-8")).hexdigest()
 

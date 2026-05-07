@@ -62,6 +62,7 @@ FIGURES = [
 ]
 
 
+# Helper functions
 def _metric_card(label: str, value: str, detail: str, tone: str = "teal"):
     return ui.div(
         ui.div(label, class_="carbon-modeling-metric-label"),

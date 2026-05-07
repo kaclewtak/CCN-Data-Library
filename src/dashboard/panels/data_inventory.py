@@ -15,29 +15,10 @@ from dashboard.utils.synthesis_io import build_synthesis_df
 
 matplotlib.use("Agg")
 
+
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
-
-
-@module.ui
-def data_inventory_ui():
-    return ui.navset_card_tab(
-        ui.nav_panel(
-            "Summary",
-            _summary_tab_content(),
-        ),
-        ui.nav_panel(
-            "Geographic Coverage",
-            ui.card(
-                ui.card_header("Area Contribution"),
-                ui.output_plot("plot_area_bar", height="620px"),
-            ),
-            ui.card(ui.card_header("Coverage Gap Hints"), ui.output_ui("gap_hints_ui")),
-        ),
-    )
-
-
 def _summary_tab_content():
     return ui.TagList(
         ui.tags.style("""
@@ -171,18 +152,34 @@ def _synthesis_study_counts(synthesis: pd.DataFrame, limit: int) -> pd.Series:
     return _clean_label_series(synthesis["source_study"]).value_counts().head(limit)
 
 
+@module.ui
+def data_inventory_ui():
+    return ui.navset_card_tab(
+        ui.nav_panel(
+            "Summary",
+            _summary_tab_content(),
+        ),
+        ui.nav_panel(
+            "Geographic Coverage",
+            ui.card(
+                ui.card_header("Area Contribution"),
+                ui.output_plot("plot_area_bar", height="620px"),
+            ),
+            ui.card(ui.card_header("Coverage Gap Hints"), ui.output_ui("gap_hints_ui")),
+        ),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Server
 # ---------------------------------------------------------------------------
-
-
 @module.server
 def data_inventory_server(_module_input, _output, _session):
     initial_inventory = build_inventory_df()
     inventory_df: reactive.Value[pd.DataFrame | None] = reactive.Value(initial_inventory)
     synthesis_df: reactive.Value[pd.DataFrame | None] = reactive.Value(build_synthesis_df(initial_inventory))
 
-    # ---- Inventory + synthesis summary cards -------------------------------
+    #  Inventory + synthesis summary cards
 
     @render.ui
     def inventory_overview_cards():
@@ -225,7 +222,7 @@ def data_inventory_server(_module_input, _output, _session):
             class_="inventory-summary-grid",
         )
 
-    # ---- Synthesis count plots --------------------------------------------
+    # Synthesis count plots
 
     @render.plot
     def plot_category_dist():
@@ -260,7 +257,7 @@ def data_inventory_server(_module_input, _output, _session):
             palette="mako",
         )
 
-    # ---- Synthesis plots --------------------------------------------------
+    # Synthesis plots
 
     @render.plot
     def plot_som_hist():
@@ -411,7 +408,7 @@ def data_inventory_server(_module_input, _output, _session):
             tags.append(ui.div(h["text"], class_=f"alert {css}", role="alert"))
         return ui.TagList(*tags)
 
-    # helpers
+    # Helper Functions
     def _format_count(value: int) -> str:
         return f"{value:,}"
 

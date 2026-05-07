@@ -40,8 +40,6 @@ CMR_GRANULES_URL = "https://cmr.earthdata.nasa.gov/search/granules.json"
 
 
 # Helper functions
-
-
 def _get_bounding_box(points_df: pd.DataFrame) -> tuple[float, float, float, float] | None:
     """Return (min_lon, min_lat, max_lon, max_lat) with 0.5-degree buffer."""
     if points_df.empty:
@@ -113,9 +111,9 @@ def _search_granules(bbox: tuple, collection: dict) -> list[dict]:
     return all_results
 
 
-# Shiny module — UI
-
-
+# ---------------------------------------------------------------------------
+# UI
+# ---------------------------------------------------------------------------
 @module.ui
 def eo_ui():
     return ui.TagList(
@@ -152,9 +150,9 @@ def eo_ui():
     )
 
 
-# Shiny module — Server
-
-
+# ---------------------------------------------------------------------------
+# Server
+# ---------------------------------------------------------------------------
 @module.server
 def eo_server(input_, _output, _session, table_points_getter: Callable[[], pd.DataFrame]):
     granules = reactive.Value([])

@@ -1,5 +1,3 @@
-"""QA Dashboard panel — compare user data against CCN reference distributions."""
-
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -31,6 +29,7 @@ from dashboard.utils.qa import (
 )
 
 
+# Helper Functions
 def validation_report_csv(warnings: pd.DataFrame) -> str:
     if warnings.empty:
         return "No validation issues.\n"
@@ -122,13 +121,16 @@ def _qa_map_controls():
     )
 
 
+# ---------------------------------------------------------------------------
+# UI
+# ---------------------------------------------------------------------------
 @module.ui
 def qa_ui():
     comparison_choices = {"__all__": "All matched variables"}
     comparison_choices.update({k: f"{k}  ({v['unit']})" for k, v in QA_NUMERIC_COLS.items()})
 
     return ui.navset_tab(
-        # --- QA Charts tab ---
+        # QA Charts tab
         ui.nav_panel(
             "QA Charts",
             ui.layout_sidebar(
@@ -180,7 +182,7 @@ def qa_ui():
                 ui.output_ui("duplicate_diagnostics_panel"),
             ),
         ),
-        # --- Statistical Tests tab ---
+        # Statistical Tests tab
         ui.nav_panel(
             "Statistical Tests",
             ui.layout_sidebar(
@@ -228,7 +230,7 @@ def qa_ui():
                 ),
             ),
         ),
-        # --- Validation tab ---
+        # Validation tab
         ui.nav_panel(
             "Validation",
             ui.card(
@@ -250,7 +252,7 @@ def qa_ui():
                 class_="mt-2",
             ),
         ),
-        # --- QA Map tab ---
+        # QA Map tab
         ui.nav_panel(
             "QA Map",
             _qa_map_controls(),
@@ -260,6 +262,9 @@ def qa_ui():
     )
 
 
+# ---------------------------------------------------------------------------
+# Server
+# ---------------------------------------------------------------------------
 @module.server
 def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.DataFrame | None]):
     # Lazy-load reference data on first access
@@ -284,7 +289,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
             ui.update_selectize(f"{prefix}_country", choices=data["country_choices"])
             ui.update_selectize(f"{prefix}_habitat", choices=data["habitat_choices"])
 
-    # --- Cascading geo filter helpers (one set per tab prefix) ---
+    # Cascading geo filter helpers (one set per tab prefix)
 
     def _read_geo_inputs(prefix: str):
         """Return (continents, countries, us_subregions, habitats) lists for a tab."""
@@ -361,7 +366,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
     def map_us_subregion_ui():
         return _us_subregion_ui_for("map")
 
-    # --- User data (Polars -> Pandas) + auto column matching ---
+    # User data (Polars -> Pandas) + auto column matching
 
     @reactive.calc
     def user_pandas() -> pd.DataFrame | None:
@@ -377,7 +382,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
             return {k: None for k in ALL_CANONICAL}
         return auto_match_columns(df.columns.tolist())
 
-    # --- QA Charts ---
+    # QA Charts
 
     @render.ui
     def qa_chart():
@@ -481,7 +486,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
     def duplicate_diagnostics_panel():
         return ui.HTML(build_duplicate_diagnostics_html(user_pandas(), resolved_col_map()))
 
-    # --- Validation ---
+    # Validation
 
     @reactive.calc
     def validation_results():
@@ -510,7 +515,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
     def download_warnings():
         yield validation_report_csv(validation_results())
 
-    # --- Statistical Tests ---
+    # Statistical Tests
 
     @render.ui
     def comparison_mapping():
@@ -672,7 +677,7 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
         )
         return ui.TagList(summary, table, legend)
 
-    # --- QA Map ---
+    # QA Map
 
     @render.ui
     def map_display():
