@@ -197,10 +197,11 @@ def qa_ui():
                         "comparison_test",
                         "Statistical Test",
                         choices={
-                            "ks": "Kolmogorov-Smirnov",
                             "anderson": "Anderson-Darling",
+                            "ks": "Kolmogorov-Smirnov",
+                            "ttest": "Student's t-test",
                         },
-                        selected="ks",
+                        selected="anderson",
                     ),
                     ui.input_selectize(
                         "comparison_habitat",
@@ -591,8 +592,9 @@ def qa_server(module_input, _output, _session, data_getter: Callable[[], pl.Data
             )
 
         test_label = {
-            "ks": "Kolmogorov-Smirnov",
             "anderson": "Anderson-Darling",
+            "ks": "Kolmogorov-Smirnov",
+            "ttest": "Student's t-test",
         }
 
         def _p_color(p_value: float | None) -> str:

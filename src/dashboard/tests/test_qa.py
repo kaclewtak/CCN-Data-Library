@@ -72,6 +72,22 @@ def test_compare_user_to_reference_handles_insufficient_data() -> None:
     assert result["n_ref"] == 2
 
 
+def test_compare_user_to_reference_supports_student_t_test() -> None:
+    result = compare_user_to_reference(
+        pd.Series([1.0, 1.1, 1.2, 1.3]),
+        pd.Series([2.0, 2.1, 2.2, 2.3]),
+        test_name="ttest",
+    )
+
+    assert result["test"] == "ttest"
+    assert result["n_user"] == 4
+    assert result["n_ref"] == 4
+    assert result["statistic"] is not None
+    assert result["p_value"] is not None
+    assert result["p_value"] < 0.01
+    assert result["interpretation"] == "Distributions are significantly different (p < 0.01)."
+
+
 def test_build_comparison_results_filters_reference_rows_and_selected_variable() -> None:
     ref_merged = pd.DataFrame(
         {

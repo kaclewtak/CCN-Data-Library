@@ -479,10 +479,20 @@ def compare_user_to_reference(
         except ValueError as exc:
             result["interpretation"] = f"Test failed: {exc}"
             return result
-    else:
+    elif test_name == "ks":
         comparison = stats.ks_2samp(user_clean, ref_clean)
         statistic = float(getattr(comparison, "statistic"))
         p_value = float(getattr(comparison, "pvalue"))
+    elif test_name == "ttest":
+        comparison = stats.ttest_ind(user_clean, ref_clean, equal_var=True, nan_policy="omit")
+        statistic = float(getattr(comparison, "statistic"))
+        p_value = float(getattr(comparison, "pvalue"))
+        if not np.isfinite(statistic) or not np.isfinite(p_value):
+            result["interpretation"] = "Test failed: could not compute a finite t statistic."
+            return result
+    else:
+        result["interpretation"] = f"Unsupported statistical test: {test_name}"
+        return result
 
     if p_value < 0.01:
         interpretation = "Distributions are significantly different (p < 0.01)."
