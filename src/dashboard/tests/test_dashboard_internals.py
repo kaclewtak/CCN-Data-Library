@@ -70,6 +70,50 @@ def test_carbon_modeling_comparisons_include_clean_and_expanded_descriptions() -
     assert "carbon-modeling-figure-pair--single" not in html
 
 
+def test_eo_gallery_includes_dataset_specific_assets_and_reasoning() -> None:
+    groups_by_dataset = eo_panel.EO_DATASET_EXAMPLE_GROUPS
+
+    assert set(groups_by_dataset) == set(eo_panel.COLLECTIONS)
+
+    for collection_name, groups in groups_by_dataset.items():
+        figures = [figure for _, _, _, group_figures in groups for figure in group_figures]
+        file_names = [file_name for _, file_name, _, _ in figures]
+        text = " ".join(
+            [collection_name]
+            + [title for title, _, _, _ in groups]
+            + [description for _, _, description, _ in groups]
+            + [" ".join((run_label, title, summary)) for run_label, _, title, summary in figures]
+        ).lower()
+
+        assert len(groups) == 2
+        assert len(figures) >= 2
+        assert all(len(group) == 4 for group in groups)
+        assert all(len(figure) == 4 for figure in figures)
+        assert all(description for _, _, description, _ in groups)
+        assert all(summary for _, _, _, summary in figures)
+        assert all(file_name.startswith("eo_dataset_") for file_name in file_names)
+        assert all((DASHBOARD_ROOT / "images" / file_name).is_file() for file_name in file_names)
+        assert "raw" in text
+        assert "derivative" in text
+
+    html = str(eo_panel.eo_ui("eo_search"))
+    assert "eo_example_gallery" in html
+    assert "eo-example-gallery" in html
+    assert "eo_dataset_emit_raw.png" not in html
+
+    sentinel2_html = str(
+        getattr(eo_panel, "_eo_example_gallery")(
+            "Sentinel-2 L2A Surface Reflectance",
+            groups_by_dataset["Sentinel-2 L2A Surface Reflectance"],
+        )
+    )
+    assert "Raw and Derived EO Examples: Sentinel-2 L2A Surface Reflectance" in sentinel2_html
+    assert "eo_dataset_sentinel2_raw_tci.png" in sentinel2_html
+    assert "eo_dataset_sentinel2_derivatives.png" in sentinel2_html
+    assert "eo_dataset_emit_raw.png" not in sentinel2_html
+    assert "modeling notebook" in sentinel2_html.lower()
+
+
 def test_dashboard_runtime_check_validates_assets_and_data(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -300,6 +344,7 @@ def test_search_granules_extracts_download_and_preview_links(
                             "time_start": "2025-01-02T03:04:05Z",
                             "time_end": "2025-01-02T03:14:05Z",
                             "boxes": ["10 -80 11 -79"],
+                            "polygons": [["10 -80 10 -79 11 -79 11 -80 10 -80"]],
                             "links": [
                                 {"href": "https://example.test/EMIT_L2A_RFL_scene.nc.dmrpp"},
                                 {"href": "https://lp-prod-protected.example/EMIT_L2A_RFL_scene.nc"},
@@ -320,20 +365,255 @@ def test_search_granules_extracts_download_and_preview_links(
     results = search_granules(
         (-80.5, 9.5, -78.5, 11.5),
         eo_panel.COLLECTIONS["EMIT L2A Reflectance"],
+        source_name="EMIT L2A Reflectance",
     )
 
     assert calls[0]["url"] == eo_panel.CMR_GRANULES_URL
     assert calls[0]["params"]["bounding_box"] == "-80.5,9.5,-78.5,11.5"
+    assert "temporal" not in calls[0]["params"]
     assert results == [
         {
+            "source": "EMIT L2A Reflectance",
             "granule_id": "EMIT_SCENE_001",
             "time_start": "2025-01-02 03:04:05",
             "time_end": "2025-01-02 03:14:05",
             "url": "https://lp-prod-protected.example/EMIT_L2A_RFL_scene.nc",
+            "metadata_url": "",
             "preview_url": "https://lp-prod-public.example/EMIT_L2A_RFL_scene.png",
+            "preview_kind": "derived PNG preview",
+            "cloud_cover": "",
             "boxes": ["10 -80 11 -79"],
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[-80.0, 10.0], [-79.0, 10.0], [-79.0, 11.0], [-80.0, 11.0], [-80.0, 10.0]]],
+            },
         }
     ]
+
+
+def test_cmr_polygons_to_geometry_parses_live_cmr_shape() -> None:
+    geometry = getattr(eo_panel, "_cmr_polygons_to_geometry")(
+        [
+            [
+                "26.7522621 -80.4531479 26.2169151 -81.0166702 25.6396103 -80.4682388 26.1749573 -79.9047165 26.7522621 -80.4531479"
+            ]
+        ]
+    )
+
+    assert geometry == {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [-80.4531479, 26.7522621],
+                [-81.0166702, 26.2169151],
+                [-80.4682388, 25.6396103],
+                [-79.9047165, 26.1749573],
+                [-80.4531479, 26.7522621],
+            ]
+        ],
+    }
+
+
+def test_search_stac_items_builds_unfiltered_payload_and_stops_at_initial_page(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict] = []
+
+    class FakeResponse:
+        def __init__(self, payload: dict) -> None:
+            self.payload = payload
+
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            if self.payload.get("token") == "next-page":
+                return {
+                    "features": [
+                        {
+                            "id": "S2A_002",
+                            "bbox": [-80.0, 10.0, -79.0, 11.0],
+                            "properties": {"datetime": "2024-06-02T15:30:00Z"},
+                            "assets": {
+                                "B04": {
+                                    "href": "https://example.test/red.tif",
+                                    "type": "image/tiff; application=geotiff",
+                                }
+                            },
+                            "links": [{"rel": "self", "href": "https://example.test/item-2.json"}],
+                        }
+                    ]
+                }
+
+            return {
+                "features": [
+                    {
+                        "id": "S2A_001",
+                        "bbox": [-80.5, 9.5, -78.5, 11.5],
+                        "properties": {
+                            "datetime": "2024-06-01T15:30:00Z",
+                            "eo:cloud_cover": 12.34,
+                        },
+                        "assets": {
+                            "rendered_preview": {"href": "https://example.test/preview.png"},
+                            "visual": {
+                                "href": "https://sentinel2l2a01.blob.core.windows.net/path/visual.tif",
+                                "type": "image/tiff; application=geotiff",
+                            },
+                        },
+                        "links": [{"rel": "self", "href": "https://example.test/item.json"}],
+                    }
+                ],
+                "links": [{"rel": "next", "href": eo_panel.STAC_SEARCH_URL, "body": {"token": "next-page"}}],
+            }
+
+    def fake_post(url: str, *, json: dict, timeout: int) -> FakeResponse:
+        calls.append({"url": url, "json": json, "timeout": timeout})
+        return FakeResponse(json)
+
+    monkeypatch.setattr(eo_panel.requests, "post", fake_post)
+
+    search_stac_items = getattr(eo_panel, "_search_stac_items")
+    results = search_stac_items(
+        (-80.5, 9.5, -78.5, 11.5),
+        eo_panel.COLLECTIONS["Sentinel-2 L2A Surface Reflectance"],
+        source_name="Sentinel-2 L2A Surface Reflectance",
+    )
+
+    assert calls[0]["url"] == eo_panel.STAC_SEARCH_URL
+    assert calls[0]["json"] == {
+        "collections": ["sentinel-2-l2a"],
+        "bbox": [-80.5, 9.5, -78.5, 11.5],
+        "limit": 100,
+    }
+    assert len(calls) == 1
+    assert results == [
+        {
+            "source": "Sentinel-2 L2A Surface Reflectance",
+            "granule_id": "S2A_001",
+            "time_start": "2024-06-01 15:30:00",
+            "time_end": "2024-06-01 15:30:00",
+            "url": "https://sentinel2l2a01.blob.core.windows.net/path/visual.tif",
+            "data_links": [{"label": "Visual", "url": "https://sentinel2l2a01.blob.core.windows.net/path/visual.tif"}],
+            "metadata_url": "https://example.test/item.json",
+            "preview_url": "https://example.test/preview.png",
+            "preview_kind": "STAC rendered preview",
+            "cloud_cover": 12.34,
+            "boxes": ["9.5 -80.5 11.5 -78.5"],
+            "geometry": None,
+        },
+    ]
+
+
+def test_search_stac_items_supports_sentinel1_rtc_vv_vh_assets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict] = []
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {
+                "features": [
+                    {
+                        "id": "S1A_RTC_001",
+                        "bbox": [-91.0, 29.0, -90.0, 30.0],
+                        "properties": {"datetime": "2026-05-16T00:10:27Z"},
+                        "assets": {
+                            "rendered_preview": {"href": "https://example.test/sentinel-1-preview.png"},
+                            "vv": {
+                                "href": "https://sentinel1euwestrtc.blob.core.windows.net/path/vv.tif",
+                                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                            },
+                            "vh": {
+                                "href": "https://sentinel1euwestrtc.blob.core.windows.net/path/vh.tif",
+                                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                            },
+                        },
+                        "links": [{"rel": "self", "href": "https://example.test/s1-item.json"}],
+                    }
+                ]
+            }
+
+    def fake_post(url: str, *, json: dict, timeout: int) -> FakeResponse:
+        calls.append({"url": url, "json": json, "timeout": timeout})
+        return FakeResponse()
+
+    monkeypatch.setattr(eo_panel.requests, "post", fake_post)
+
+    search_stac_items = getattr(eo_panel, "_search_stac_items")
+    results = search_stac_items(
+        (-91.0, 29.0, -90.0, 30.0),
+        eo_panel.COLLECTIONS["Sentinel-1 RTC Backscatter"],
+        source_name="Sentinel-1 RTC Backscatter",
+    )
+
+    assert calls[0]["json"] == {
+        "collections": ["sentinel-1-rtc"],
+        "bbox": [-91.0, 29.0, -90.0, 30.0],
+        "limit": 100,
+    }
+    assert results == [
+        {
+            "source": "Sentinel-1 RTC Backscatter",
+            "granule_id": "S1A_RTC_001",
+            "time_start": "2026-05-16 00:10:27",
+            "time_end": "2026-05-16 00:10:27",
+            "url": "https://sentinel1euwestrtc.blob.core.windows.net/path/vv.tif",
+            "data_links": [
+                {"label": "VV", "url": "https://sentinel1euwestrtc.blob.core.windows.net/path/vv.tif"},
+                {"label": "VH", "url": "https://sentinel1euwestrtc.blob.core.windows.net/path/vh.tif"},
+            ],
+            "metadata_url": "https://example.test/s1-item.json",
+            "preview_url": "https://example.test/sentinel-1-preview.png",
+            "preview_kind": "STAC rendered preview",
+            "cloud_cover": "",
+            "boxes": ["29.0 -91.0 30.0 -90.0"],
+            "geometry": None,
+        }
+    ]
+
+
+def test_links_html_lazy_signs_planetary_computer_data_links() -> None:
+    links_html = getattr(eo_panel, "_links_html")(
+        "https://sentinel2l2a01.blob.core.windows.net/path/visual.tif",
+        "https://example.test/item.json",
+    )
+
+    assert 'data-raw-url="https://sentinel2l2a01.blob.core.windows.net/path/visual.tif"' in links_html
+    assert "signAndOpenPlanetaryComputerUrl(this)" in links_html
+    assert "https://example.test/item.json" in links_html
+
+
+def test_selected_result_rows_filters_map_overlays_to_checked_rows() -> None:
+    parse_selected = getattr(eo_panel, "_parse_selected_row_indexes")
+    selected_rows = getattr(eo_panel, "_selected_result_rows")
+    rows = [
+        {"granule_id": "first", "boxes": ["10 -80 11 -79"]},
+        {"granule_id": "second", "boxes": ["11 -80 12 -79"]},
+        {"granule_id": "third", "boxes": ["12 -80 13 -79"]},
+    ]
+
+    selected_indexes = parse_selected(("1", 1, "bad", 12, -1, "2"), len(rows))
+
+    assert selected_indexes == [1, 2]
+    assert parse_selected("0,2", len(rows)) == [0, 2]
+    assert selected_rows(rows, selected_indexes) == [rows[1], rows[2]]
+
+
+def test_eo_map_toggle_uses_closest_container_not_id_selector() -> None:
+    panel_source = (DASHBOARD_ROOT / "panels" / "eo_panel.py").read_text(encoding="utf-8")
+
+    assert 'onchange="window.updateSelectedGranuleRows(this)"' in panel_source
+    assert "closest('.eo-granule-table-container')" in panel_source
+    assert "querySelectorAll('.eo-row-select:checked')" in panel_source
+    assert "querySelectorAll('#" not in panel_source
+    assert '_session.ns("granule-table-container")' not in panel_source
+    assert 'id="{table_container_id}"' not in panel_source
+    assert "selected_indexes = set(selected_granule_rows.get())" not in panel_source
+    assert 'checked = " checked" if row_index == 0 else ""' in panel_source
 
 
 def test_get_bounding_box_adds_expected_buffer() -> None:

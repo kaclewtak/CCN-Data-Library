@@ -77,7 +77,7 @@ Matches common user fields for carbon fraction, organic matter fraction, dry bul
 
 ### Satellite Search
 
-Uses imported latitude and longitude columns to build a buffered bounding box, query NASA CMR, and list matching L2 granules with available time ranges, download links, previews, and coverage maps. Current collections include EMIT L2A Reflectance, PACE OCI L2 Ocean Color, and PACE OCI L2 Inherent Optical Properties. This panel needs internet access and NASA CMR availability.
+Uses imported latitude and longitude columns to build a buffered bounding box, query earth-observation sources for regional products, and list matching items with available time ranges, data links, metadata links, preview imagery when available, cloud cover where available, and coverage maps. Result footprints are overlaid only for rows checked in the Map column, with the first result selected after each search; the map now renders CMR polygon footprints as well as STAC geometry/bounding boxes. Model-relevant sources are prioritized from the modeling notebooks: EMIT L2A Reflectance is queried through NASA CMR, while Sentinel-2 L2A Surface Reflectance and Sentinel-1 RTC Backscatter are queried through Planetary Computer STAC for NDVI and VV/VH backscatter source discovery with each initial load capped at 100 items. Sentinel data links are signed on click through the Planetary Computer API because the underlying Azure Blob assets are not publicly accessible without a SAS token. The current PACE OCI L2 Ocean Color and Inherent Optical Properties CMR collections remain available for continuity. This panel needs internet access and availability of NASA CMR or the Planetary Computer STAC API.
 
 ### Data Inventory
 
